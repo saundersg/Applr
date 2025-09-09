@@ -7,6 +7,6 @@
 ### Example
 ```
 install.packages('devtools')
-devtools::install_github('Applr','saundersg')
+devtools::install_github('saundersg/Applr')
 library(Applr)
 ```
