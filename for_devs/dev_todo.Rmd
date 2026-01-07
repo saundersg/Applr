@@ -31,7 +31,6 @@ date: "2025-09-20"
 - [ ] Consider if the names `slice_2d` and `geom_slice` convey their function best
 - [ ] Clean up AI made files
 - [ ] Tidy repo in general...
-- [ ] Probably obfuscate the names in student_models (they give an idea of what to expect for how these functions will be used)
 
 ## New Features
 
