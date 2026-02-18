@@ -375,7 +375,7 @@ GeomSlice <- ggproto(
 #'}
 #'
 #' @export
-geom_slice <- function(
+geom_slice_grouptry <- function(
     model,                    # Required: the fitted linear model
     n = 100,                  # Number of points to generate for smooth line
     inherit.aes = TRUE,       # Whether to inherit aesthetics from main ggplot call
