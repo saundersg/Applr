@@ -6,3 +6,8 @@
 .quarto
 .vscode
 chat_notes
+tests/output/
+Rplots.pdf
+docs/
+inst/doc/
+scratch/

@@ -1,0 +1,300 @@
+# geom_slice_subtitle() — a plot subtitle describing the geom_slice() layers.
+#
+# Architecture (mirrors geom_slice_text.R):
+#
+#   geom_slice_subtitle()  validates user input and returns a
+#                          `slice_subtitle_spec`. It takes NO model or
+#                          predict_vars — those are borrowed from the plot's
+#                          existing geom_slice() layers at add time.
+#   ggplot_add.slice_subtitle_spec
+#                          scans plot$layers for slice layers, warns when there
+#                          are none or when they use different models, works out
+#                          which held values are NOT already labeled elsewhere
+#                          on the plot (geom_slice_text labels, the legend,
+#                          facet strips), and sets the plot subtitle.
+#
+# The subtitle is add-time text, not a layer: everything it reports (imputed
+# means, predict_vars, what the legend covers) is knowable from the plot object
+# before it is built, mirroring the held-variable logic of build_slice_spec().
+
+
+# TRUE for layers created by geom_slice_text() (which carry the same slice
+# stat params as the slice layer they label).
+is_slice_text_layer <- function(layer) {
+  inherits(layer$stat, "StatSliceText")
+}
+
+# The held (unlabeled) values one plot's slice layers imply, as a named list in
+# the model's predictor order. Reproduces the held-variable logic of
+# build_slice_spec() at add time: predictors on the x-axis, pinned by a
+# grouping aesthetic (the legend labels those), pinned by a facet variable
+# (the strips label those), or already labeled by geom_slice_text() are
+# excluded; what's left is a predict_vars value or the imputed default.
+slice_subtitle_held <- function(plot, slice_layers, model) {
+  # predict_vars combined across the slice layers (they share one model)
+  predict_vars <- list()
+  for (sl in slice_layers) {
+    pv <- sl$stat_params$predict_vars %||% list()
+    for (v in names(pv)) {
+      predict_vars[[v]] <- unique(c(predict_vars[[v]], pv[[v]]))
+    }
+  }
+
+  # Explicit predict_vars win over group/facet pinning, as in
+  # build_slice_spec(); the context is shared with the band resolution below.
+  context <- slice_add_time_context(plot, model, predict_vars)
+  raw_data <- context$raw_data
+  predictor_vars <- context$predictor_vars
+  x_vars <- context$x_vars
+  group_vars <- context$group_vars
+  facet_vars <- context$facet_vars
+
+  labeled_vars <- unique(unlist(lapply(
+    Filter(is_slice_text_layer, plot$layers),
+    slice_text_label_vars, plot = plot
+  )))
+
+  # A banded variable spans a range instead of being held; report it with its
+  # own wording.
+  band <- NULL
+  for (sl in slice_layers) {
+    band <- slice_layer_band(sl, plot, context)
+    if (!is.null(band)) break
+  }
+
+  held_vars <- setdiff(predictor_vars,
+                       c(x_vars, group_vars, facet_vars, labeled_vars,
+                         if (!is.null(band)) band$var))
+  held <- list()
+  for (var in held_vars) {
+    held[[var]] <- if (!is.null(predict_vars[[var]])) {
+      predict_vars[[var]]
+    } else {
+      # geom_slice() already announced the imputed value; don't repeat it
+      suppressMessages(impute_value(raw_data[[var]], var))
+    }
+  }
+  list(held = held, band = band)
+}
+
+# The "held at: x2 = 2.507; g = \"A\"" line from a named list of held values.
+# Values format like geom_slice's console messages (4 sig figs, quoted
+# strings); multi-value variables join with ", " (e.g. "x2 = 0, 4").
+slice_subtitle_held_line <- function(held) {
+  parts <- vapply(names(held), function(v) {
+    paste0(v, " = ", paste(vapply(held[[v]], format_value, character(1)),
+                           collapse = ", "))
+  }, character(1))
+  paste0("held at: ", paste(parts, collapse = "; "))
+}
+
+# The "projection band: x2 spanning 1-4" line for a banded variable, from the
+# list(var =, values = c(lo, hi)) that resolve_slice_band() returns.
+slice_subtitle_band_line <- function(band) {
+  paste0("projection band: ", band$var, " spanning from ",
+         format_value(band$values[1]), " to ", format_value(band$values[2]))
+}
+
+
+# The full annotation text for a spec, or NULL when there is nothing to say
+# (no slice layers, conflicting models, or every line dropped). Shared by
+# geom_slice_subtitle() and geom_slice_caption(); `fn_name` and `where` only
+# feed the warning wording.
+slice_annotation_text <- function(object, plot, fn_name, where) {
+  slice_layers <- Filter(is_slice_layer, plot$layers)
+
+  if (length(slice_layers) == 0) {
+    slice_warn(
+      what = paste0(fn_name, "() found no geom_slice() layer to describe, so no ",
+                    where, " was added."),
+      hint = paste0("Add the slice first, such as 'geom_slice(model) + ",
+                    fn_name, "()'.")
+    )
+    return(NULL)
+  }
+
+  models <- lapply(slice_layers, function(l) l$stat_params$model)
+  if (!all(vapply(models[-1], identical, logical(1), y = models[[1]]))) {
+    names <- unique(vapply(slice_layers,
+                           function(l) l$stat_params$model_name %||% "model",
+                           character(1)))
+    slice_warn(
+      what = paste0(fn_name, "() found geom_slice() layers with different models (",
+                    paste0("`", names, "`", collapse = ", "),
+                    "), so no ", where, " was added."),
+      hint = "Use the same model in every geom_slice() layer, or remove the layers whose model differs."
+    )
+    return(NULL)
+  }
+
+  model <- models[[1]]
+  info <- slice_subtitle_held(plot, slice_layers, model)
+  held <- info$held
+  band <- info$band
+
+  # The whole annotation, written with one set of `lm_equation()` arguments.
+  # Whether it comes back NULL never depends on how the equation is written,
+  # so testing the first candidate settles it for all of them.
+  build <- function(args) {
+    equation <- do.call(lm_equation, c(list(model), args))
+    lines <- character(0)
+    if (isTRUE(object$model)) lines <- equation
+    if (length(held) > 0) lines <- c(lines, slice_subtitle_held_line(held))
+    if (!is.null(band)) lines <- c(lines, slice_subtitle_band_line(band))
+    if (length(lines) == 0) return(NULL)
+    paste0(object$prepend, paste(lines, collapse = "\n"), object$append)
+  }
+
+  candidates <- lapply(annotation_equation_args(object$dots, model), build)
+  if (is.null(candidates[[1]])) return(NULL)
+  wrapped <- wrap_annotation_text(unlist(candidates), plot, where, object$wrap)
+
+  # Renaming the reader's factor levels to make room is not something to do
+  # silently — say what was written, and how to ask for the other thing.
+  if (wrapped$candidate != 1L) {
+    eg <- brackets_example(model)
+    slice_inform(
+      what = paste0("Factor terms were shortened to fit the ", where,
+                    if (is.null(eg)) "" else
+                      paste0(" - wrote `", eg[["short"]], "` for `", eg[["long"]], "`"),
+                    "."),
+      hint = paste0("To keep the full names, use '", fn_name,
+                    "(style = \"prettier\")' - the ", where,
+                    " may then run past the edge of the plot.")
+    )
+  }
+  wrapped$text
+}
+
+# The `lm_equation()` argument lists to write this annotation with, most
+# preferred first. A caller-named `style` is left to stand alone; otherwise a
+# second candidate with the briefer bracketed levels is offered for the wrap
+# to fall back on, but only where a bare level name still identifies its
+# factor. The rest of `...` rides along unexamined — validating it is
+# lm_equation()'s job, not this one's.
+annotation_equation_args <- function(dots, model) {
+  if (!is.null(dots$style) || !brackets_unambiguous(model)) return(list(dots))
+  list(dots, c(dots, list(style = "brackets")))
+}
+
+# Adding to a plot is the only moment geom_slice_subtitle() can see the
+# geom_slice() layers it describes — and the subtitle belongs to the plot,
+# not to any layer.
+#' @export
+#' @noRd
+ggplot_add.slice_subtitle_spec <- function(object, plot, ...) {
+  subtitle <- slice_annotation_text(object, plot, "geom_slice_subtitle",
+                                    "subtitle")
+  if (is.null(subtitle)) return(plot)
+  plot + labs(subtitle = subtitle)
+}
+
+
+#' Describe the lines drawn by geom_slice() in the plot subtitle
+#'
+#' `geom_slice_subtitle()` fills the plot subtitle with a description of the
+#' plot's [geom_slice()] layers: the model equation ([lm_equation()] style) on
+#' the first line, and the held values the plot does not otherwise show on the
+#' second (`"held at: x2 = 2.507"`, formatted like `geom_slice()`'s console
+#' messages).
+#'
+#' It takes no `model` or `predict_vars` — everything is borrowed from the
+#' plot's existing `geom_slice()` layers, so add it *after* them (and after
+#' any [geom_slice_text()]). The held-values line is conscious of what the
+#' plot already labels: variables labeled by `geom_slice_text()`, pinned by a
+#' grouping aesthetic (the legend covers those), or pinned by faceting are
+#' left out. User-chosen `predict_vars` values and imputed defaults are
+#' treated the same — both are unlabeled held values. When nothing is held,
+#' the line is dropped entirely.
+#'
+#' @param model If `TRUE` (default), the subtitle's first line is the model
+#'   equation; `FALSE` drops it, leaving only the held-values line.
+#' @param prepend,append Plain strings pasted before the first line and after
+#'   the last line of the default subtitle.
+#' @param ... Passed to [lm_equation()] when the equation is written, under
+#'   its own argument names — chiefly `style`, which controls how factor terms
+#'   are labelled.
+#'
+#'   Left unset, `style` is chosen to fit: with `wrap` on, the equation is
+#'   tried spelled out (`4.09*(Species="setosa")`) and briefly
+#'   (`4.09*[setosa]`), each with and without the hanging indent, preferring
+#'   the spelled-out form and giving up the indent last. The first that fits
+#'   wins, and a message says so if the brief form did. Because the indent
+#'   goes last, a narrower plot can bring the full names *back*. The brief
+#'   form is never offered when two terms would shorten to the same label — a
+#'   bare `[High]` from two different factors no longer says which it meant.
+#'
+#'   Naming `style` yourself pins it and switches all of that off. Pin it (or
+#'   give `wrap` a width) when the annotation must come out the same whatever
+#'   size device it is drawn on.
+#' @param wrap Controls wrapping of lines too long to fit. `TRUE` (default)
+#'   measures how much room the subtitle has in this plot on the current
+#'   graphics device and breaks long lines to fit, between terms only, with
+#'   continuation lines hanging under the right-hand side of the equal sign.
+#'   `FALSE` leaves the text as one line per item, however far it runs off the
+#'   plot. A number is a width in inches to wrap to instead of measuring —
+#'   useful when the plot will be drawn at a size other than the current
+#'   device, as with `ggsave(width = )`.
+#'
+#' @returns An object that sets the plot subtitle when added to a ggplot.
+#'
+#' @seealso [geom_slice()] for the layers being described;
+#'   [geom_slice_caption()] for the same text in the caption;
+#'   [geom_slice_text()] to label the lines themselves.
+#'
+#' @examples
+#' library(ggplot2)
+#'
+#' # Subtitle reports the model equation and that hp is held at its mean
+#' model <- lm(mpg ~ disp + hp, data = mtcars)
+#' ggplot(mtcars, aes(disp, mpg)) +
+#'   geom_point() +
+#'   geom_slice(model) +
+#'   geom_slice_subtitle()
+#'
+#' @export
+geom_slice_subtitle <- function(model = TRUE,
+                                prepend = "",
+                                append = "",
+                                ...,
+                                wrap = TRUE) {
+  new_slice_annotation_spec(model, prepend, append, list(...), wrap,
+                            class = "slice_subtitle_spec")
+}
+
+# Shared validation + construction for geom_slice_subtitle() and
+# geom_slice_caption(); `class` picks which ggplot_add method fires.
+new_slice_annotation_spec <- function(model, prepend, append, dots, wrap,
+                                      class) {
+  if (!is.logical(model) || length(model) != 1 || is.na(model)) {
+    slice_abort(
+      what = "`model` must be TRUE or FALSE.",
+      hint = "For example, 'model = FALSE' to drop the equation line."
+    )
+  }
+  if (!is.character(prepend) || length(prepend) != 1 || is.na(prepend)) {
+    slice_abort(
+      what = "`prepend` must be a single string.",
+      hint = "For example, 'prepend = \"Model: \"'."
+    )
+  }
+  if (!is.character(append) || length(append) != 1 || is.na(append)) {
+    slice_abort(
+      what = "`append` must be a single string.",
+      hint = "For example, 'append = \" (mean-imputed)\"'."
+    )
+  }
+  ok_wrap <- length(wrap) == 1 && !is.na(wrap) &&
+    (is.logical(wrap) || (is.numeric(wrap) && wrap > 0))
+  if (!ok_wrap) {
+    slice_abort(
+      what = "`wrap` must be TRUE, FALSE, or a width in inches.",
+      hint = "For example, 'wrap = 6' to wrap to a 6-inch plot."
+    )
+  }
+  structure(
+    list(model = model, prepend = prepend, append = append, dots = dots,
+         wrap = wrap),
+    class = class
+  )
+}

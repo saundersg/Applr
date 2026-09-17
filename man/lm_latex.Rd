@@ -4,25 +4,50 @@
 \alias{lm_latex}
 \title{Write out the equation of a linear model in LaTeX format}
 \usage{
-lm_latex(model)
+lm_latex(model, style = c("prettier", "brackets", "raw"))
 }
 \arguments{
 \item{model}{A linear model}
+
+\item{style}{How factor terms are labelled. \code{"prettier"} (the default)
+spells out the factor name and level (e.g. \code{(Species="setosa")}),
+\code{"brackets"} shows the level alone (e.g. \verb{[setosa]}), and \code{"raw"} keeps
+the design-matrix names (e.g. \code{Speciessetosa}).}
 }
 \value{
-The equation of an indicated linear model with coefficients and variable names in LaTeX form
+A character string of length 1 containing the display-math LaTeX
+equation (wrapped in \verb{$$...$$}), printed to the console with \code{cat()} and
+returned invisibly.
 }
 \description{
-Takes a fitted linear model and generates a properly formatted LaTeX equation
-suitable for inclusion in R Markdown documents, academic papers, or presentations.
-The output includes underbrace notation to clearly label predicted values and
-predictor variables, making it ideal for educational or presentation purposes.
-Coefficients are rounded to 3 significant figures.
+Takes a fitted linear model and generates a properly formatted LaTeX
+equation suitable for inclusion in R Markdown documents, academic papers,
+or presentations. The output includes underbrace notation to clearly label
+predicted values and predictor variables, making it ideal for educational
+or presentation purposes. Coefficients are rounded to 3 significant
+figures.
+}
+\details{
+Use it when a model needs to appear as typeset math — in an R Markdown
+chunk with \code{results = "asis"}, the LaTeX string prints ready to render.
 }
 \examples{
-\dontrun{
-model <- lm(width ~ length + I(length^2) + sex + sex:length + sex:I(length^2), KidsFeet)
+# Simple regression
+lm_latex(lm(mpg ~ wt, data = mtcars))
+
+# Multiple predictors and a transformed term
+lm_latex(lm(mpg ~ disp + hp + I(hp^2), data = mtcars))
+
+# Factor predictor with interactions, spelled out by default
+model <- lm(Sepal.Length ~ Sepal.Width * Species, data = iris)
 lm_latex(model)
-}
+
+# `style = "brackets"` shows just the level; `"raw"` keeps design-matrix names
+lm_latex(model, style = "brackets")
+lm_latex(model, style = "raw")
+
+# Capture the string instead of just printing it
+eq <- lm_latex(lm(mpg ~ wt, data = mtcars))
+nchar(eq)
 
 }
