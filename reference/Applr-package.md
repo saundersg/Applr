@@ -45,27 +45,25 @@ Core capabilities:
   [`lm_equation`](https://saundersg.github.io/Applr/reference/lm_equation.md),
   [`lm_latex`](https://saundersg.github.io/Applr/reference/lm_latex.md)
 
-- Theme:
-  [`theme_lc`](https://saundersg.github.io/Applr/reference/theme_lc.md)
-
 ## Quick start
 
-Fit a model and plot a slice:
+Fit a model, then see it in one call:
 
 
     library(Applr)
-    model <- lm(mpg ~ disp + hp, data = mtcars)
-    slice_2d(model, x_axis = "disp")
+    model <- lm(mpg ~ qsec + am, data = mtcars)
+    autoplot(model)
 
-ggplot2 layer with facets:
+Or build the plot yourself with a geom_slice() layer:
 
 
     library(ggplot2)
-    model <- lm(mpg ~ disp + hp + cyl, data = mtcars)
-    ggplot(mtcars, aes(disp, mpg)) +
+    model <- lm(hwy ~ displ * drv + cyl, data = mpg)
+    ggplot(mpg, aes(displ, hwy, color = drv)) +
       geom_point() +
-      facet_wrap(~cyl) +
-      geom_slice(model = model, predict_vars = list(hp = 110))
+      geom_slice(model, band = TRUE) +
+      geom_slice_text() +
+      geom_slice_subtitle()
 
 ## See also
 
@@ -74,8 +72,7 @@ ggplot2 layer with facets:
   [`?geom_slice`](https://saundersg.github.io/Applr/reference/geom_slice.md),
   [`?scatter_3d`](https://saundersg.github.io/Applr/reference/scatter_3d.md),
   [`?lm_equation`](https://saundersg.github.io/Applr/reference/lm_equation.md),
-  [`?lm_latex`](https://saundersg.github.io/Applr/reference/lm_latex.md),
-  [`?theme_lc`](https://saundersg.github.io/Applr/reference/theme_lc.md)
+  [`?lm_latex`](https://saundersg.github.io/Applr/reference/lm_latex.md)
 
 - The package README for a brief tour
 
@@ -86,3 +83,7 @@ ggplot2 layer with facets:
 Authors:
 
 - Cameron McClellan <cameron.m.mcclellan@gmail.com>
+
+Other contributors:
+
+- Garrett Saunders <saundersg@byui.edu> \[thesis advisor\]
