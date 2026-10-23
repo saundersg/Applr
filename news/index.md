@@ -2,6 +2,8 @@
 
 ## Applr 1.0.0
 
+CRAN release: 2026-10-22
+
 First stable release. The public API documented here is covered by a
 stability promise: renames or removals after 1.0 go through a
 deprecation cycle.

@@ -33,9 +33,7 @@ Perfect for any **App**lied **l**inear **r**egression.
 
 ``` r
 
-install.packages("devtools")      # if you don’t have it
-devtools::install_github("saundersg/Applr")
-library(Applr)
+install.packages("Applr")
 ```
 
 ## Quick start
