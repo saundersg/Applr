@@ -68,17 +68,24 @@ jobs:
           Rscript tests/suite/pins/install.R
           Rscript -e 'pak::pkg_install(c("chromote", "httpuv", "png", "yaml"), upgrade = FALSE, ask = FALSE)'
 
-      # The plotly contract tests take screenshots through chromote. The image's
-      # desktop Chrome (157) can take over 10 s to start, and with four copies
-      # starting it at once misses chromote's timeout; the headless shell doesn't.
+      # The plotly contract tests take screenshots through chromote. On a cold
+      # runner, copies starting their own Chrome at the same moment sometimes
+      # never get a debugging port, so one headless shell is started here and
+      # every copy connects to it (APPLR_CHROME_PORT, read by views.R).
       - name: Install Chrome headless shell
         run: |
           out=$(npx -y @puppeteer/browsers@2 install chrome-headless-shell@stable --path "$RUNNER_TEMP/chrome")
           echo "$out"
           echo "CHROMOTE_CHROME=${out##* }" >> "$GITHUB_ENV"
 
-      - name: Start Chrome once
-        run: time Rscript -e 'b <- chromote::ChromoteSession$new(); b$close()'
+      - name: Start a shared Chrome
+        run: |
+          args=$(Rscript -e 'cat(chromote::default_chrome_args())')
+          nohup "$CHROMOTE_CHROME" $args --headless --remote-debugging-port=9222 \
+            --user-data-dir="$RUNNER_TEMP/chrome-profile" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &
+          for i in $(seq 60); do curl -sf http://127.0.0.1:9222/json/version && break; sleep 1; done
+          curl -sf http://127.0.0.1:9222/json/version || { cat "$RUNNER_TEMP/chrome.log"; exit 1; }
+          echo "APPLR_CHROME_PORT=9222" >> "$GITHUB_ENV"
 
       - name: Mutation check
         run: Rscript tests/suite/mutate.R 4 --shard ${{ matrix.shard }}/${{ inputs.shards || 8 }} ${{ inputs.full && '--full' || '' }}
