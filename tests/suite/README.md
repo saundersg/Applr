@@ -203,17 +203,25 @@ names one catching test per break. `--full` runs every test in every copy and
 lists all that catch it, which helps when a break is caught for an unexpected
 reason. The unbroken copy always runs in full, and if it fails the run stops.
 
-The check takes a long time on one machine, so
-`.github/workflows/mutation-check.yaml` runs it on Actions,
-started by hand (*Run workflow*, or `gh workflow run mutation-check.yaml
---ref <branch>`), with inputs for the number of shards (default 8) and
-`full`. Each runner runs `mutate.R --shard i/n`: every n-th break from the
-i-th, plus the unbroken copy, writing a partial report to
-`mutation_shards/`. The last job runs `mutate.R --merge <dir>`, which
-checks that the shards agree on `code`, `full` and the test count and cover
-every break once, then writes `mutation_report.json` as a local run would.
-Download it from the run's `mutation-report` artifact and commit it; the job
-fails if any break was missed or crashed.
+The check takes a long time on one machine, so run it on Actions instead:
+`.github/workflows/mutation-check.yaml`, started by hand with
+`gh workflow run mutation-check.yaml --ref <branch>` (or *Run workflow* in
+the Actions tab, once the workflow is on `main`). Its inputs are the number
+of shards (default 8) and `full`. Each runner runs `mutate.R --shard i/n`:
+every n-th break from the i-th, plus the unbroken copy, writing a partial
+report to `mutation_shards/`. The last job runs `mutate.R --merge <dir>`,
+which checks that the shards agree on `code`, `full` and the test count and
+cover every break once, then writes `mutation_report.json` as a local run
+would. Download it from the run's `mutation-report` artifact
+(`gh run download <run> -n mutation-report -D tests/suite`) and commit it;
+the job fails if any break was missed or crashed. A run takes about 5
+minutes with the package cache warm, and 10 without.
+
+Each runner starts one headless Chrome before the check and sets
+`APPLR_CHROME_PORT`, so `screenshot_session()` (`views.R`) connects to it.
+Copies starting their own Chrome at the same moment on a fresh runner
+sometimes never got a debugging port. Locally, each copy still starts its
+own, and retries once if that fails.
 
 The report records `suite_code_hash()` (`stamp.R`): a hash of every `.R` file
 here, the unit tests and break list included, plus the case files the unit
