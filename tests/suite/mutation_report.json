@@ -1,21 +1,17 @@
 {
-  "when": "2026-11-12T18:39:41-0700",
-  "commit": "9aad881 + uncommitted changes",
-  "code": "f78bd7f3d86e36eedef3676d6c932493",
-  "tests": 68,
-  "caught": 36,
+  "when": "2026-11-13T20:04:34+0000",
+  "commit": "d7cae02",
+  "code": "48bd440e42778bc6f52c4c88e5ccb8e6",
+  "tests": 78,
+  "full": false,
+  "caught": 43,
   "breaks": [
     {
       "name": "A changed fingerprint keeps its status",
       "file": "status.R",
       "caught": true,
       "caught_by": [
-        "test-decisions.R: a human decision for an old fingerprint has no effect",
-        "test-decisions.R: no agent command writes the decisions file",
-        "test-runner.R: running records Unreviewed, unchanged re-runs keep status, changes reset it",
-        "test-runner.R: list and diff work; approval requires a note and rejection stores it",
-        "test-status.R: every row of the transition table holds",
-        "test-status.R: a run resets exactly when the fingerprint is new, and records it"
+        "test-check.R: a variant of an output that isn't Human approved, or a stale bundle, is refused"
       ],
       "crashed": false
     },
@@ -24,11 +20,7 @@
       "file": "fingerprint.R",
       "caught": true,
       "caught_by": [
-        "test-contract.R: plotly_3d: sensitivity",
-        "test-fake-type.R: an unforeseen type goes from run to the review page's data",
-        "test-fake-type.R: the unforeseen type gets the shared trust tests",
-        "test-normalise.R: a single-part output has no header; every part of a multi-part one is hashed",
-        "test-types.R: every part goes through the common normalisation"
+        "test-contract.R: plotly_3d: sensitivity"
       ],
       "crashed": false
     },
@@ -46,8 +38,7 @@
       "file": "fingerprint.R",
       "caught": true,
       "caught_by": [
-        "test-normalise.R: negative zero loses its sign but real negatives do not",
-        "test-types.R: every part goes through the common normalisation"
+        "test-normalise.R: negative zero loses its sign but real negatives do not"
       ],
       "crashed": false
     },
@@ -56,8 +47,7 @@
       "file": "status.R",
       "caught": true,
       "caught_by": [
-        "test-runner.R: list and diff work; approval requires a note and rejection stores it",
-        "test-status.R: every row of the transition table holds"
+        "test-runner.R: list and diff work; approval requires a note and rejection stores it"
       ],
       "crashed": false
     },
@@ -75,16 +65,7 @@
       "file": "store.R",
       "caught": true,
       "caught_by": [
-        "test-decisions.R: a human approval of the current fingerprint makes it Human approved, in the decisions file only",
-        "test-decisions.R: a human decision for an old fingerprint has no effect",
-        "test-decisions.R: a human rejection needs a note, sets Rejected and holds against the agent",
-        "test-decisions.R: a human approval keeps that version's form and views for comparison",
-        "test-fake-type.R: an unforeseen type goes from run to the review page's data",
-        "test-runner.R: running records Unreviewed, unchanged re-runs keep status, changes reset it",
-        "test-runner.R: an agent's decisions never write Human approved",
-        "test-server.R: the page, its data and the views are served",
-        "test-server.R: a decision from the page is checked and written to the decisions file",
-        "test-server.R: a rejection without a note, or on a stale page, is refused"
+        "test-check.R: an agent approves a platform variant from a bundle, with a note"
       ],
       "crashed": false
     },
@@ -93,12 +74,7 @@
       "file": "store.R",
       "caught": true,
       "caught_by": [
-        "test-contract.R: base_graphics: completeness",
-        "test-contract.R: conditions: completeness",
-        "test-contract.R: plotly_3d: completeness",
-        "test-contract.R: returned_text: completeness",
-        "test-contract.R: static_plot: completeness",
-        "test-fake-type.R: the unforeseen type gets the shared trust tests"
+        "test-contract.R: base_graphics: completeness"
       ],
       "crashed": false
     },
@@ -107,12 +83,7 @@
       "file": "store.R",
       "caught": true,
       "caught_by": [
-        "test-contract.R: base_graphics: completeness",
-        "test-contract.R: conditions: completeness",
-        "test-contract.R: plotly_3d: completeness",
-        "test-contract.R: returned_text: completeness",
-        "test-contract.R: static_plot: completeness",
-        "test-fake-type.R: the unforeseen type gets the shared trust tests"
+        "test-contract.R: base_graphics: completeness"
       ],
       "crashed": false
     },
@@ -130,8 +101,7 @@
       "file": "store.R",
       "caught": true,
       "caught_by": [
-        "test-decisions.R: a human approval keeps that version's form and views for comparison",
-        "test-fake-type.R: an unforeseen type goes from run to the review page's data"
+        "test-check.R: the release audit compares fresh views with those kept at approval"
       ],
       "crashed": false
     },
@@ -149,8 +119,7 @@
       "file": "store.R",
       "caught": true,
       "caught_by": [
-        "test-runner.R: breaking the line fails the expectation and leaves review state untouched",
-        "test-runner.R: a case with no expectations does not count as passed"
+        "test-runner.R: breaking the line fails the expectation and leaves review state untouched"
       ],
       "crashed": false
     },
@@ -231,8 +200,7 @@
       "file": "types/returned_text.R",
       "caught": true,
       "caught_by": [
-        "test-contract.R: returned_text: sensitivity",
-        "test-type-returned-text.R: entries keep their order, with names as headers and a blank line between"
+        "test-contract.R: returned_text: sensitivity"
       ],
       "crashed": false
     },
@@ -250,11 +218,7 @@
       "file": "store.R",
       "caught": true,
       "caught_by": [
-        "test-decisions.R: a human approval of the current fingerprint makes it Human approved, in the decisions file only",
-        "test-decisions.R: a human rejection needs a note, sets Rejected and holds against the agent",
-        "test-fake-type.R: an unforeseen type goes from run to the review page's data",
-        "test-server.R: a decision from the page is checked and written to the decisions file",
-        "test-server.R: a rejection without a note, or on a stale page, is refused"
+        "test-check.R: an agent approves a platform variant from a bundle, with a note"
       ],
       "crashed": false
     },
@@ -263,11 +227,7 @@
       "file": "store.R",
       "caught": true,
       "caught_by": [
-        "test-decisions.R: a human rejection needs a note, sets Rejected and holds against the agent",
-        "test-decisions.R: the human can't decide on an output no agent has approved, or on a stale page",
-        "test-decisions.R: no agent command writes the decisions file",
-        "test-server.R: a rejection without a note, or on a stale page, is refused",
-        "test-server.R: only JSON from the page's own origin is accepted"
+        "test-decisions.R: a human rejection needs a note, sets Rejected and holds against the agent"
       ],
       "crashed": false
     },
@@ -285,8 +245,7 @@
       "file": "server.R",
       "caught": true,
       "caught_by": [
-        "test-decisions.R: a human rejection needs a note, sets Rejected and holds against the agent",
-        "test-server.R: a rejection without a note, or on a stale page, is refused"
+        "test-decisions.R: a human rejection needs a note, sets Rejected and holds against the agent"
       ],
       "crashed": false
     },
@@ -295,9 +254,7 @@
       "file": "server.R",
       "caught": true,
       "caught_by": [
-        "test-decisions.R: a human rejection needs a note, sets Rejected and holds against the agent",
-        "test-decisions.R: the human can't decide on an output no agent has approved, or on a stale page",
-        "test-server.R: a decision from the page is checked and written to the decisions file"
+        "test-decisions.R: a human rejection needs a note, sets Rejected and holds against the agent"
       ],
       "crashed": false
     },
@@ -306,8 +263,7 @@
       "file": "server.R",
       "caught": true,
       "caught_by": [
-        "test-decisions.R: the human can't decide on an output no agent has approved, or on a stale page",
-        "test-server.R: a rejection without a note, or on a stale page, is refused"
+        "test-decisions.R: the human can't decide on an output no agent has approved, or on a stale page"
       ],
       "crashed": false
     },
@@ -316,8 +272,7 @@
       "file": "server.R",
       "caught": true,
       "caught_by": [
-        "test-decisions.R: a human approval keeps that version's form and views for comparison",
-        "test-fake-type.R: an unforeseen type goes from run to the review page's data"
+        "test-check.R: the release audit compares fresh views with those kept at approval"
       ],
       "crashed": false
     },
@@ -371,9 +326,70 @@
       "file": "stamp.R",
       "caught": true,
       "caught_by": [
-        "test-fake-type.R: an unforeseen type goes from run to the review page's data",
-        "test-server.R: the page, its data and the views are served",
-        "test-stamp.R: editing suite code, a unit test or a demo case changes the hash"
+        "test-fake-type.R: an unforeseen type goes from run to the review page's data"
+      ],
+      "crashed": false
+    },
+    {
+      "name": "CI passes Agent approved without a warning",
+      "file": "check.R",
+      "caught": true,
+      "caught_by": [
+        "test-check.R: CI shows each review status by the approved policy"
+      ],
+      "crashed": false
+    },
+    {
+      "name": "CI passes an Unreviewed or Rejected output",
+      "file": "check.R",
+      "caught": true,
+      "caught_by": [
+        "test-check.R: CI shows each review status by the approved policy"
+      ],
+      "crashed": false
+    },
+    {
+      "name": "A missing input passes the CI check",
+      "file": "check.R",
+      "caught": true,
+      "caught_by": [
+        "test-check.R: an output the state records but no case produced stops the check"
+      ],
+      "crashed": false
+    },
+    {
+      "name": "A platform variant still counts after its original changed",
+      "file": "check.R",
+      "caught": true,
+      "caught_by": [
+        "test-check.R: a variant counts only for its platform, fingerprint and a Human approved original"
+      ],
+      "crashed": false
+    },
+    {
+      "name": "A platform variant counts for an original that isn't Human approved",
+      "file": "check.R",
+      "caught": true,
+      "caught_by": [
+        "test-check.R: a variant counts only for its platform, fingerprint and a Human approved original"
+      ],
+      "crashed": false
+    },
+    {
+      "name": "The release check accepts Agent approved",
+      "file": "check.R",
+      "caught": true,
+      "caught_by": [
+        "test-check.R: the release check accepts Human approved and its platform variants only"
+      ],
+      "crashed": false
+    },
+    {
+      "name": "The release audit misses a changed view",
+      "file": "check.R",
+      "caught": true,
+      "caught_by": [
+        "test-check.R: the release audit compares fresh views with those kept at approval"
       ],
       "crashed": false
     }
