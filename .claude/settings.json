@@ -3,8 +3,16 @@
     "allow": [
       "Bash(Rscript tests/suite/suite.R *)",
       "Bash(Rscript tests/suite/test.R)",
-      "Bash(Rscript tests/suite/mutate.R)",
-      "Bash(Rscript tests/suite/mutate.R *)"
+      "Bash(gh workflow run mutation-check.yaml *)",
+      "Bash(gh run list *)",
+      "Bash(gh run view *)",
+      "Bash(gh run watch *)",
+      "Bash(gh run rerun *)",
+      "Bash(gh run download *)"
+    ],
+    "ask": [
+      "Bash(*Rscript*mutate.R*)",
+      "PowerShell(*Rscript*mutate.R*)"
     ],
     "deny": [
       "Edit(tests/suite/human_decisions.json)"
