@@ -22,8 +22,17 @@ screenshot_session <- local({
     if (is.null(session) || !session$is_active()) {
       old <- options(chromote.timeout = screenshot_timeout)
       on.exit(options(old))
+      # On CI, the mutation check's copies share one Chrome that the workflow
+      # started, instead of racing to start their own.
+      port <- Sys.getenv("APPLR_CHROME_PORT")
+      if (nzchar(port)) {
+        remote <- chromote::ChromeRemote$new(host = "127.0.0.1", port = as.integer(port))
+        chromote::set_default_chromote_object(chromote::Chromote$new(browser = remote))
+        session <<- chromote::ChromoteSession$new(width = 800, height = 600)
+        return(session)
+      }
       # Two processes starting Chrome at once (as the mutation check's copies
-      # do) can leave one without a debugging port; a fresh Chrome fixes it.
+      # do locally) can leave one without a debugging port; a fresh Chrome fixes it.
       session <<- tryCatch(chromote::ChromoteSession$new(width = 800, height = 600), error = function(e) {
         Sys.sleep(stats::runif(1, 1, 5))
         chromote::set_default_chromote_object(chromote::Chromote$new())

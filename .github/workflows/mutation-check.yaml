@@ -1,0 +1,132 @@
+# The suite's mutation check (tests/suite/mutate.R), split across runners and
+# started by hand. Each shard runs its share of the breaks plus the unbroken
+# copy; the last job merges their reports into mutation_report.json, uploads
+# it, and fails if any break was missed or crashed.
+on:
+  workflow_dispatch:
+    inputs:
+      shards:
+        description: Runners to split the breaks across
+        type: number
+        default: 8
+      full:
+        description: Run every test in every broken copy (--full)
+        type: boolean
+        default: false
+
+name: mutation-check
+
+permissions: read-all
+
+jobs:
+  plan:
+    if: github.repository == 'saundersg/Applr'
+    runs-on: ubuntu-latest
+    outputs:
+      shards: ${{ steps.list.outputs.shards }}
+    steps:
+      - id: list
+        run: echo "shards=$(jq -nc --argjson n '${{ inputs.shards || 8 }}' '[range(1; $n + 1)]')" >> "$GITHUB_OUTPUT"
+
+  shard:
+    needs: plan
+    runs-on: ubuntu-latest
+    name: shard ${{ matrix.shard }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.5.3'
+          use-public-rspm: true
+
+      # The project .Rprofile would shadow setup-r's, which sets the CRAN mirror.
+      # Hidden from git, so the report's commit isn't marked as changed.
+      - name: Drop project .Rprofile
+        run: git update-index --skip-worktree .Rprofile && rm .Rprofile
+
+      # Bump the suffix when the packages installed below change.
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: r-lib-${{ runner.os }}-4.5.3-${{ hashFiles('tests/suite/pins/versions.csv') }}-v2
+
+      # httpuv, png and yaml are used by the suite but not pinned.
+      - name: Install pinned packages
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          Rscript -e 'install.packages("pak")'
+          Rscript tests/suite/pins/install.R
+          Rscript -e 'pak::pkg_install(c("chromote", "httpuv", "png", "yaml"), upgrade = FALSE, ask = FALSE)'
+
+      # The plotly contract tests take screenshots through chromote. On a cold
+      # runner, copies starting their own Chrome at the same moment sometimes
+      # never get a debugging port, so one headless shell is started here and
+      # every copy connects to it (APPLR_CHROME_PORT, read by views.R).
+      - name: Install Chrome headless shell
+        run: |
+          out=$(npx -y @puppeteer/browsers@2 install chrome-headless-shell@stable --path "$RUNNER_TEMP/chrome")
+          echo "$out"
+          echo "CHROMOTE_CHROME=${out##* }" >> "$GITHUB_ENV"
+
+      - name: Start a shared Chrome
+        run: |
+          args=$(Rscript -e 'cat(chromote::default_chrome_args())')
+          nohup "$CHROMOTE_CHROME" $args --headless --remote-debugging-port=9222 \
+            --user-data-dir="$RUNNER_TEMP/chrome-profile" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &
+          for i in $(seq 60); do curl -sf http://127.0.0.1:9222/json/version && break; sleep 1; done
+          curl -sf http://127.0.0.1:9222/json/version || { cat "$RUNNER_TEMP/chrome.log"; exit 1; }
+          echo "APPLR_CHROME_PORT=9222" >> "$GITHUB_ENV"
+
+      - name: Mutation check
+        run: Rscript tests/suite/mutate.R 4 --shard ${{ matrix.shard }}/${{ inputs.shards || 8 }} ${{ inputs.full && '--full' || '' }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-shard-${{ matrix.shard }}
+          path: tests/suite/mutation_shards
+          if-no-files-found: ignore
+
+  merge:
+    needs: shard
+    if: ${{ !cancelled() && needs.shard.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.5.3'
+          use-public-rspm: true
+
+      - name: Drop project .Rprofile
+        run: git update-index --skip-worktree .Rprofile && rm .Rprofile
+
+      - name: Install jsonlite
+        run: Rscript -e 'install.packages("jsonlite")'
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mutation-shard-*
+          path: shards
+
+      # The committed report goes first, so a failed merge uploads nothing stale.
+      - name: Merge shard reports
+        run: |
+          rm tests/suite/mutation_report.json
+          Rscript tests/suite/mutate.R --merge shards
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-report
+          path: tests/suite/mutation_report.json
+          if-no-files-found: ignore
