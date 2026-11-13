@@ -3,6 +3,8 @@
 # copy; the last job merges their reports into mutation_report.json, uploads
 # it, and fails if any break was missed or crashed.
 on:
+  push:
+    branches: [claude/mutate-gha-07b5d6]
   workflow_dispatch:
     inputs:
       shards:
@@ -26,7 +28,7 @@ jobs:
       shards: ${{ steps.list.outputs.shards }}
     steps:
       - id: list
-        run: echo "shards=$(jq -nc --argjson n '${{ inputs.shards }}' '[range(1; $n + 1)]')" >> "$GITHUB_OUTPUT"
+        run: echo "shards=$(jq -nc --argjson n '${{ inputs.shards || 8 }}' '[range(1; $n + 1)]')" >> "$GITHUB_OUTPUT"
 
   shard:
     needs: plan
@@ -79,7 +81,7 @@ jobs:
         run: time Rscript -e 'b <- chromote::ChromoteSession$new(); b$close()'
 
       - name: Mutation check
-        run: Rscript tests/suite/mutate.R 4 --shard ${{ matrix.shard }}/${{ inputs.shards }} ${{ inputs.full && '--full' || '' }}
+        run: Rscript tests/suite/mutate.R 4 --shard ${{ matrix.shard }}/${{ inputs.shards || 8 }} ${{ inputs.full && '--full' || '' }}
 
       - uses: actions/upload-artifact@v4
         if: always()
