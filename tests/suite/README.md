@@ -204,7 +204,7 @@ lists all that catch it, which helps when a break is caught for an unexpected
 reason. The unbroken copy always runs in full, and if it fails the run stops.
 
 The check takes a long time on one machine, so
-`.github/workflows/mutation-check.yaml` runs it on the fork's Actions,
+`.github/workflows/mutation-check.yaml` runs it on Actions,
 started by hand (*Run workflow*, or `gh workflow run mutation-check.yaml
 --ref <branch>`), with inputs for the number of shards (default 8) and
 `full`. Each runner runs `mutate.R --shard i/n`: every n-th break from the

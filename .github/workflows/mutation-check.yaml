@@ -20,7 +20,7 @@ permissions: read-all
 
 jobs:
   plan:
-    if: github.repository == 'jamesbeeson01/Applr'
+    if: github.repository == 'saundersg/Applr'
     runs-on: ubuntu-latest
     outputs:
       shards: ${{ steps.list.outputs.shards }}
