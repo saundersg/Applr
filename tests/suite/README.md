@@ -213,7 +213,7 @@ itself, a demo case, or a type.
 ## CI and the release check
 
 `.github/workflows/judged-outputs.yaml` runs `ci.R` on pushes to
-`test-suite-revision`, on the fork only, on Windows, macOS and Ubuntu. Each
+`test-suite-revision`, on Windows, macOS and Ubuntu. Each
 runner installs `pins/versions.csv` (record it again with `pins/record.R`
 after updating packages locally, then re-run the suite). `ci.R` runs every
 case, fingerprints its outputs without writing the review state, and compares
@@ -232,7 +232,7 @@ records but no case produced, or one that fails to serialise, stops the run.
 `release_verdict()`). An output whose fingerprint differs on a runner is a
 **platform variant**: the run's artifact (`suite-<platform>`) holds its form
 and views and a `report.json`. After downloading it
-(`gh run download <run> -R jamesbeeson01/Applr -n suite-gha-ubuntu -D <bundle>`),
+(`gh run download <run> -R saundersg/Applr -n suite-gha-ubuntu -D <bundle>`),
 compare the form with `forms/<id>.txt` and approve with
 `suite.R variant <bundle> <id> "<what differs>"`. That needs the original to
 be Human approved, and records the variant under `variants.<platform>` in

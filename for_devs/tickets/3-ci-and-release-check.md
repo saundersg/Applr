@@ -10,7 +10,7 @@
 
 ## Starting point
 
-Read `for_devs/experiments/03-cross-platform/HANDOFF.md`. The plotly, slider and animation results there are valid, and the spec's *CI* section summarises them. Static ggplot, base graphics and condition text were never tested, because their inputs were old cases, which have been deleted. Use ticket 2's cases instead, not the old ones. All runs go on the fork `jamesbeeson01/Applr`, branch `test-suite-revision`. The shared repository is off limits.
+Read `for_devs/experiments/03-cross-platform/HANDOFF.md`. The plotly, slider and animation results there are valid, and the spec's *CI* section summarises them. Static ggplot, base graphics and condition text were never tested, because their inputs were old cases, which have been deleted. Use ticket 2's cases instead, not the old ones. All runs go on `saundersg/Applr`, branch `test-suite-revision`.
 
 ## Experiment
 

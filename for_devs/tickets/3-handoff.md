@@ -9,7 +9,7 @@ Read first: `3-ci-and-release-check.md` (the ticket), the spec's *CI* section, a
 | What | Where |
 |---|---|
 | The CI check: runs every case, fingerprints without writing state, reports by the approved policy, bundles platform variants, writes GitHub annotations and a summary | `tests/suite/ci.R`, logic in `tests/suite/check.R` |
-| The workflow, on Windows, macOS and Ubuntu, fork only | `.github/workflows/judged-outputs.yaml` |
+| The workflow, on Windows, macOS and Ubuntu | `.github/workflows/judged-outputs.yaml` |
 | Pinned versions, moved from the experiment | `tests/suite/pins/` |
 | Agent approval of a platform variant from a CI bundle | `suite.R variant <bundle> <id> "<note>"` |
 | The release check and audit | `tests/suite/release.R` |
@@ -19,8 +19,8 @@ The experiment folder and its `xplat-experiment` workflow are deleted. The resul
 
 ## Results
 
-- All 143 judged outputs match the maintainer's machine on all three runners (runs 43353432226, 43354217559). H1, H2, H4, H5, H6 and H7 are confirmed; H3 showed no mismatch. Details in the spec.
-- The `judged-outputs` workflow's first run (43367755333) passes on all three platforms: 143 warnings each, since everything is Agent approved. Nothing fails, and there are no variants.
+- All 143 judged outputs match the maintainer's machine on all three runners. H1, H2, H4, H5, H6 and H7 are confirmed; H3 showed no mismatch. Details in the spec.
+- The `judged-outputs` workflow's first run passes on all three platforms: 143 warnings each, since everything is Agent approved. Nothing fails, and there are no variants.
 - `num_companions` failed on macOS because `grDevices::svg()` needs cairo. It now checks the display list instead.
 - `R CMD check --as-cran` runs the expectations in 34 seconds, single-threaded (618 pass).
 

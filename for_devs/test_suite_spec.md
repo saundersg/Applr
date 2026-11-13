@@ -198,7 +198,7 @@ An output's review status is derived from both files. A human approval for the c
 
 **CI.** A workflow runs on pushes to the test-suite branch only. It runs `tests/suite/ci.R`, which runs every case, fingerprints every judged output without writing the review state, and compares each fingerprint with the one recorded in `review_state.json`. An output the state records but no case produced, or one that fails to serialise, stops the run with an error, so a missing input can never pass as a match. The maintainer confirmed that Unreviewed fails (2026-11-09): an Unreviewed output reaching `main` is a failure, even if it means CI stays red until a review is done.
 
-**Cross-platform results** (ticket 3, 2026-11-13). R 4.5.3 and the same 82 pinned package versions on every machine. The reference is the maintainer's machine (Windows 11, R's reference BLAS, LAPACK 3.12.1, `English_United States.utf8`). The three runners: Windows Server 2022 (same BLAS and LAPACK); macOS 26 on arm64 (R's own BLAS, LAPACK 3.12.1); Ubuntu 26.04 (OpenBLAS 0.3.32, LAPACK 3.12.0). All three use a UTF-8 English locale. Runs 43353432226 and 43354217559 on the fork.
+**Cross-platform results** (ticket 3, 2026-11-13). R 4.5.3 and the same 82 pinned package versions on every machine. The reference is the maintainer's machine (Windows 11, R's reference BLAS, LAPACK 3.12.1, `English_United States.utf8`). The three runners: Windows Server 2022 (same BLAS and LAPACK); macOS 26 on arm64 (R's own BLAS, LAPACK 3.12.1); Ubuntu 26.04 (OpenBLAS 0.3.32, LAPACK 3.12.0). All three use a UTF-8 English locale.
 
 | Output type | Outputs | gha-windows | gha-macos | gha-ubuntu |
 |---|---|---|---|---|

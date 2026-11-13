@@ -1,5 +1,5 @@
 # The judged-output suite's CI check (tests/suite/ci.R, spec: "CI"). Runs on
-# pushes to the test-suite branch, on the maintainer's fork only. Each
+# pushes to the test-suite branch, on saundersg/Applr only. Each
 # platform installs the pinned versions, compares every fingerprint with the
 # committed review state, and fails, warns or passes by review status. Forms
 # and views of any platform variant are uploaded as the run's artifact.
@@ -14,7 +14,7 @@ permissions: read-all
 
 jobs:
   check:
-    if: github.repository == 'jamesbeeson01/Applr'
+    if: github.repository == 'saundersg/Applr'
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.platform }}
     strategy:
