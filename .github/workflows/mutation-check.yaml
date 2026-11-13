@@ -58,7 +58,7 @@ jobs:
         id: cache
         with:
           path: ${{ env.R_LIBS_USER }}
-          key: r-lib-${{ runner.os }}-4.5.3-${{ hashFiles('tests/suite/pins/versions.csv') }}-v1
+          key: r-lib-${{ runner.os }}-4.5.3-${{ hashFiles('tests/suite/pins/versions.csv') }}-v2
 
       # httpuv, png and yaml are used by the suite but not pinned.
       - name: Install pinned packages
