@@ -18,6 +18,9 @@ _Avoid_: Check (collides with R CMD check), tier 0, assertion
 Any output whose correctness needs a reviewer's judgment: plot appearance, message wording, an interactive output or an animation. Every judged output has one fingerprint and one review status, and is judged as a whole.
 _Avoid_: Visual case, console case, snapshot
 
+**Purpose**:
+One line in a judged output's declaring call saying why the output exists: what situation it puts the function in that no other output does. It lives in the case file permanently and plays no part in the fingerprint.
+
 **State**:
 One sampled view of a judged output: the single image of a static plot, one slider position, one camera angle, or one animation frame. States decide what a reviewer sees; they are never fingerprinted on their own.
 _Avoid_: Frame (except for animations), screenshot
@@ -58,6 +61,10 @@ The only final review status. Only a person can grant it. An output is Human app
 
 **Human decision**:
 A person's approval or rejection of one judged output at one fingerprint, with its note and date. Human decisions are kept apart from everything agents and the runner record, so no agent action can create one.
+
+**Inbox**:
+The review page's list of judged outputs waiting for a human decision: those an agent has approved at their current fingerprint. It is the maintainer's only route to Human approved.
+_Avoid_: Queue (in prose), "your turn" (the page's label for it)
 
 **Rejected**:
 A review status meaning a reviewer (agent or human) sent the output back. It carries a rejection note and holds until the code changes the fingerprint.

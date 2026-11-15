@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE: Agent Adds Tests</title>
+<!-- PROTOTYPE, throwaway. Question: when an agent is told "Add test cases for
+this new feature" with no ticket, what does it read, and what does it decide? -->
+<style>
+:root { --bg:#fbfaf8; --fg:#1d1d1f; --muted:#6b6b70; --line:#e3e1dc; --card:#fff; --accent:#2f6fde; --warn:#b4570b; --bad:#b3261e; --ok:#1f7a3f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#161618; --fg:#ececee; --muted:#9a9aa2; --line:#2e2e33; --card:#1f1f23; --accent:#6d9df2; --warn:#e39a4f; --bad:#ef7b72; --ok:#5cc184; } }
+body { background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, sans-serif; margin:0; padding:24px 16px 60px; }
+main { max-width:960px; margin:0 auto; }
+h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:16px; margin:24px 0 8px; } h3 { font-size:14px; margin:0 0 6px; }
+.muted { color:var(--muted); } .small { font-size:13px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin:10px 0; }
+code, pre { font:12.5px/1.45 ui-monospace, Consolas, monospace; } pre { margin:6px 0 0; white-space:pre-wrap; }
+.toggles { display:flex; flex-wrap:wrap; gap:8px; }
+.toggles button, .tabs button { border:1px solid var(--line); background:var(--card); color:var(--fg); border-radius:999px; padding:6px 12px; cursor:pointer; font:inherit; font-size:13px; }
+.toggles button.on { border-color:var(--accent); color:var(--accent); font-weight:600; }
+.toggles button.proposed { border-style:dashed; }
+.tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; } .tabs button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+ol.steps { padding-left:20px; margin:6px 0; } ol.steps li { margin:8px 0; }
+.why { color:var(--muted); font-size:13px; } .risk { color:var(--warn); font-size:13px; } .gap { color:var(--bad); font-size:13px; }
+.cols { display:grid; grid-template-columns:1fr 1fr; gap:10px; } @media (max-width:640px) { .cols { grid-template-columns:1fr; } }
+ul.tight { margin:4px 0; padding-left:18px; } .tag { font-size:11px; border:1px solid var(--line); border-radius:4px; padding:0 5px; margin-left:4px; color:var(--muted); }
+.changed { outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+</head>
+<body><main>
+<h1>Prototype: what an agent does with "Add test cases for this new feature"</h1>
+<p class="muted">No ticket. The agent has the new code, the prompt, and whatever the repo tells it. Switch context sources on and off and watch its decisions change. The last source (dashed) doesn't exist yet: it's the rule under discussion.</p>
+
+<div class="card"><h3>The new code it's given</h3>
+<pre>autoplot.data.frame &lt;- function(object, columns = NULL, ...) {
+  num &lt;- names(object)[vapply(object, is.numeric, TRUE)]
+  dropped &lt;- setdiff(columns %||% names(object), num)
+  if (length(dropped)) message("Dropping non-numeric columns: ", toString(dropped))
+  keep &lt;- intersect(columns %||% names(object), num)
+  if (length(keep) &lt; 2) stop("A pairs plot needs at least two numeric columns.")
+  # one panel per pair of columns, a density on the diagonal
+  ...
+}</pre></div>
+
+<h2>Guided scenarios</h2>
+<div class="tabs" id="tabs"></div>
+<p id="scenario" class="small"></p>
+
+<h2>Context the agent has</h2>
+<div class="toggles" id="toggles"></div>
+
+<div id="out"></div>
+</main>
+<script>
+// ---- logic: which context sources lead to which decisions (pure) ----
+const SOURCES = [
+  { id: "code", label: "The new code", always: true },
+  { id: "claude", label: "CLAUDE.md" },
+  { id: "readme", label: "tests/suite/README.md" },
+  { id: "spec", label: "test_suite_spec.md + GLOSSARY.md" },
+  { id: "cases", label: "Existing case files" },
+  { id: "inventory", label: "behaviour_inventory.yml (deleted at ticket 4)" },
+  { id: "rule", label: "One behaviour, one test (proposed)", proposed: true }
+];
+
+function plan(ctx) {
+  const has = id => ctx.includes(id);
+  const steps = [], inbox = [], silent = [], gaps = [];
+
+  steps.push({ d: "Read the new function and list its branches: the happy path, the non-numeric message, the fewer-than-two error.",
+    why: "The code is the only thing that says what the feature does." });
+
+  if (has("inventory")) {
+    steps.push({ d: "Add an entry for autoplot.data.frame to the inventory: one behaviour (one panel per pair) and two edge cases (dropped columns, too few columns).",
+      why: "The spec says cases are written from the inventory and cite its IDs." });
+  } else {
+    gaps.push("Nowhere to write down which behaviours the feature has before writing tests for it, so the list of behaviours exists only in the agent's head for this one session.");
+  }
+
+  if (has("readme") || has("spec")) {
+    steps.push({ d: "Split the work by test type: a num_ case (panel count, which columns), a cond_ case (message and error wording), a look_ case (the plot).",
+      why: "The spec says to organise cases by test type, and the README shows judged_output() and raises()." });
+  } else {
+    steps.push({ d: "Write one file, test-autoplot-data-frame.R, with plain test_that() blocks and expect_s3_class(p, \"ggplot\").",
+      why: "Without the suite docs, it writes the tests any R package would have." });
+    gaps.push("Nothing reaches the review page: no judged_output(), so the plot is never looked at.");
+  }
+
+  if (has("cases")) {
+    steps.push({ d: "Copy look_autoplot's shape: several judged outputs in one case, on iris, mtcars and mpg, plus one with columns = picked.",
+      why: "look_autoplot has six judged outputs in one case, so that looks like the house style.",
+      risk: "Three datasets showing the same thing are three outputs that test one behaviour." });
+  } else if (has("readme") || has("spec")) {
+    steps.push({ d: "Make one judged output on iris.", why: "The README examples each show one output." });
+  }
+
+  if (has("inventory")) {
+    steps.push({ d: "Put covers(\"autoplot.data-frame.pairs\", ...) at the top of each case.",
+      why: "The page shows the cited principles as Expected.",
+      risk: has("rule") ? null : "covers() is per case, so every output in the case shows the same Expected. Nothing says which output proves which behaviour." });
+  }
+
+  if (has("rule")) {
+    steps.push({ d: "For each behaviour, write one test that names it: tests = \"autoplot.data-frame.too-few-columns\". Before adding a second test for an ID, say what it proves that the first doesn't, or don't add it.",
+      why: "The rule makes 'which behaviour, and why isn't it already covered' the first thing written, not a note added afterwards." });
+    steps.push({ d: "Drop the mtcars and mpg plots. Keep iris for the pairs layout and one columns = picked output, because that tests the columns argument.",
+      why: "Two outputs naming the same behaviour fail the check." });
+  }
+
+  // what the maintainer sees
+  if (has("readme") || has("spec")) {
+    const looks = has("rule") ? ["look_autoplot_pairs/iris"]
+      : has("cases") ? ["look_autoplot_pairs/iris", "look_autoplot_pairs/mtcars", "look_autoplot_pairs/mpg", "look_autoplot_pairs/picked"]
+      : ["look_autoplot_pairs/iris"];
+    inbox.push(...looks, "cond_autoplot_pairs/dropped_columns", "cond_autoplot_pairs/too_few_columns");
+    if (has("rule")) inbox.push("look_autoplot_pairs/picked");
+    silent.push("num_autoplot_pairs: panel count, column order (expectations)");
+  } else {
+    silent.push("test-autoplot-data-frame.R: three test_that() blocks");
+  }
+  if (has("inventory")) silent.push("The new inventory entries");
+  silent.push("Whether the case should exist at all");
+
+  if (has("rule")) {
+    inbox.push("New behaviours: autoplot.data-frame.pairs, .columns, .dropped-columns, .too-few-columns, each with the test that claims it");
+    silent.pop();
+  } else {
+    gaps.push("Nobody approves whether a test is worth having. Expectations and inventory edits never reach the inbox, and a judged output is approved for how it looks, not for why it exists.");
+  }
+
+  return { steps, inbox, silent, gaps };
+}
+
+// ---- page ----
+const SCENARIOS = [
+  { name: "Today", ctx: ["code", "claude", "readme", "spec", "cases", "inventory"],
+    text: "This branch now. The inventory exists, so behaviours get written down, but each case's outputs all share one Expected, and look_autoplot's style invites duplicates." },
+  { name: "After ticket 4", ctx: ["code", "claude", "readme", "spec", "cases"],
+    text: "The inventory has been deleted. This is what every future feature looks like: the agent copies the nearest case, and nothing asks what's new." },
+  { name: "Code only", ctx: ["code"],
+    text: "An agent that doesn't read the suite docs, for example in a fresh repo checkout with a short prompt." },
+  { name: "With the rule", ctx: ["code", "claude", "readme", "spec", "cases", "rule"],
+    text: "After ticket 4, plus a permanent rule: each test names the one behaviour it proves, and the behaviour list itself is reviewed." }
+];
+let ctx = [...SCENARIOS[0].ctx], tab = 0, last = null;
+
+function render() {
+  document.getElementById("tabs").innerHTML = SCENARIOS.map((s, i) =>
+    `<button class="${i === tab ? "on" : ""}" data-tab="${i}">${s.name}</button>`).join("");
+  document.getElementById("scenario").textContent = tab >= 0 ? SCENARIOS[tab].text : "Free play: your own mix of context.";
+  document.getElementById("toggles").innerHTML = SOURCES.map(s =>
+    `<button class="${ctx.includes(s.id) ? "on" : ""} ${s.proposed ? "proposed" : ""}" data-src="${s.id}" ${s.always ? "disabled" : ""}>${s.label}</button>`).join("");
+  const p = plan(ctx), prev = last; last = p;
+  const mark = (k, v) => prev && JSON.stringify(prev[k]) !== JSON.stringify(v) ? "changed" : "";
+  document.getElementById("out").innerHTML = `
+    <h2>What it decides</h2>
+    <div class="card ${mark("steps", p.steps)}"><ol class="steps">${p.steps.map(s => `<li>${s.d}<div class="why">Because: ${s.why}</div>${s.risk ? `<div class="risk">Risk: ${s.risk}</div>` : ""}</li>`).join("")}</ol></div>
+    <div class="cols">
+      <div class="card ${mark("inbox", p.inbox)}"><h3>Reaches your inbox</h3><ul class="tight">${p.inbox.map(x => `<li><code>${x}</code></li>`).join("") || "<li class='muted'>Nothing</li>"}</ul></div>
+      <div class="card ${mark("silent", p.silent)}"><h3>Never reaches you</h3><ul class="tight">${p.silent.map(x => `<li>${x}</li>`).join("")}</ul></div>
+    </div>
+    ${p.gaps.length ? `<div class="card ${mark("gaps", p.gaps)}"><h3>Gaps</h3><ul class="tight">${p.gaps.map(g => `<li class="gap">${g}</li>`).join("")}</ul></div>` : ""}`;
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-tab]"), s = e.target.closest("[data-src]");
+  if (t) { tab = +t.dataset.tab; ctx = [...SCENARIOS[tab].ctx]; render(); }
+  if (s) { const id = s.dataset.src; ctx = ctx.includes(id) ? ctx.filter(x => x !== id) : [...ctx, id]; tab = -1; render(); }
+});
+render();
+</script>
+</body>
+</html>

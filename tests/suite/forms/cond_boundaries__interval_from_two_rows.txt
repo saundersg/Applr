@@ -1,0 +1,5 @@
+warning
+NaNs produced
+
+warning
+no non-missing arguments to max; returning -Inf

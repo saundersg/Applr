@@ -1,6 +1,7 @@
 # Review server (httpuv): serves the review page in page/, the data it reads
 # and the views, and records human decisions. It is the only code that
-# writes human_decisions.json. Start it with tests/suite/review.R.
+# writes human_decisions.json (and, during ticket 4, salvage_review.json).
+# Start it with tests/suite/review.R.
 
 review_port <- function() as.integer(getOption("applr.review_port", 7654))
 
@@ -141,10 +142,11 @@ parse_query <- function(q) {
                   vapply(kv, function(p) decode(p[1]), ""))
 }
 
-# Decisions come only as JSON from the page on this server: a cross-site page
+# Writes come only as JSON from the page on this server: a cross-site page
 # can't send JSON here without a CORS preflight, which this server never
-# answers, and a foreign Origin or Host is refused outright.
-decide_request <- function(req, paths) {
+# answers, and a foreign Origin or Host is refused outright. NULL when the
+# request may proceed.
+refuse_foreign <- function(req) {
   type <- req$CONTENT_TYPE %||% req$HTTP_CONTENT_TYPE %||% ""
   if (!grepl("^application/json", type)) {
     return(respond_json(list(error = "Decisions must be sent as JSON."), 415))
@@ -154,6 +156,32 @@ decide_request <- function(req, paths) {
   if (!grepl("^(127\\.0\\.0\\.1|localhost):[0-9]+$", host) || origin != paste0("http://", host)) {
     return(respond_json(list(error = "Decisions are accepted only from the review page."), 403))
   }
+  NULL
+}
+
+# TEMPORARY (ticket 4): the salvage audit with the maintainer's verdicts, and
+# a verdict from the page.
+salvage_api_data <- function(paths, salvage_file, case_dir) {
+  if (!file.exists(salvage_file)) return(list(error = paste("No salvage audit at", salvage_file)))
+  audit <- tryCatch(read_salvage(salvage_file, case_dir), error = function(e) list(error = conditionMessage(e)))
+  if (!is.null(audit$error)) return(audit)
+  c(audit, list(reviews = latest_salvage_reviews(paths), file = salvage_file))
+}
+
+salvage_request <- function(req, paths, salvage_file, case_dir) {
+  refused <- refuse_foreign(req)
+  if (!is.null(refused)) return(refused)
+  body <- jsonlite::fromJSON(rawToChar(req$rook.input$read()), simplifyVector = TRUE)
+  res <- tryCatch(salvage_review(body$id %||% "", body$verdict %||% "", body$note %||% "",
+                                 read_salvage(salvage_file, case_dir), paths),
+                  error = function(e) e)
+  if (inherits(res, "error")) return(respond_json(list(error = conditionMessage(res)), 409))
+  respond_json(list(ok = TRUE))
+}
+
+decide_request <- function(req, paths) {
+  refused <- refuse_foreign(req)
+  if (!is.null(refused)) return(refused)
   body <- jsonlite::fromJSON(rawToChar(req$rook.input$read()), simplifyVector = TRUE)
   res <- tryCatch(human_decide(body$id %||% "", body$decision %||% "", body$note %||% "",
                                body$fingerprint %||% "", paths),
@@ -163,7 +191,8 @@ decide_request <- function(req, paths) {
 }
 
 review_app <- function(paths = suite_paths(), page_dir = "tests/suite/page",
-                       inventory_file = inventory_path(), case_dir = "tests/testthat") {
+                       inventory_file = inventory_path(), case_dir = "tests/testthat",
+                       salvage_file = salvage_path()) {
   route <- function(req) {
     path <- req$PATH_INFO
     get <- identical(req$REQUEST_METHOD, "GET")
@@ -179,6 +208,10 @@ review_app <- function(paths = suite_paths(), page_dir = "tests/suite/page",
       return(respond_json(review_api_form(parse_query(req$QUERY_STRING)$id %||% "", paths)))
     }
     if (identical(req$REQUEST_METHOD, "POST") && path == "/api/decide") return(decide_request(req, paths))
+    if (get && path == "/api/salvage") return(respond_json(salvage_api_data(paths, salvage_file, case_dir)))
+    if (identical(req$REQUEST_METHOD, "POST") && path == "/api/salvage") {
+      return(salvage_request(req, paths, salvage_file, case_dir))
+    }
     not_found()
   }
   list(call = function(req) {

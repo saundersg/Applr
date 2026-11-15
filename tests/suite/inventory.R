@@ -61,9 +61,52 @@ case_covers <- function(file) {
   unique(found)
 }
 
+# Each judged output a case file declares, read without running it, keyed by
+# name: its `purpose`, the top-level call that declares it, and the top-level
+# lines before that call it depends on. Those are the definitions of the
+# names it uses, followed back, and the plain calls (set.seed()) among them.
+declaring <- c("judged_output", "raises")
+
+case_outputs <- function(file) {
+  parsed <- parse(file, keep.source = TRUE)
+  exprs <- as.list(parsed)
+  src <- vapply(attr(parsed, "srcref"), function(s) paste(as.character(s), collapse = "\n"), "")
+  head_of <- function(e) if (is.call(e) && is.name(e[[1]])) as.character(e[[1]]) else ""
+  assigns <- vapply(exprs, function(e) head_of(e) %in% c("<-", "="), TRUE)
+  defines <- lapply(seq_along(exprs), function(i) {
+    if (!assigns[i]) return(character())
+    lhs <- exprs[[i]][[2]]
+    while (is.call(lhs)) lhs <- lhs[[2]]
+    if (is.name(lhs)) as.character(lhs) else character()
+  })
+  uses <- lapply(seq_along(exprs), function(i) {
+    e <- exprs[[i]]
+    all.names(if (assigns[i] && is.name(e[[2]])) e[[3]] else e)
+  })
+  plain <- !assigns & !vapply(exprs, head_of, "") %in% c(declaring, "covers", "test_that")
+
+  out <- list()
+  for (k in seq_along(exprs)) {
+    e <- exprs[[k]]
+    if (!head_of(e) %in% declaring || length(e) < 2 || !is.character(e[[2]])) next
+    need <- uses[[k]]
+    keep <- logical(k - 1)
+    for (i in rev(seq_len(k - 1))) {
+      if (length(intersect(defines[[i]], need))) {
+        keep[i] <- TRUE
+        need <- union(need, uses[[i]])
+      }
+    }
+    if (any(keep)) keep <- keep | (plain[seq_len(k - 1)] & seq_len(k - 1) < max(which(keep)))
+    out[[e[[2]]]] <- list(purpose = if (is.character(e$purpose)) e$purpose else "",
+                          setup = as.list(src[which(keep)]), code = src[k])
+  }
+  out
+}
+
 # One record per case file: the IDs it cites, any the inventory doesn't
-# know, and its family, taken from the first function entry it cites (else
-# the first shared one).
+# know, its family, taken from the first function entry it cites (else the
+# first shared one), and what case_outputs() reads of each output.
 case_index <- function(case_dir, inventory) {
   ids <- vapply(inventory$entries, `[[`, "", "id")
   shared <- vapply(inventory$entries, `[[`, TRUE, "shared")
@@ -75,6 +118,7 @@ case_index <- function(case_dir, inventory) {
     first <- c(known[!shared[known]], known)[1]
     list(name = case_name(f), file = basename(f), covers = as.list(cites),
          unknown = as.list(setdiff(cites, ids)),
-         family = if (is.na(first)) "not in the inventory" else family[first])
+         family = if (is.na(first)) "not in the inventory" else family[first],
+         outputs = case_outputs(f))
   })
 }

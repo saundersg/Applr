@@ -27,12 +27,18 @@ zigzag <- ggplot2::ggplot(zig, ggplot2::aes(x * x2, y)) + ggplot2::geom_point() 
   ggplot2::labs(title = "Predictions that aren't a function of x * x2")
 
 covers("autoplot.looks-complete", "shared.composite-x.exact-fit", "shared.composite-x.zigzag")
-judged_output("iris_quick", iris_quick)
-judged_output("chosen", chosen)
-judged_output("mapped", mapped)
-judged_output("other_axis", other_axis)
-judged_output("exact_composite", exact_composite)
-judged_output("zigzag", zigzag)
+judged_output("iris_quick", iris_quick,
+              purpose = "The README's iris quick look: autoplot() alone gives curved slices with ribbons per species and the wrapped equation.")
+judged_output("chosen", chosen,
+              purpose = "autoplot() choosing colour by drv and facets by cyl itself gives a finished plot with lines pinned to each panel.")
+judged_output("mapped", mapped,
+              purpose = "A user's colour mapping plus facet_wrap() replace autoplot()'s own choices, with each line pinned to its panel's drv.")
+judged_output("other_axis", other_axis,
+              purpose = "autoplot() with a user-chosen x-axis, bare lines and a title shows the same model from another angle.")
+judged_output("exact_composite", exact_composite,
+              purpose = "An exact fit plotted against its full linear predictor puts every point on the line.")
+judged_output("zigzag", zigzag,
+              purpose = "A composite x-axis whose predictions aren't a function of it zigzags through the points, the honest picture rather than a bug.")
 
 test_that("the exact fit's points lie on its composite-axis line", {
   d <- slice_data(exact_composite)

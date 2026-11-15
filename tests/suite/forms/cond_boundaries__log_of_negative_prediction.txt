@@ -1,0 +1,10 @@
+message
+Predictions of `exp(y)` were back-transformed to match the `y` axis.
+    To turn this off, use 'back_transform = FALSE'.
+
+warning
+NaNs produced
+
+warning
+Removed 18 rows containing missing values or values outside the scale range
+(`geom_slice()`).

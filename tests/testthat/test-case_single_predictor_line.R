@@ -13,7 +13,8 @@ p <- ggplot2::ggplot(df, ggplot2::aes(x, y)) +
   ggplot2::labs(title = "Single predictor")
 
 covers("geom_slice.line-is-prediction", "geom_slice.user-theme")
-judged_output("plot", p)
+judged_output("plot", p,
+              purpose = "A one-predictor model's line runs through the points in the user's plot, title and default theme.")
 
 test_that("the plotted line equals the model's prediction on the expected grid", {
   d <- ggplot2::ggplot_build(p)$data[[2]]

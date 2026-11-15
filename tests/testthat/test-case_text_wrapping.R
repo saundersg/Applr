@@ -29,7 +29,8 @@ covers("shared.annotation-wrap.fits", "shared.annotation-wrap.between-terms",
        "shared.annotation-wrap.ladder", "shared.annotation-wrap.width-or-off",
        "shared.annotation-wrap.prepend-equals", "shared.annotation-wrap.overlong-term",
        "shared.annotation-wrap.ambiguous-brackets")
-judged_output("wrapped", examples, type = "returned_text")
+judged_output("wrapped", examples, type = "returned_text",
+              purpose = "One long subtitle wrapped at fixed widths: where it breaks, how it indents, when it shortens to [level], and when it can't.")
 
 lines <- function(name) strsplit(examples[[name]], "\n", fixed = TRUE)[[1]]
 blank <- "^[    ]+"

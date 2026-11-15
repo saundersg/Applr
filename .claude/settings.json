@@ -15,7 +15,8 @@
       "PowerShell(*Rscript*mutate.R*)"
     ],
     "deny": [
-      "Edit(tests/suite/human_decisions.json)"
+      "Edit(tests/suite/human_decisions.json)",
+      "Edit(tests/suite/salvage_review.json)"
     ]
   },
   "hooks": {

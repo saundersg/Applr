@@ -10,7 +10,8 @@ equations <- c(
 )
 
 covers("lm_equation.format", "lm_equation.style", "lm_equation.terms-from-coefficients")
-judged_output("equations", equations, type = "returned_text")
+judged_output("equations", equations, type = "returned_text",
+              purpose = "lm_equation() on a factor-by-numeric interaction in each style: spelled-out levels, [level] brackets and raw coefficient names.")
 
 test_that("each style names the factor terms its own way", {
   expect_match(equations[["prettier"]], '(Species="versicolor")', fixed = TRUE)

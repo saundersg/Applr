@@ -17,8 +17,10 @@ target <- if (tool %in% c("Bash", "PowerShell")) {
   c(ti$file_path, ti$notebook_path)
 }
 
-if (any(grepl("human_decisions\\.json", unlist(target), ignore.case = TRUE))) {
-  message("Blocked: tests/suite/human_decisions.json holds the maintainer's own review decisions. ",
+# salvage_review.json is ticket 4's temporary file of the maintainer's
+# verdicts on the salvage audit, protected the same way.
+if (any(grepl("(human_decisions|salvage_review)\\.json", unlist(target), ignore.case = TRUE))) {
+  message("Blocked: tests/suite/human_decisions.json and salvage_review.json hold the maintainer's own review decisions. ",
           "Only the review server writes it, when the maintainer approves or rejects on the review page. ",
           "Use `Rscript tests/suite/suite.R approve|reject <id> \"<note>\"` for agent decisions, ",
           "and ask the maintainer to review on the page (Rscript tests/suite/review.R).")

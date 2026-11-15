@@ -65,6 +65,9 @@ main > * + * { margin-top: 14px; }
 .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .expect { background: var(--soft); border-radius: 6px; padding: 8px 10px; font-size: 13px; }
 .expect ul { margin: 4px 0 0; padding-left: 18px; }
+.pills { display: flex; gap: 6px; }
+.purpose { margin: 4px 0 0; font-size: 15px; } .purpose.missing { color: var(--warn); font-size: 13px; }
+.code .console { max-height: 320px; overflow-y: auto; margin-top: 6px; } .code .setup { color: var(--muted); }
 .agentnote { border-left: 3px solid var(--accent); padding: 4px 10px; font-size: 13px; white-space: pre-wrap; }
 .yournote { border-left: 3px solid var(--bad); padding: 4px 10px; font-size: 13px; background: var(--badbg); border-radius: 0 6px 6px 0; white-space: pre-wrap; }
 .oknote { border-left: 3px solid var(--ok); padding: 4px 10px; font-size: 13px; background: var(--okbg); border-radius: 0 6px 6px 0; }

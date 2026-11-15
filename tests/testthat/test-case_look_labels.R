@@ -36,15 +36,24 @@ covers("geom_slice_text.colour-follows-line", "geom_slice_text.legend-key-colour
        "geom_slice_text.expand-fits-labels", "geom_slice_subtitle.readable",
        "geom_slice_caption.no-indent-right-aligned", "shared.annotation-wrap.hanging-indent",
        "shared.annotation-wrap.narrow-and-wide")
-judged_output("colour_by_group", colour_by_group)
-judged_output("legend_style", legend_style)
-judged_output("legend_one_colour", legend_one_colour)
-judged_output("left_offset", left_offset)
-judged_output("manual_hjust", manual_hjust)
-judged_output("no_expand", no_expand)
-judged_output("subtitle", subtitle)
-judged_output("caption", caption)
-judged_output("subtitle_narrow", subtitle_narrow)
+judged_output("colour_by_group", colour_by_group,
+              purpose = "Labels on lines coloured by group take their own line's colour and fit inside the widened panel.")
+judged_output("legend_style", legend_style,
+              purpose = "The legend style labels six same-coloured lines with bare values and a key naming the variables, with headroom so the key clears the top label.")
+judged_output("legend_one_colour", legend_one_colour,
+              purpose = "With a fixed line colour the legend key takes that colour rather than grey.")
+judged_output("left_offset", left_offset,
+              purpose = "Labels at the left ends, offset 15pt and in a fixed colour, widen the panel on the left.")
+judged_output("manual_hjust", manual_hjust,
+              purpose = "A user's hjust and vjust replace the automatic offset, centring labels on the line ends.")
+judged_output("no_expand", no_expand,
+              purpose = "expand = FALSE leaves the scales alone, so labels run off the panel: the documented trade-off.")
+judged_output("subtitle", subtitle,
+              purpose = "A long subtitle wrapped at 6 inches hangs its continuation lines under the equation's right-hand side, clear of the panel.")
+judged_output("caption", caption,
+              purpose = "The same text as a caption sits below the plot, right-aligned and wrapped without the hanging indent.")
+judged_output("subtitle_narrow", subtitle_narrow,
+              purpose = "A subtitle wrapped at 3.5 inches beside a squeezed panel still fits, term by term.")
 
 test_that("labels take their line's colour, and the key is grey for mixed colours", {
   t <- slice_text_data(colour_by_group)

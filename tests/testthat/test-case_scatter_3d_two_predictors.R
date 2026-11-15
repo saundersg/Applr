@@ -11,7 +11,8 @@ judged_output("widget", widget, states = list(
   default = list(eye = list(x = 1.25, y = 1.25, z = 1.25)),
   top = list(eye = list(x = 0, y = 0, z = 2.5)),
   side = list(eye = list(x = 2.5, y = 0, z = 0))
-))
+),
+              purpose = "scatter_3d() on a two-predictor model shows the prediction surface through the points, readable from every camera.")
 
 test_that("the surface equals the model's prediction over the predictor grid", {
   built <- plotly::plotly_build(widget)$x$data

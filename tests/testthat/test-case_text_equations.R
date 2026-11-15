@@ -20,8 +20,10 @@ latex <- vapply(models, function(m) {
 
 covers("lm_equation.format", "lm_equation.no-intercept", "lm_equation.na-and-residue",
        "lm_equation.intercept-only", "lm_latex.format", "lm_latex.special-characters")
-judged_output("equations", equations, type = "returned_text")
-judged_output("latex", latex, type = "returned_text")
+judged_output("equations", equations, type = "returned_text",
+              purpose = "lm_equation() across representative model shapes: transformed, no intercept, rank-deficient, exact, intercept-only and underscored names.")
+judged_output("latex", latex, type = "returned_text",
+              purpose = "lm_latex() on the same model shapes, underbracing each term, including the empty intercept-only term and unescaped underscore.")
 
 test_that("coefficients are rounded to 3 significant figures and signs read naturally", {
   co <- signif(coef(models$multiple), 3)

@@ -51,8 +51,8 @@ two_part <- function(message) {
 # raised, in order; that some message contains each of `has` and is in the
 # two-part format; and, unless the call errors, that it finished, building
 # its plot (a ggplot is built; base graphics have drawn).
-raises <- function(name, call, kinds, has = character(), format = TRUE) {
-  judged_output(name, call, type = "conditions")
+raises <- function(name, call, kinds, has = character(), format = TRUE, purpose = NULL) {
+  judged_output(name, call, type = "conditions", purpose = purpose)
   testthat::test_that(paste0(name, " raises ", paste(kinds, collapse = ", ")), {
     r <- conditions_of(call)
     testthat::expect_equal(r$kinds, kinds)

@@ -28,7 +28,8 @@ examples <- c(
 covers("geom_slice_subtitle.equation-line", "geom_slice_subtitle.held-line",
        "geom_slice_subtitle.band-line", "geom_slice_subtitle.prepend-append",
        "geom_slice_subtitle.dots-to-equation", "slice_2d.caption", "slice_2d.caption-nothing-held")
-judged_output("subtitles", examples, type = "returned_text")
+judged_output("subtitles", examples, type = "returned_text",
+              purpose = "geom_slice_subtitle()'s equation, held-value and band lines, with its options, unwrapped, plus slice_2d()'s caption and its empty form.")
 
 lines <- function(name) strsplit(examples[[name]], "\n", fixed = TRUE)[[1]]
 

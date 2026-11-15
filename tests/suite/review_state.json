@@ -351,6 +351,38 @@
     "engine_version": "",
     "status": "Agent approved"
   },
+  "cond_boundaries/interval_from_two_rows": {
+    "agent_note": "KNOWN ISSUE: a two-row model has no residual df, so predict() gives NaN intervals: base R's 'NaNs produced', then ggplot2's 'no non-missing arguments to max; returning -Inf' while drawing. Confusing for a student, but rare. The line itself still draws. Approve to pin it, reject if Applr should explain.",
+    "rejection_note": "",
+    "who": "agent",
+    "when": "2026-11-13T18:27:56-0700",
+    "case": "cond_boundaries",
+    "type": "conditions",
+    "view": "text",
+    "states": "conditions",
+    "fingerprint": "6929811d5332",
+    "parts": {
+      "main": "6929811d5332"
+    },
+    "engine_version": "",
+    "status": "Agent approved"
+  },
+  "cond_boundaries/log_of_negative_prediction": {
+    "agent_note": "KNOWN ISSUE: shows what users see today, not good wording. Applr's back-transform message, then base R's bare 'NaNs produced' and ggplot2's 'Removed 18 rows' when log() meets negative exp(y) predictions at small x. Nothing names the range with no value; known_issues.Rmd suggests an Applr warning. Approve to pin it, reject to ask for that warning.",
+    "rejection_note": "",
+    "who": "agent",
+    "when": "2026-11-13T18:27:51-0700",
+    "case": "cond_boundaries",
+    "type": "conditions",
+    "view": "text",
+    "states": "conditions",
+    "fingerprint": "0c165f75f7b3",
+    "parts": {
+      "main": "0c165f75f7b3"
+    },
+    "engine_version": "",
+    "status": "Agent approved"
+  },
   "cond_build/axis_unmapped": {
     "agent_note": "One error, arriving inside ggplot2's 'Problem while computing stat' chain, so it reads three lines down. Applr's own text is fine.",
     "rejection_note": "",
@@ -2149,6 +2181,22 @@
     "view": "image",
     "states": "plot"
   },
+  "text_equation_shapes/factor_terms": {
+    "agent_note": "LaTeX factor labels match lm_equation()'s three styles: (Species=\"versicolor\"), [versicolor], Speciesversicolor, interactions joined with ':'. factor(cyl) and as.factor(am) keep their call in the label. factor(cyl)6 and 8 both round to -4.79 at 3 significant figures (-4.786, -4.792); that's rounding, not a repeat. The quotes inside \\text{} typeset as straight-ish quotes in LaTeX, readable but not ideal.",
+    "rejection_note": "",
+    "who": "agent",
+    "when": "2026-11-13T18:27:58-0700",
+    "case": "text_equation_shapes",
+    "type": "returned_text",
+    "view": "text",
+    "states": "text",
+    "fingerprint": "dfe97ecfdc9b",
+    "parts": {
+      "main": "dfe97ecfdc9b"
+    },
+    "engine_version": "",
+    "status": "Agent approved"
+  },
   "text_equations/equations": {
     "agent_note": "Eight models' equations. Simple, multiple, transformed (log(mpg) response, I(wt^2) kept), no intercept, rank-deficient (NA term dropped) and exact fit ('y = 0 + 2*x', residue zeroed) all read well. KNOWN BUG: intercept-only gives 'mpg = 20.1 + *'. The 0 intercept in 'y = 0 + 2*x' is arguably noise worth dropping; your call.",
     "rejection_note": "",
@@ -2253,11 +2301,7 @@
     "case": "widget_scatter_3d",
     "type": "plotly_3d",
     "view": "states",
-    "states": [
-      "default",
-      "top",
-      "side"
-    ],
+    "states": ["default", "top", "side"],
     "fingerprint": "d9ce10a86df1",
     "parts": {
       "figure": "02e2e057a8fa",
@@ -2275,11 +2319,7 @@
     "case": "widget_scatter_3d",
     "type": "plotly_3d",
     "view": "states",
-    "states": [
-      "default",
-      "top",
-      "side"
-    ],
+    "states": ["default", "top", "side"],
     "fingerprint": "245dd007cf3f",
     "parts": {
       "figure": "1bac21472da5",
@@ -2297,11 +2337,7 @@
     "case": "widget_scatter_3d",
     "type": "plotly_3d",
     "view": "states",
-    "states": [
-      "default",
-      "top",
-      "side"
-    ],
+    "states": ["default", "top", "side"],
     "fingerprint": "ce0725f6ae52",
     "parts": {
       "figure": "ca1c298ff9e6",

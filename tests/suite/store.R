@@ -152,6 +152,13 @@ list_unreviewed <- function(paths = suite_paths()) {
   names(Filter(function(r) identical(r$status, "Unreviewed"), review_records(paths)))
 }
 
+# Rejected outputs with who rejected them and the note, for the agent fixing
+# them. A human's note is read here, since agents never open the decisions.
+list_rejected <- function(paths = suite_paths()) {
+  rejected <- Filter(function(r) identical(r$status, "Rejected"), review_records(paths))
+  lapply(rejected, function(r) list(who = r$who, when = r$when, note = r$rejection_note %||% ""))
+}
+
 # Text diff of the current form against the last human-approved one.
 diff_output <- function(id, paths = suite_paths()) {
   now <- file.path(paths$forms, paste0(file_id(id), ".txt"))
@@ -218,6 +225,7 @@ review_page_data <- function(paths = suite_paths()) {
       ifelse(file.exists(f), f, NA_character_)
     }
     live <- file.path(view_dir(id, paths), "live.html")
+    approved_form <- file.path(paths$approved, paste0(file_id(id), ".txt"))
     list(
       id = id, case = rec$case, type = rec$type, view = rec$view,
       status = rec$status, who = rec$who, when = rec$when,
@@ -228,7 +236,8 @@ review_page_data <- function(paths = suite_paths()) {
                           approved_file = files(TRUE)),
       live = if (file.exists(live)) live else NA_character_,
       form = file.path(paths$forms, paste0(file_id(id), ".txt")),
-      approved_form = file.path(paths$approved, paste0(file_id(id), ".txt"))
+      approved_form = approved_form,
+      new = !file.exists(approved_form)
     )
   })
 }

@@ -31,13 +31,20 @@ y_scale <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + ggplot2::geom_poin
   ggplot2::scale_y_log10() + ggplot2::labs(title = "scale_y_log10() axis")
 
 covers("shared.band.look", "shared.slicing.facets-look", "geom_slice_text.facets")
-judged_output("band_inferred", band_inferred)
-judged_output("band_named", band_named)
-judged_output("exact_fit_clear", exact_fit_clear)
-judged_output("facet_grid", facet_grid)
-judged_output("y_raw", y_raw)
-judged_output("y_expression", y_expression)
-judged_output("y_scale", y_scale)
+judged_output("band_inferred", band_inferred,
+              purpose = "band = TRUE finds cyl and draws one labelled band per colour group over cyl's data range.")
+judged_output("band_named", band_named,
+              purpose = "A band named by the user, with its two values pinned, is narrower than the inferred one and labels each edge.")
+judged_output("exact_fit_clear", exact_fit_clear,
+              purpose = "The README's four-predictor exact fit made clear with colour, facets, a band, labels and a subtitle: every point inside its band.")
+judged_output("facet_grid", facet_grid,
+              purpose = "facet_grid() over two predictors pins each panel's line and ribbon to that panel's values.")
+judged_output("y_raw", y_raw,
+              purpose = "A log(mpg) model on a raw mpg axis is back-transformed into a curve through the points.")
+judged_output("y_expression", y_expression,
+              purpose = "The same model on a log(mpg) axis expression stays on the model's scale, a straight line.")
+judged_output("y_scale", y_scale,
+              purpose = "The same model under scale_y_log10() is straight on the log axis with mpg tick labels.")
 
 test_that("every point of the exact fit sits inside its panel's band", {
   d <- slice_data(exact_fit_clear)

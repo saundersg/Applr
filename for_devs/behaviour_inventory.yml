@@ -119,6 +119,10 @@ functions:
         source: "compute_slice_group() range(na.rm = TRUE)"
         options: ["Numeric: data with NA x rows, model fitted with na.omit."]
         test_type: numeric
+      - id: geom_slice.full-range-beyond-data
+        principle: With full_range = TRUE and scale limits wider than the data, the line is predicted across the limits, past the data.
+        source: "From the old suite (salvage audit, 2026-11-13): prediction beyond the data range. compute_slice_group() scales$x$dimension()"
+        test_type: numeric
 
   # ---------------------------------------------------------------------------
   geom_slice_text:
@@ -258,6 +262,10 @@ functions:
         source: "new_slice_annotation_spec()"
         options: ["Condition: one call per argument; wording judged together."]
         test_type: condition
+      - id: geom_slice_subtitle.style-pinned
+        principle: A style passed through `...` pins the labels, so a narrow subtitle keeps spelled-out factor names and announces no shortening.
+        source: "From the old suite (salvage audit, 2026-11-13): the escape hatch from the brackets fallback. annotation_equation_args()"
+        test_type: text
 
   # ---------------------------------------------------------------------------
   geom_slice_caption:
@@ -474,6 +482,14 @@ functions:
         source: "README autoplot-mapping; for_devs/known_issues.Rmd (add time vs build time)"
         options: ["Numeric: line per panel uses that panel's drv.", "Appearance: the README plot."]
         test_type: numeric
+      - id: autoplot.transformed-terms
+        principle: For a transformed model, such as log(mpg) ~ log(disp), the axes are the raw response and predictor, and the line is back-transformed onto them.
+        source: "From the old suite (salvage audit, 2026-11-13): transformed response and predictor through autoplot(). autoplot.lm() all.vars()"
+        test_type: numeric
+      - id: autoplot.local-data
+        principle: A model fitted with `data` that exists only where it was fitted (inside local() or a function) still plots, recovered through the formula's environment.
+        source: "From the old suite (salvage audit, 2026-11-13): data in a local scope. slice_model_frame()"
+        test_type: numeric
 
   # ---------------------------------------------------------------------------
   lm_equation:
@@ -512,6 +528,10 @@ functions:
         source: "lm_equation() rhs paste with no slopes"
         options: ["Numeric: lm_equation(lm(mpg ~ 1, mtcars))."]
         test_type: text
+      - id: lm_equation.response-and-term-names
+        principle: The response (1/y, sqrt(y), y^2) and terms (x:z, I(x * z), factor(cyl), as.factor(am)) are named as the formula writes them.
+        source: "From the old suite (salvage audit, 2026-11-13): equations of transformed responses, products and factors made in the formula. lm_equation_parts()"
+        test_type: text
 
   # ---------------------------------------------------------------------------
   lm_latex:
@@ -532,6 +552,10 @@ functions:
         principle: Variable names with LaTeX special characters (`_`, `%`, `&`) go inside \text{} unescaped and would break the typeset equation.
         source: "lm_latex() (no escaping)"
         options: ["Numeric: lm(y ~ my_var) output contains an escaped \\_ (fails today)."]
+        test_type: text
+      - id: lm_latex.factor-styles
+        principle: Factor terms are labelled under their underbraces in each style as lm_equation() labels them, and style abbreviations resolve.
+        source: "From the old suite (salvage audit, 2026-11-13): LaTeX of a factor interaction in each style. lm_latex(); pretty_coef_names()"
         test_type: text
 
   # ---------------------------------------------------------------------------
@@ -653,6 +677,10 @@ shared:
         options: ["Condition: lm(mtcars[['mpg']] ~ mtcars[['wt']]) errors clearly."]
         test_type: condition
         deferred: Known issue with no decided behaviour yet; write the case when known_issues.Rmd's extension of the `$` rule is made.
+      - id: shared.validation.every-entry-point
+        principle: geom_slice(), slice_2d(), add_slice_2d() and autoplot() refuse a non-lm model, `$` names and an unknown back_transform with the same message, naming themselves in the hint. scatter_3d() refuses the same models but names geom_slice() today.
+        source: "From the old suite (salvage audit, 2026-11-13): each engine's refusals. check_slice_model(fn =); check_back_transform()"
+        test_type: condition
 
   # ---------------------------------------------------------------------------
   model-data:
@@ -681,6 +709,10 @@ shared:
         source: "slice_model_frame(); autoplot.lm() comment"
         options: ["Condition: f <- function() { d <- mtcars; lm(mpg ~ wt, d) }; geom_slice(f())."]
         test_type: condition
+      - id: shared.model-data.dot-formula
+        principle: A model written as y ~ . slices exactly like the same model with its predictors spelled out.
+        source: "From the old suite (salvage audit, 2026-11-13): seen in the student analyses. formula.lm() expands the dot"
+        test_type: numeric
 
   # ---------------------------------------------------------------------------
   back-transform:
@@ -738,6 +770,14 @@ shared:
         source: "prepare_slice_data() vs resolve_y_fn()"
         options: ["Condition: record each engine's conditions on log(mpg) ~ disp + hp."]
         test_type: condition
+      - id: shared.back-transform.every-engine
+        principle: Both engines invert each common response transform (log, sqrt, 1/y, exp, y^2) the same way; exp and powers go through their own branches of the inverse.
+        source: "From the old suite (salvage audit, 2026-11-13): every response transform in every engine. get_inverse_function() unary and ^ branches"
+        test_type: numeric
+      - id: shared.back-transform.outside-domain
+        principle: Where a prediction falls outside the inverse's domain (a negative y^2 or exp(y) prediction), the line has no value there. Applr says nothing. slice_2d() drops the points silently, and geom_slice() users see only base R's "NaNs produced" (exp(y)) and ggplot2's "Removed rows" warnings.
+        source: "From the old suite (salvage audit, 2026-11-13): back-transforms outside their domain. for_devs/known_issues.Rmd"
+        test_type: numeric
 
   # ---------------------------------------------------------------------------
   imputation:
@@ -864,6 +904,18 @@ shared:
         source: "build_slice_spec() intersect(layout_cols, predictor_vars)"
         options: ["Numeric: facet_wrap(~gear) with lm(mpg ~ wt); identical lines per panel."]
         test_type: numeric
+      - id: shared.slicing.factor-in-formula-pinned
+        principle: A predictor made a factor in the formula (as.factor(cyl), factor(cyl)) is drawn per level once a grouping aesthetic, predict_vars or autoplot()'s colour pins it.
+        source: "From the old suite (salvage audit, 2026-11-13): common in the student analyses. coerce_like(); autoplot.lm()"
+        test_type: numeric
+      - id: shared.slicing.two-aesthetics
+        principle: Colour and linetype mapped to two predictors give one line per pair that occurs, each pinned to both values.
+        source: "From the old suite (salvage audit, 2026-11-13): grouping by colour and linetype at once. build_slice_spec() group_aes"
+        test_type: numeric
+      - id: shared.slicing.numeric-facet
+        principle: A facet on a numeric predictor pins each panel to its number.
+        source: "From the old suite (salvage audit, 2026-11-13): faceting by a numeric predictor. coerce_like() numeric branch"
+        test_type: numeric
       - id: shared.slicing.added-after
         principle: A facet, layer aes() or %+% data swap added after geom_slice_text() or geom_slice_subtitle() can make their add-time reading disagree with the build; the drawn lines stay right.
         source: "for_devs/known_issues.Rmd (noted 2026-08-18)"
@@ -917,6 +969,11 @@ shared:
         principle: The ribbon is translucent in its line's colour; the prediction ribbon is visibly wider than the confidence one.
         source: "README interval"
         test_type: appearance
+    edge_cases:
+      - id: shared.intervals.no-residual-df
+        principle: A model with no residual degrees of freedom (two rows) has no interval; the plot is still built, and users see base R's bare "NaNs produced" and a ggplot2 warning while it is drawn.
+        source: "From the old suite (salvage audit, 2026-11-13): very small datasets. predict.lm() qt(df = 0)"
+        test_type: condition
 
   # ---------------------------------------------------------------------------
   composite-x:
@@ -941,6 +998,10 @@ shared:
         principle: full_range has no effect with an expression x-axis; lines keep their data extent.
         source: "?geom_slice (full_range)"
         options: ["Numeric: same layer data with and without full_range."]
+        test_type: numeric
+      - id: shared.composite-x.one-predictor
+        principle: An x-axis expression of one predictor (aes(log(disp)), x_axis = "log(disp)") is drawn like any expression, at the data rows.
+        source: "From the old suite (salvage audit, 2026-11-13): x-axes of log(x), x^2 and 1/x. compute_slice_group() and prepare_slice_data() x_simple"
         test_type: numeric
 
   # ---------------------------------------------------------------------------

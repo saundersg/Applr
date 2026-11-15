@@ -34,7 +34,8 @@ examples <- c(
 )
 
 covers("geom_slice_text.label-predict-vars", "geom_slice_text.label-group", "geom_slice_text.style")
-judged_output("labels", examples, type = "returned_text")
+judged_output("labels", examples, type = "returned_text",
+              purpose = "The label strings geom_slice_text() writes in each style, from predict_vars and from a colour group, and which wins when both vary.")
 
 test_that("labels name the values, crossed in predict_vars order, to 4 significant figures", {
   expect_equal(strsplit(examples[["variable"]], "\n")[[1]],

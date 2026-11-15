@@ -1,0 +1,325 @@
+# TEMPORARY. Salvage audit (ticket 4): what each part of the old suite, kept
+# in the `old-suite` tag, put the functions through, and whether the new
+# suite does too. The clean-up step deletes this file. The review page's
+# "Salvage audit" view reads it; the maintainer's verdicts on it go to
+# tests/suite/salvage_review.json, written only by the review server.
+#
+#   additions:   each test written because of the audit
+#     id:        stable, lower case
+#     case:      the case file it is in (test-case_<case>.R)
+#     tests:     test_that() names or judged output names in that file
+#     entries:   inventory IDs it covers
+#     why:       the situation the old suite had that the new one lacked
+#   old:         one line per old case, testthat test and file
+#     verdict:   covered | added | discarded
+#     by:        new cases that cover it (covered)
+#     added:     addition IDs written for it (added)
+#     note:      one line
+
+additions:
+  - id: every-engine-back-transform
+    case: num_model_shapes
+    tests: ["exp(y), y^2, sqrt(y) and 1/y responses are inverted the same way by both engines"]
+    entries: [shared.back-transform.every-engine]
+    why: exp(y) and y^2 responses were untested, and they take their own branches of the inverse (unary exp, binary ^). Only log was checked in slice_2d().
+  - id: one-predictor-x-expression
+    case: num_model_shapes
+    tests: ["an x-axis expression of one predictor predicts at the data rows, in both engines"]
+    entries: [shared.composite-x.one-predictor]
+    why: aes(log(x)), aes(x^2) and aes(1/x) take the composite path although they name one predictor; only several-predictor expressions were tested.
+  - id: factor-in-formula-pinned
+    case: num_model_shapes
+    tests: ["a factor made in the formula is drawn per level once a grouping, predict_vars or autoplot() pins it"]
+    entries: [shared.slicing.factor-in-formula-pinned]
+    why: as.factor(x) in the formula is the commonest model shape in the student analyses; only its imputation bug was pinned, not the way it works.
+  - id: dot-formula
+    case: num_model_shapes
+    tests: ["a `y ~ .` model slices like its spelled-out formula"]
+    entries: [shared.model-data.dot-formula]
+    why: Seen in the student analyses; nothing tested a formula whose predictors aren't written out.
+  - id: two-aesthetics
+    case: num_model_shapes
+    tests: ["colour and linetype on two predictors give one line per pair, each pinned"]
+    entries: [shared.slicing.two-aesthetics]
+    why: Colour and linetype were tested one at a time, never together on two predictors.
+  - id: numeric-facet
+    case: num_model_shapes
+    tests: ["a facet on a numeric predictor pins each panel to its number"]
+    entries: [shared.slicing.numeric-facet]
+    why: Facet pinning was checked only for a character predictor; a numeric one goes through a different coercion.
+  - id: full-range-beyond-data
+    case: num_model_shapes
+    tests: ["full_range under wider scale limits predicts past the data"]
+    entries: [geom_slice.full-range-beyond-data]
+    why: full_range was checked only where the panel equals the data range, so prediction past the data was never seen.
+  - id: autoplot-transformed
+    case: num_model_shapes
+    tests: ["autoplot() puts the raw response and predictor on the axes of a transformed model"]
+    entries: [autoplot.transformed-terms]
+    why: autoplot() was tested only on untransformed models.
+  - id: autoplot-local-data
+    case: num_model_shapes
+    tests: ["autoplot() finds data that exists only where the model was fitted"]
+    entries: [autoplot.local-data]
+    why: Recovery through the formula's environment was tested for geom_slice() without data, never for autoplot() with data in a local scope.
+  - id: outside-domain-silent
+    case: num_model_shapes
+    tests: ["where a back-transform has no value the line has none there, with no Applr warning (known issue)"]
+    entries: [shared.back-transform.outside-domain]
+    why: Nothing evaluated a back-transform outside its domain. A y^2 model with negative predictions loses those points; slice_2d() says nothing, geom_slice() only ggplot2's "Removed rows" at draw time. Pinned as a known issue.
+  - id: log-of-negative-prediction
+    case: cond_boundaries
+    tests: ["log_of_negative_prediction"]
+    entries: [shared.back-transform.outside-domain]
+    why: The same boundary for exp(y), where the user sees base R's bare "NaNs produced". Its wording is judged.
+  - id: interval-from-two-rows
+    case: cond_boundaries
+    tests: ["interval_from_two_rows"]
+    entries: [shared.intervals.no-residual-df]
+    why: Very small datasets; an interval with no residual degrees of freedom gives the same bare warning. Its wording is judged.
+  - id: every-entry-point
+    case: cond_boundaries
+    tests: ["every entry point refuses a non-lm model, `$` names and an unknown back_transform alike"]
+    entries: [shared.validation.every-entry-point]
+    why: The old suite refused bad models and arguments in every engine; the new one only through geom_slice(). This found scatter_3d()'s hint naming geom_slice(), pinned as a known bug.
+  - id: latex-factor-styles
+    case: text_equation_shapes
+    tests: ["factor_terms", "lm_latex() names factor terms in each style as lm_equation() does",
+            "a factor made in the formula keeps its call in the term name"]
+    entries: [lm_latex.factor-styles, lm_equation.response-and-term-names]
+    why: lm_latex() was tested on numeric terms only; factor labels in LaTeX, and factor(cyl) or as.factor(am) term names, were never looked at. Their wording is judged.
+  - id: equation-names
+    case: text_equation_shapes
+    tests: ["the response and terms are named as the formula writes them"]
+    entries: [lm_equation.response-and-term-names]
+    why: Equations of 1/y, sqrt(y), exp(y) and y^2 responses, and of x:z and I(x * z) terms, were never checked.
+  - id: subtitle-equation-only
+    case: text_equation_shapes
+    tests: ["with nothing held the subtitle is the equation alone, with no empty held line"]
+    entries: [geom_slice_subtitle.held-line]
+    why: The inventory says the held line is dropped when nothing is held, but no case checked it with the equation shown.
+  - id: style-pinned
+    case: text_equation_shapes
+    tests: ["a pinned style keeps its names at a narrow width and says nothing about shortening"]
+    entries: [geom_slice_subtitle.style-pinned]
+    why: The escape hatch from the narrow-width brackets fallback was untested.
+
+old:
+  # --- autoplot ---------------------------------------------------------------
+  - {id: ap_01_single_predictor, verdict: covered, by: [num_autoplot, look_autoplot], note: "Points, slice and confidence ribbon from autoplot() alone."}
+  - {id: ap_02_additive_imputed, verdict: covered, by: [num_autoplot, cond_autoplot], note: "First numeric predictor on x; the other imputed with a message."}
+  - {id: ap_03_ytransform_log, verdict: added, added: [autoplot-transformed], note: "Transformed response through autoplot()."}
+  - {id: ap_04_transformed_predictor, verdict: added, added: [autoplot-transformed], note: "Transformed predictor through autoplot()."}
+  - {id: ap_05_factor_colored, verdict: covered, by: [num_autoplot, look_autoplot], note: "A factor predictor becomes the colour."}
+  - {id: ap_06_err_non_lm, verdict: discarded, note: "autoplot() on a data frame never reaches Applr: ggplot2's autoplot.default answers, in its own words."}
+  - {id: ap_07_err_no_data_argument, verdict: covered, by: [cond_autoplot], note: "no_data_argument."}
+  - {id: ap_08_local_data, verdict: added, added: [autoplot-local-data], note: "Data that exists only in a local scope."}
+  - {id: ap_09_factor_first_predictor, verdict: covered, by: [cond_autoplot, num_autoplot], note: "A factor first predictor is skipped for x, with a message."}
+  - {id: ap_10_err_dollar_names, verdict: added, added: [every-entry-point], note: "`$` names through autoplot()."}
+  - {id: ap_11_passthrough_args, verdict: covered, by: [num_autoplot], note: "... reaches geom_slice()."}
+  - {id: ap_12_mapping, verdict: added, added: [factor-in-formula-pinned], note: "A user mapping over factor(cyl) in the formula; the mapping itself is covered by num_autoplot."}
+  - {id: ap_13_summary_console, verdict: covered, by: [num_autoplot], note: "summary() printed first. The old full summary snapshot was console infrastructure."}
+  - {id: ap_14_mapping_nonmodel_var, verdict: covered, by: [num_autoplot, num_slicing], note: "A mapping on a column the model doesn't use, which pins nothing."}
+  - {id: ap_15_auto_color_facet, verdict: covered, by: [num_autoplot, cond_autoplot], note: "Few-value numeric predictors become colour and facet."}
+  # --- add_slice_2d -------------------------------------------------------------
+  - {id: as_01_single_predictor, verdict: covered, by: [num_misc, cond_slice_2d], note: "add_slice_2d() shares prepare_slice_data() with slice_2d()."}
+  - {id: as_02_additive_default, verdict: covered, by: [num_misc, cond_imputation], note: "Imputed with slice_2d()'s message."}
+  - {id: as_03_multiplicative, verdict: covered, by: [num_composite_x], note: "x_axis = \"x * x2\"; the I() form takes the same path."}
+  - {id: as_04_multiplicative_x_axis_x, verdict: covered, by: [num_misc], note: "A product term sliced along one of its raw variables."}
+  - {id: as_05_interaction_three_slices, verdict: covered, by: [look_base], note: "Overlaid add_slice_2d() calls."}
+  - {id: as_06_quadratic, verdict: covered, by: [num_misc, look_base], note: "I(x^2) along its raw variable."}
+  - {id: as_07_ytransform_inverse, verdict: added, added: [every-engine-back-transform], note: "1/y in the base engine."}
+  - {id: as_08_ytransform_sqrt, verdict: added, added: [every-engine-back-transform], note: "sqrt(y) in the base engine."}
+  - {id: as_09_ytransform_log, verdict: covered, by: [num_back_transform], note: "log(y) in the base engine."}
+  - {id: as_10_ytransform_exp, verdict: added, added: [every-engine-back-transform], note: "exp(y) in the base engine."}
+  - {id: as_11_ytransform_square, verdict: added, added: [every-engine-back-transform], note: "y^2 in the base engine."}
+  - {id: as_12_err_non_lm, verdict: added, added: [every-entry-point], note: "A non-lm model given to add_slice_2d()."}
+  - {id: as_13_err_nonexistent_x_axis, verdict: covered, by: [cond_slice_2d], note: "x_axis_not_found; shared prepare_slice_data()."}
+  - {id: as_14_err_factor_x_axis, verdict: covered, by: [cond_slice_2d], note: "x_axis_not_numeric."}
+  - {id: as_15_err_dollar_names, verdict: added, added: [every-entry-point], note: "`$` names through add_slice_2d()."}
+  - {id: as_16_err_character_variable, verdict: covered, by: [cond_imputation], note: "slice_2d_character: the base engine refuses a character predictor."}
+  - {id: as_17_err_no_plot_open, verdict: covered, by: [cond_slice_2d], note: "no_plot_open."}
+  - {id: as_18_err_wrong_data_plot, verdict: discarded, note: "Base graphics can't tell what was plotted. The one mismatch it can see, a slice wholly outside the window, is cond_slice_2d's outside_plot."}
+  - {id: as_19_err_mismatched_x_axis, verdict: discarded, note: "As above: a partly overlapping line on the wrong axis is undetectable in base graphics."}
+  - {id: as_20_err_transformed_y_plot, verdict: discarded, note: "As above. On real data a log-y plot puts the raw-unit line wholly outside, and outside_plot fires."}
+  - {id: as_21_err_back_transform_invalid, verdict: added, added: [every-entry-point], note: "An invalid back_transform in add_slice_2d(); the shared check is also covered by cond_validation."}
+  - {id: as_22_err_back_transform_extra_args, verdict: covered, by: [cond_validation], note: "check_back_transform() is shared by every engine."}
+  - {id: as_23_interval_confidence, verdict: covered, by: [num_intervals, look_base], note: "Band edges equal predict(); the overlay shows a band."}
+  # --- geom_slice_caption -------------------------------------------------------
+  - {id: cp_01_default_imputed, verdict: covered, by: [num_companions, look_labels], note: "The caption holds the subtitle's text."}
+  - {id: cp_02_band_and_held, verdict: covered, by: [text_subtitles, num_companions], note: "Band and held lines, the same text in the caption."}
+  - {id: cp_03_long_equation_wraps, verdict: covered, by: [look_labels, num_companions], note: "A wrapped caption, right-aligned, no indent."}
+  # --- geom_slice ---------------------------------------------------------------
+  - {id: gs_01_single_predictor, verdict: covered, by: [single_predictor_line], note: "Line equals predict() on the grid."}
+  - {id: gs_02_additive_default_held, verdict: covered, by: [num_imputation, condition_imputed_values], note: "Imputed at the mean."}
+  - {id: gs_03_additive_predict_vars, verdict: covered, by: [num_held_values], note: "One held value."}
+  - {id: gs_04_additive_two_slices, verdict: covered, by: [num_held_values, num_slice_text], note: "Two layers, each with its own held value."}
+  - {id: gs_05_quadratic, verdict: covered, by: [num_intervals, num_misc], note: "I(x^2) along its raw variable."}
+  - {id: gs_06_interaction_manual_slices, verdict: covered, by: [num_held_values, num_slice_text], note: "One layer per held value."}
+  - {id: gs_07_interaction_grouped, verdict: covered, by: [num_slicing], note: "colour = factor(x) pins the numeric x."}
+  - {id: gs_08_interaction_faceted, verdict: added, added: [numeric-facet], note: "A facet on a numeric predictor."}
+  - {id: gs_09_ytransform_log, verdict: covered, by: [num_back_transform], note: "log(y) inverted."}
+  - {id: gs_10_ytransform_sqrt, verdict: covered, by: [num_back_transform], note: "sqrt(y) inverted."}
+  - {id: gs_11_ytransform_inverse, verdict: covered, by: [num_back_transform], note: "1/y inverted."}
+  - {id: gs_12_real_data_two_predictors, verdict: covered, by: [num_imputation, cond_imputation], note: "Imputed predictor on real data."}
+  - {id: gs_13_real_data_predict_vars, verdict: covered, by: [num_held_values], note: "Held values on real data."}
+  - {id: gs_14_real_data_faceted, verdict: added, added: [numeric-facet], note: "facet_wrap(~cyl) with numeric cyl in the model."}
+  - {id: gs_15_many_predictors, verdict: covered, by: [num_held_values], note: "Several predictors held at once; three changes nothing."}
+  - {id: gs_16_factor_predictor, verdict: covered, by: [num_imputation], note: "Factor imputed at its most common level."}
+  - {id: gs_17_all_features, verdict: covered, by: [num_slicing, num_imputation, look_slicing], note: "Colour and facet on different predictors plus imputation of every type."}
+  - {id: gs_18_impute_types, verdict: covered, by: [num_imputation, cond_imputation], note: "Numeric, factor and character imputation."}
+  - {id: gs_19_x_axis_product, verdict: covered, by: [num_composite_x], note: "A product x-axis; I(x * z) and x:z take the same path."}
+  - {id: gs_20_x_axis_log, verdict: added, added: [one-predictor-x-expression], note: "aes(log(x)) over y ~ log(x)."}
+  - {id: gs_21_x_axis_square, verdict: added, added: [one-predictor-x-expression], note: "aes(x^2); same path as log(x)."}
+  - {id: gs_22_x_axis_inverse, verdict: added, added: [one-predictor-x-expression], note: "aes(1/x); same path as log(x)."}
+  - {id: gs_23_x_axis_composite_product, verdict: covered, by: [num_composite_x, look_autoplot], note: "A many-term composite x-axis; exact_composite shows it."}
+  - {id: gs_24_scale_x_log10, verdict: covered, by: [num_scale_transforms], note: "Even grid on the log axis."}
+  - {id: gs_25_scale_y_log10, verdict: covered, by: [num_scale_transforms], note: "Predictions in panel units."}
+  - {id: gs_26_inline_log_y, verdict: covered, by: [num_back_transform, look_slicing], note: "y-axis expression of the response."}
+  - {id: gs_27_err_non_lm, verdict: covered, by: [cond_validation], note: "not_lm."}
+  - {id: gs_29_err_dollar_names, verdict: covered, by: [cond_validation], note: "dollar_names."}
+  - {id: gs_30_character_variable, verdict: covered, by: [num_imputation, cond_imputation], note: "Character predictor imputed by mode."}
+  - {id: gs_31_err_back_transform_invalid, verdict: covered, by: [cond_validation], note: "back_transform_class."}
+  - {id: gs_32_err_back_transform_extra_args, verdict: covered, by: [cond_validation], note: "back_transform_arity."}
+  - {id: gs_33_interval_confidence, verdict: covered, by: [num_intervals, look_geom_slice], note: "Confidence ribbon."}
+  - {id: gs_34_interval_prediction, verdict: covered, by: [num_intervals, look_geom_slice], note: "Prediction ribbon."}
+  - {id: gs_35_multi_value_single_var, verdict: covered, by: [num_held_values], note: "One line per value."}
+  - {id: gs_36_multi_value_crossed, verdict: covered, by: [num_held_values], note: "Crossed values."}
+  - {id: gs_37_err_data_mismatch, verdict: covered, by: [cond_build], note: "plot_data_mismatch."}
+  - {id: gs_38_multi_value_cross_colored, verdict: added, added: [two-aesthetics], note: "Colour and linetype on two predictors."}
+  - {id: gs_39_color_facet, verdict: covered, by: [num_slicing], note: "Colour and facet together (the autoplot-plus-facet test)."}
+  - {id: gs_40_back_transform_fn, verdict: covered, by: [num_back_transform], note: "A function override."}
+  - {id: gs_41_back_transform_string, verdict: covered, by: [num_back_transform], note: "A named override."}
+  - {id: gs_42_back_transform_false, verdict: covered, by: [num_back_transform], note: "back_transform = FALSE."}
+  - {id: gs_43_ytransform_inverse_axis, verdict: covered, by: [num_back_transform], note: "A y-axis matching the response is used as is; 1/y takes the same identical() path as log(y)."}
+  - {id: gs_44_ytransform_exp, verdict: added, added: [every-engine-back-transform], note: "exp(y) in geom_slice()."}
+  - {id: gs_45_ytransform_square, verdict: added, added: [every-engine-back-transform], note: "y^2 in geom_slice()."}
+  - {id: gs_46_both_intervals, verdict: discarded, note: "Two interval layers stacked. Each ribbon is covered (num_intervals, look_geom_slice); stacking layers is ggplot2's doing, not Applr's."}
+  - {id: gs_47_real_data_interaction_grouped, verdict: covered, by: [look_geom_slice, num_geom_slice_grid], note: "Curves per group over each group's range."}
+  - {id: gs_48_err_discrete_x_axis, verdict: covered, by: [cond_build], note: "discrete_x."}
+  - {id: gs_49_band_two_values, verdict: covered, by: [num_band], note: "band = TRUE over the multi-value entry."}
+  - {id: gs_50_band_imputed_range, verdict: covered, by: [num_band, cond_band], note: "Band over the data range, with its message."}
+  - {id: gs_51_band_grouped_faceted, verdict: covered, by: [num_band, look_slicing], note: "Bands per group; exact_fit_clear adds facets."}
+  - {id: gs_52_band_true_no_predict_vars, verdict: covered, by: [num_band], note: "band = TRUE finds the variable."}
+  - {id: gs_53_warn_band_nothing_to_band, verdict: covered, by: [cond_band], note: "band_true_no_candidate."}
+  - {id: gs_54_warn_band_var_not_in_model, verdict: covered, by: [cond_band], note: "band_not_predictor."}
+  - {id: gs_55_warn_band_var_on_x_axis, verdict: covered, by: [cond_band], note: "band_on_x."}
+  - {id: gs_56_warn_band_var_pinned, verdict: covered, by: [cond_band], note: "band_pinned."}
+  - {id: gs_57_full_range, verdict: covered, by: [num_geom_slice_grid, look_geom_slice], note: "full_range spans the panel."}
+  - {id: gs_58_interval_grouped_color, verdict: covered, by: [look_geom_slice], note: "Ribbons in their line's colour, legend keys too."}
+  - {id: gs_59_band_true_grouped_color, verdict: covered, by: [num_band, look_slicing], note: "band_inferred."}
+  # --- geom_slice_text ----------------------------------------------------------
+  - {id: gt_01_default_two_lines, verdict: covered, by: [num_slice_text, text_labels, look_labels], note: "One label per line at its end."}
+  - {id: gt_02_crossed_vars, verdict: covered, by: [text_labels], note: "Crossed labels joined with '; '."}
+  - {id: gt_03_style_value, verdict: covered, by: [text_labels], note: "style = \"value\"."}
+  - {id: gt_04_style_legend, verdict: covered, by: [text_labels, look_labels], note: "style = \"legend\", the key and its headroom."}
+  - {id: gt_05_location_left, verdict: covered, by: [num_slice_text], note: "location = \"left\"."}
+  - {id: gt_06_offset_hjust_vjust, verdict: covered, by: [look_labels], note: "manual_hjust and no_expand."}
+  - {id: gt_07_color_grouped, verdict: covered, by: [look_labels], note: "colour_by_group."}
+  - {id: gt_08_manual_color, verdict: covered, by: [look_labels], note: "left_offset sets color = \"black\"."}
+  - {id: gt_09_legend_replacement, verdict: covered, by: [text_labels], note: "Labels name the group."}
+  - {id: gt_10_multiple_slice_layers, verdict: covered, by: [num_slice_text], note: "Two layers labelled as one."}
+  - {id: gt_11_warn_no_slice_layer, verdict: covered, by: [cond_companions], note: "text_no_slice."}
+  - {id: gt_12_warn_multiple_models, verdict: covered, by: [cond_companions], note: "text_two_models."}
+  - {id: gt_13_offset_scaled_axis, verdict: discarded, note: "The offset is a grid unit in points inside the grob, so axis units can't reach it; look_labels shows the gap."}
+  - {id: gt_14_narrow_panel_labels_fit, verdict: covered, by: [look_labels, cond_companions], note: "Room is measured in points (text_too_wide). The per-case device size was old infrastructure."}
+  - {id: gt_15_band_edges_labeled, verdict: covered, by: [num_band, cond_imputation, look_slicing], note: "Edge labels; companions stay quiet."}
+  - {id: gt_16_band_edges_grouped, verdict: covered, by: [num_band, look_slicing], note: "Each label belongs to the edge its value made."}
+  - {id: gt_17_warn_labels_too_wide, verdict: covered, by: [cond_companions], note: "text_too_wide."}
+  - {id: gt_18_user_scale_preserved, verdict: covered, by: [num_slice_text], note: "The user's scale is edited, not replaced."}
+  - {id: gt_19_log_axis_preserved, verdict: covered, by: [num_slice_text], note: "A log scale stays log."}
+  # --- lm_latex and lm_equation -------------------------------------------------
+  - {id: la_01_factor_default, verdict: added, added: [latex-factor-styles], note: "LaTeX of a factor interaction, prettier."}
+  - {id: la_02_factor_raw, verdict: added, added: [latex-factor-styles], note: "The same, raw."}
+  - {id: la_03_factor_brackets, verdict: added, added: [latex-factor-styles], note: "The same, brackets, by abbreviation."}
+  - {id: le_01_single_predictor, verdict: covered, by: [text_equations], note: "Exact fit with the intercept zapped to 0."}
+  - {id: le_02_additive, verdict: covered, by: [text_equations], note: "Two predictors."}
+  - {id: le_03_multiplicative, verdict: added, added: [equation-names], note: "An I(x * z) term."}
+  - {id: le_04_interaction, verdict: added, added: [equation-names], note: "An x:z term."}
+  - {id: le_05_quadratic, verdict: covered, by: [text_equations], note: "I(x^2)."}
+  - {id: le_06_ytransform_inverse, verdict: added, added: [equation-names], note: "1/y on the left."}
+  - {id: le_07_ytransform_sqrt, verdict: added, added: [equation-names], note: "sqrt(y) on the left."}
+  - {id: le_08_ytransform_log, verdict: covered, by: [text_equations], note: "log(y) on the left."}
+  - {id: le_09_ytransform_exp, verdict: added, added: [equation-names], note: "exp(y) on the left."}
+  - {id: le_10_ytransform_square, verdict: added, added: [equation-names], note: "y^2 on the left."}
+  - {id: le_11_mtcars_log, verdict: covered, by: [text_equations], note: "Negative slopes read '- '."}
+  - {id: le_12_factor_default, verdict: covered, by: [text_lm_equation_styles], note: "prettier."}
+  - {id: le_13_factor_raw, verdict: covered, by: [text_lm_equation_styles], note: "raw."}
+  - {id: le_14_factor_brackets, verdict: covered, by: [text_lm_equation_styles], note: "brackets."}
+  - {id: le_15_warn_bad_style, verdict: covered, by: [cond_misc, text_lm_equation_styles], note: "Unknown style warns; abbreviations resolve. lm_latex() shares check_equation_style()."}
+  # --- slice_2d -----------------------------------------------------------------
+  - {id: s2_01_single_predictor, verdict: covered, by: [base_slice_2d, cond_slice_2d], note: "Default plot and the x-axis message."}
+  - {id: s2_02_additive_default, verdict: covered, by: [cond_imputation, text_subtitles, look_base], note: "Imputed, shown in the caption."}
+  - {id: s2_03_additive_x_axis_xpos, verdict: covered, by: [num_held_values], note: "A held predictor named x."}
+  - {id: s2_04_multiplicative, verdict: covered, by: [cond_slice_2d, num_misc], note: "Default x-axis is the first raw variable."}
+  - {id: s2_05_multiplicative_x_axis_xpos, verdict: covered, by: [num_misc], note: "A product term along one raw variable."}
+  - {id: s2_06_multiplicative_x_axis_product, verdict: covered, by: [num_composite_x], note: "x_axis as an expression; str2lang() makes spacing irrelevant."}
+  - {id: s2_07_interaction, verdict: covered, by: [cond_imputation, base_slice_2d], note: "Interaction with the other variable imputed."}
+  - {id: s2_08_quadratic, verdict: covered, by: [num_misc, look_base], note: "I(x^2) along its raw variable."}
+  - {id: s2_09_ytransform_inverse, verdict: added, added: [every-engine-back-transform], note: "1/y in slice_2d()."}
+  - {id: s2_10_ytransform_sqrt, verdict: added, added: [every-engine-back-transform], note: "sqrt(y) in slice_2d()."}
+  - {id: s2_11_ytransform_log, verdict: covered, by: [num_back_transform], note: "log(y) in slice_2d()."}
+  - {id: s2_12_ytransform_exp, verdict: added, added: [every-engine-back-transform], note: "exp(y) in slice_2d()."}
+  - {id: s2_13_ytransform_square, verdict: added, added: [every-engine-back-transform], note: "y^2 in slice_2d()."}
+  - {id: s2_14_mtcars_log, verdict: covered, by: [num_back_transform, look_base], note: "log(mpg) on real data."}
+  - {id: s2_15_err_non_lm, verdict: added, added: [every-entry-point], note: "A non-lm model in slice_2d()."}
+  - {id: s2_16_err_nonexistent_x_axis, verdict: covered, by: [cond_slice_2d], note: "x_axis_not_found."}
+  - {id: s2_17_err_factor_x_axis, verdict: covered, by: [cond_slice_2d], note: "x_axis_not_numeric."}
+  - {id: s2_18_err_dollar_names, verdict: added, added: [every-entry-point], note: "`$` names in slice_2d()."}
+  - {id: s2_19_err_character_variable, verdict: covered, by: [cond_imputation], note: "slice_2d_character."}
+  - {id: s2_20_err_back_transform_invalid, verdict: added, added: [every-entry-point], note: "Unknown back_transform name in slice_2d()."}
+  - {id: s2_21_err_back_transform_extra_args, verdict: covered, by: [cond_validation], note: "Shared check_back_transform()."}
+  - {id: s2_22_deprecated_xaxis_alias, verdict: covered, by: [cond_slice_2d], note: "xaxis_deprecated."}
+  - {id: s2_23_interval_confidence, verdict: covered, by: [num_intervals], note: "Band edges equal predict()."}
+  - {id: s2_24_interval_prediction, verdict: covered, by: [num_intervals, look_base], note: "slice_2d_styled; the y-axis covers the band."}
+  - {id: s2_25_err_stale_data, verdict: covered, by: [cond_slice_2d], note: "data_changed."}
+  - {id: s2_26_back_transform_string, verdict: covered, by: [num_back_transform, cond_validation], note: "Named overrides go through the shared check_back_transform()."}
+  # --- geom_slice_subtitle ------------------------------------------------------
+  - {id: sb_01_default_imputed, verdict: covered, by: [text_subtitles], note: "imputed."}
+  - {id: sb_02_predict_vars, verdict: covered, by: [text_subtitles], note: "held_values."}
+  - {id: sb_03_text_labeled_excluded, verdict: covered, by: [num_companions], note: "Labelled variables left out."}
+  - {id: sb_04_model_off, verdict: covered, by: [text_subtitles], note: "no_equation."}
+  - {id: sb_05_prepend_append, verdict: covered, by: [text_subtitles], note: "prepend_append."}
+  - {id: sb_07_grouped_legend_excluded, verdict: covered, by: [num_companions], note: "Legend variables left out."}
+  - {id: sb_08_nothing_held, verdict: added, added: [subtitle-equation-only], note: "Equation alone, no empty held line."}
+  - {id: sb_09_multi_value_factor, verdict: covered, by: [text_subtitles], note: "Values joined with ', '; a factor quoted."}
+  - {id: sb_10_warn_no_slice_layer, verdict: covered, by: [cond_companions], note: "subtitle_no_slice."}
+  - {id: sb_11_warn_multiple_models, verdict: covered, by: [cond_companions], note: "subtitle_two_models."}
+  - {id: sb_12_band_spanning, verdict: covered, by: [text_subtitles], note: "band."}
+  - {id: sb_13_band_and_held, verdict: covered, by: [text_subtitles], note: "band with a held value."}
+  - {id: sb_14_long_equation_wraps, verdict: covered, by: [text_wrapping, look_labels], note: "wide_6in; subtitle."}
+  - {id: sb_15_narrow_plot_wraps, verdict: covered, by: [text_wrapping, look_labels], note: "narrow_2in; subtitle_narrow."}
+  - {id: sb_16_ambiguous_levels_no_fallback, verdict: covered, by: [text_wrapping], note: "shared_level_1.5in."}
+  - {id: sb_17_style_pinned, verdict: added, added: [style-pinned], note: "A pinned style at a narrow width."}
+  - {id: sb_18_warn_bad_style, verdict: covered, by: [cond_companions], note: "subtitle_bad_style."}
+  - {id: sb_19_brackets_keeps_indent, verdict: covered, by: [text_wrapping], note: "brackets_3.5in."}
+  - {id: sb_20_indent_lost_names_return, verdict: covered, by: [text_wrapping], note: "The ladder's widths, fixed in inches."}
+  # --- old testthat tests -------------------------------------------------------
+  - {id: "test-deprecated: geom_fit() is removed and points to geom_slice()", verdict: covered, by: [cond_misc], note: "geom_fit_defunct."}
+  - {id: "test-deprecated: drawit() warns and still draws", verdict: covered, by: [cond_misc], note: "drawit_deprecated and drawit() draws what slice_2d() draws."}
+  - {id: "test-geom_slice: geom_slice() returns a ggplot2 layer", verdict: discarded, note: "Every case adds the layer to a plot; a class check adds nothing they don't."}
+  - {id: "test-geom_slice: the slice matches predict() across the data range", verdict: covered, by: [single_predictor_line], note: "Line equals predict() on the grid."}
+  - {id: "test-geom_slice: predict_vars holds other predictors at the given value", verdict: covered, by: [num_held_values], note: "single."}
+  - {id: "test-geom_slice: multiple predict_vars values draw one line each", verdict: covered, by: [num_held_values], note: "crossed."}
+  - {id: "test-geom_slice: interval = 'confidence' adds a band around the line", verdict: covered, by: [num_intervals], note: "Edges equal predict()."}
+  - {id: "test-geom_slice: a log response is back-transformed to the plotted scale", verdict: covered, by: [num_back_transform, cond_back_transform], note: "Inverted, with its message."}
+  - {id: "test-geom_slice: geom_slice() rejects non-lm input", verdict: covered, by: [cond_validation], note: "not_lm."}
+  - {id: "test-lm_equation: lm_equation() writes a plain-text equation", verdict: covered, by: [text_equations], note: "Rounding and signs."}
+  - {id: "test-lm_equation: lm_equation() keeps a transformed response on the left side", verdict: covered, by: [text_equations], note: "log(mpg) on the left."}
+  - {id: "test-lm_equation: lm_equation() spells out factor levels", verdict: added, added: [latex-factor-styles], note: "factor(cyl) in the formula."}
+  - {id: "test-lm_equation: lm_latex() returns display-math LaTeX", verdict: covered, by: [text_equations, num_misc], note: "Format and invisible return."}
+  - {id: "test-plots: autoplot() builds a ggplot and summary = FALSE keeps it quiet", verdict: covered, by: [num_autoplot], note: "summary = FALSE prints nothing."}
+  - {id: "test-plots: autoplot() prints the model summary by default", verdict: covered, by: [num_autoplot], note: "summary() printed first."}
+  - {id: "test-plots: slice_2d() and add_slice_2d() draw in base graphics", verdict: covered, by: [look_base, num_misc], note: "Drawn and judged."}
+  - {id: "test-plots: slice_2d() errors on an x_axis not in the model", verdict: covered, by: [cond_slice_2d], note: "x_axis_not_found."}
+  - {id: "test-plots: scatter_3d() returns a plotly widget", verdict: covered, by: [num_scatter_3d, widget_scatter_3d], note: "Built traces and widgets."}
+  - {id: "test-suite: custom tests/ suite passes", verdict: discarded, note: "A shim that ran the old runner. Old infrastructure."}
+  # --- old infrastructure and other files ---------------------------------------
+  - {id: "tests/_setup.R", verdict: discarded, note: "useFancyQuotes = FALSE is in the spec's pinned options, and curly quotes become straight in condition text (unit/test-type-conditions.R). The rest loaded the package."}
+  - {id: "tests/_helpers.R", verdict: discarded, note: "Case header parsing for the old report. Old infrastructure."}
+  - {id: "tests/run.R, report.Rmd, README.md", verdict: discarded, note: "The old runner and report: console snapshots, blank-PNG detection. Old infrastructure. Right-trimmed snapshot lines match common normalisation rule 1."}
+  - {id: "tests/expected/", verdict: discarded, note: "Console snapshots and old message wording."}
+  - {id: "tests/reference/ and its build scripts", verdict: discarded, note: "Reference images, an eyeball oracle known to be off in places. Lines are now checked against predict()."}
+  - {id: "Platform fixes (curly quotes, near-zero rounding, line endings)", verdict: covered, by: [], note: "Spec normalisation: curly to straight quotes in conditions, negative zero loses its sign, CRLF and trailing spaces removed. unit/test-normalise.R and test-type-conditions.R test each; ticket 3 matched every fingerprint on three platforms."}
+  - {id: "tests/archive/student_models_house_selling_prices/", verdict: added, added: [factor-in-formula-pinned, dot-formula], note: "Mined for model forms. as.factor() terms and y ~ . were missing. Large interactions, many predictors, log-log models and positional data = are covered by construction (lm() stores a matched call)."}
+  - {id: "tests/archive/ Comparison files, MidtermDecisionRecreation, play.Rmd, Math425PastGrades.csv", verdict: discarded, note: "Earlier versions of the same situations (geom_fit, drawit, add_slice_2d); nothing beyond the cases above."}

@@ -8,12 +8,12 @@ const GROUP_ORDER = ["you", "rejected", "agent", "approved"];
 const VIEW_KIND = { image: "image", text: "text diff", states: "states + live" };
 const QUICK_NOTES = ["Labels clipped", "Spacing too tight", "Line doesn't match the expected behaviour",
   "Wording unclear", "Legend wrong", "Agent note doesn't match what I see"];
-const PAGES = ["overview", "inventory", "health", "principles", "structure"];
+const PAGES = ["overview", "inventory", "health", "principles", "structure", "salvage"];
 
 const arr = x => x == null ? [] : Array.isArray(x) ? x : [x];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-let DATA = null, OUT = {}, CASES = {}, ENTRIES = {}, GUIDE = {};
+let DATA = null, OUT = {}, CASES = {}, ENTRIES = {}, GUIDE = {}, SALVAGE = null;
 const forms = {};
 const ui = { view: "case", sel: null, collapsed: false, compare: "swipe", filter: "", rejecting: false, draft: "",
   open: { you: true, rejected: true, agent: true, approved: false }, sessionTotal: null, done: 0, error: null, busy: false };
@@ -38,6 +38,11 @@ async function loadGuide() {
   const html = await (await fetch("/page/guide.html", { cache: "no-store" })).text();
   const doc = new DOMParser().parseFromString(html, "text/html");
   doc.querySelectorAll("template[id]").forEach(t => GUIDE[t.id] = t.innerHTML);
+}
+
+async function loadSalvage() {
+  const r = await fetch("/api/salvage", { cache: "no-store" });
+  SALVAGE = r.status === 404 ? null : await r.json();
 }
 
 async function loadForm(id) {
@@ -80,6 +85,7 @@ function sidebar() {
       <button title="Suite overview (o)" data-go="overview" class="${ui.view === "overview" ? "on" : ""}">▦</button>
       <button title="Behaviour inventory" data-go="inventory" class="${ui.view === "inventory" ? "on" : ""}">☷</button>
       <button title="Suite health" data-go="health" class="${ui.view === "health" ? "on" : ""}">♥</button>
+      ${SALVAGE ? `<button title="Salvage audit" data-go="salvage" class="${ui.view === "salvage" ? "on" : ""}">⚖${salvageLeft() ? `<span class="badge">${salvageLeft()}</span>` : ""}</button>` : ""}
       <button title="Guide" data-go="principles" class="rail-foot ${ui.view === "principles" || ui.view === "structure" ? "on" : ""}">?</button></div></aside>`;
   const f = ui.filter.toLowerCase();
   const shown = ids().filter(id => id.toLowerCase().includes(f) || OUT[id].type.toLowerCase().includes(f));
@@ -97,6 +103,7 @@ function sidebar() {
       ${nav("overview", "▦ Suite overview", "o")}
       ${nav("inventory", "☷ Behaviour inventory")}
       ${nav("health", "♥ Suite health")}
+      ${SALVAGE ? nav("salvage", `⚖ Salvage audit${salvageLeft() ? ` <span class="pill s-you">${salvageLeft()} to review</span>` : ""}`) : ""}
       <div style="margin:10px 0 0"><input type="search" id="find" placeholder="Find an output…" value="${esc(ui.filter)}"></div>
       ${groups || `<p class="muted small">No judged outputs${ui.filter ? " match" : " yet: run <code>suite.R run</code>"}.</p>`}
       <p class="muted small" style="margin-top:16px"><kbd>j</kbd>/<kbd>k</kbd> next/prev in your queue · <kbd>a</kbd> approve · <kbd>r</kbd> reject with note · <kbd>s</kbd> swipe/side by side · <kbd>o</kbd> overview · <kbd>[</kbd> sidebar</p>
@@ -168,6 +175,23 @@ function expected(o) {
     ${unknown.map(id => `<li class="tag-bad">Cites ${esc(id)}, which isn't in the inventory.</li>`).join("")}</ul></div>`;
 }
 
+// What the case file says of this output (inventory.R: case_outputs), read
+// without running it.
+const declared = o => caseOf(o).outputs?.[o.id.slice(o.case.length + 1)];
+
+function purpose(o) {
+  const d = declared(o);
+  return d?.purpose ? `<p class="purpose">${esc(d.purpose)}</p>`
+    : `<p class="purpose missing">No purpose line: the case file doesn't say why this output exists.</p>`;
+}
+
+function codeView(o) {
+  const d = declared(o), c = caseOf(o);
+  if (!d) return `<p class="muted small">Couldn't find the call that declares this output in ${esc(c.file || "its case file")}.</p>`;
+  return `<details open class="code"><summary>Code that produces it <span class="mono">${esc(c.file)}</span></summary>
+    <div class="console">${arr(d.setup).map(l => `<div class="setup">${esc(l)}</div>`).join("")}<div>${esc(d.code)}</div></div></details>`;
+}
+
 function decisionBar(o) {
   const k = key(o);
   if (k === "agent") return `<p class="muted small">Waiting for an agent pass. Outputs come to you once an agent approves them.</p>`;
@@ -187,7 +211,7 @@ function notes(o) {
   return [
     k === "rejected" && o.rejection_note ? `<div class="yournote"><b>Rejected by ${esc(by)}:</b> ${esc(o.rejection_note)}</div>` : "",
     k === "approved" ? `<div class="oknote"><b>Approved by you</b> <span class="muted small">${esc(o.when)}</span>${o.human_note ? ": " + esc(o.human_note) : ""}</div>` : "",
-    o.agent_note ? `<div class="agentnote"><b>Agent:</b> ${esc(o.agent_note)}</div>` : ""
+    o.agent_note ? `<div class="agentnote"><b>Agent${o.new && k !== "approved" ? ` on a new output` : ""}:</b> ${esc(o.agent_note)}</div>` : ""
   ].join("");
 }
 
@@ -207,12 +231,14 @@ function caseView() {
   const visual = o.view === "text" ? textView(o) : o.view === "states" ? statesView(o) : imageView(o);
   return `${prog}
     ${ui.error ? `<div class="error">${esc(ui.error)}</div>` : ""}
-    <div class="head"><h2>${esc(o.id)}</h2>${pill(key(o))}</div>
+    <div class="head"><h2>${esc(o.id)}</h2><span class="pills">${o.new ? `<span class="pill s-agent" title="Never Human approved">new</span>` : ""}${pill(key(o))}</span></div>
+    ${purpose(o)}
     <div class="muted small">${esc(c.family)} · ${esc(o.type)} · ${esc(VIEW_KIND[o.view] || o.view)} · fingerprint <span class="mono">${esc(o.fingerprint)}</span>
       ${arr(o.parts).length > 1 ? ` (parts: ${arr(o.parts).map(esc).join(", ")})` : ""} · set by ${esc(o.who)} ${esc(o.when)}</div>
     ${decisionBar(o)}
     ${notes(o)}
     ${expected(o)}
+    ${codeView(o)}
     ${visual}
     ${o.view !== "text" ? `<details data-form><summary>Serialised form and what changed</summary>${forms[o.id] ? formView(o.id, false) : ""}</details>` : ""}`;
 }
@@ -309,6 +335,83 @@ function healthView() {
     <h3>Unit tests</h3>${t ? `<p class="small muted">${t.tests} tests in ${t.seconds} s${t.skipped ? `, ${t.skipped} skipped` : ""}.</p>` : ""}${tests}`;
 }
 
+// ---- salvage audit (temporary, ticket 4) ----
+// Every addition and every old line gets the maintainer's verdict; old lines
+// marked "added" are judged through the addition they led to.
+const salvageItems = () => SALVAGE && !SALVAGE.error
+  ? [...arr(SALVAGE.additions).map(a => a.id), ...arr(SALVAGE.old).filter(o => o.verdict !== "added").map(o => o.id)] : [];
+const salvageLeft = () => salvageItems().filter(id => !SALVAGE.reviews?.[id]).length;
+
+function verdictBox(id) {
+  const r = SALVAGE.reviews?.[id];
+  if (ui.svEditing === id) return `<div class="rejectbox"><b>Disagree</b>
+      <div class="muted small">Say what's wrong and what you want instead. The agent reads this.</div>
+      <textarea id="sv-note" placeholder="For example: keep this case, it catches …">${esc(ui.svDraft)}</textarea>
+      <div class="actions"><button class="reject solid" data-sv-send="${esc(id)}" ${ui.busy ? "disabled" : ""}>Send <kbd class="on-solid">Ctrl+Enter</kbd></button>
+        <button class="ghost" data-sv-cancel>Cancel <kbd>Esc</kbd></button></div></div>`;
+  const done = r ? (r.verdict === "agree"
+      ? `<span class="tag-ok">✓ Agreed</span> <span class="muted small">${esc(r.when)}</span>`
+      : `<div class="yournote"><b>You disagreed:</b> ${esc(r.note)} <span class="muted small">${esc(r.when)}</span></div>`) : "";
+  return `<div class="actions">${done}
+    <button class="${r?.verdict === "agree" ? "on" : "approve"}" data-sv-agree="${esc(id)}" ${ui.busy ? "disabled" : ""}>Agree</button>
+    <button class="reject" data-sv-disagree="${esc(id)}" ${ui.busy ? "disabled" : ""}>${r?.verdict === "disagree" ? "Edit note…" : "Disagree…"}</button></div>`;
+}
+
+function salvageView() {
+  if (!SALVAGE) { loadSalvage().then(render); return `<p class="muted">Loading…</p>`; }
+  if (SALVAGE.error) return `<div class="head"><h2>Salvage audit</h2></div><div class="error">${esc(SALVAGE.error)}</div>`;
+  const adds = arr(SALVAGE.additions), old = arr(SALVAGE.old);
+  const by = v => old.filter(o => o.verdict === v);
+  const caseChip = c => `<span class="chip" data-case="${esc(c)}">${esc(c)}</span>`;
+  const entry = id => ENTRIES[id] ? `<li>${esc(ENTRIES[id].principle)} <span class="mono muted">${esc(id)}</span></li>` : `<li class="tag-bad">${esc(id)} isn't in the inventory.</li>`;
+  const outputOf = (a, t) => OUT[`${a.case}/${t.name}`];
+  const addCard = a => `<div class="card" id="sv-${esc(a.id)}">
+      <div class="head"><h3 style="margin:0">${esc(a.id)}</h3>${SALVAGE.reviews?.[a.id] ? "" : `<span class="pill s-you">to review</span>`}</div>
+      <p style="margin:6px 0">${esc(a.why)}</p>
+      <div class="small muted">In ${caseChip(a.case)} · from the old suite: ${arr(a.from).map(x => `<span class="mono">${esc(x)}</span>`).join(", ") || "none"}</div>
+      <div class="expect" style="margin-top:8px"><b>Principles it covers</b><ul>${arr(a.entries).map(entry).join("")}</ul></div>
+      ${arr(a.tests).map(t => {
+        const o = outputOf(a, t);
+        return `<details open style="margin-top:8px"><summary>${o ? "Judged output" : "Test"}: <b>${esc(t.name)}</b>${o ? ` · also in your queue as <a href="?output=${esc(o.id)}" data-pick="${esc(o.id)}">${esc(o.id)}</a> (${STATUS_LABEL[key(o)]})` : ""}</summary>
+          <div class="console">${esc(t.code)}</div></details>`;
+      }).join("")}
+      <div style="margin-top:10px">${verdictBox(a.id)}</div></div>`;
+  const row = o => `<tr id="sv-${esc(o.id)}"><td class="mono">${esc(o.id)}</td>
+      <td>${esc(o.note)}${arr(o.by).length ? `<div>${arr(o.by).map(caseChip).join("")}</div>` : ""}</td>
+      <td style="width:34%">${verdictBox(o.id)}</td></tr>`;
+  const reviewed = salvageItems().length - salvageLeft();
+  return `<div class="head"><h2>Salvage audit</h2><span class="muted small mono">${esc(SALVAGE.file)}</span></div>
+    <p class="muted">Ticket 4 read the old suite and asked of each case what situation it put the functions in, and whether the new suite puts them there too.
+      Agree or disagree with every addition and every discard. Covered lines are there to check the claim. A disagreement needs a note: the agent reads it next.
+      Judged outputs from the additions also wait in your queue as usual.</p>
+    <div class="stats"><div class="stat"><b>${adds.length}</b><span class="muted small">tests added</span></div>
+      <div class="stat"><b>${by("discarded").length}</b><span class="muted small">discarded</span></div>
+      <div class="stat"><b>${by("covered").length}</b><span class="muted small">already covered</span></div>
+      <div class="stat"><b class="${salvageLeft() ? "tag-warn" : "tag-ok"}">${reviewed} of ${salvageItems().length}</b><span class="muted small">reviewed</span></div></div>
+    ${ui.error ? `<div class="error">${esc(ui.error)}</div>` : ""}
+    <h3>Added tests</h3>${adds.map(addCard).join("")}
+    <h3>Discarded</h3><div class="card"><table><tr><th style="width:24%">Old</th><th>Why</th><th>Your verdict</th></tr>${by("discarded").map(row).join("")}</table></div>
+    <details ${ui.svCoveredOpen ? "open" : ""} data-sv-covered><summary><h3 style="display:inline">Already covered (${by("covered").length})</h3></summary>
+      <div class="card"><table><tr><th style="width:24%">Old</th><th>Covered by</th><th>Your verdict</th></tr>${by("covered").map(row).join("")}</table></div></details>`;
+}
+
+async function salvageVerdict(id, verdict, note) {
+  if (ui.busy) return;
+  if (verdict === "disagree" && !note.trim()) { ui.error = "Disagreeing needs a note for the agent."; render(); return; }
+  ui.busy = true; ui.error = null; render();
+  try {
+    const r = await fetch("/api/salvage", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, verdict, note }) });
+    if (!r.ok) { ui.error = (await r.json()).error || "The server refused the verdict."; return; }
+    ui.svEditing = null; ui.svDraft = "";
+    await loadSalvage();
+  } catch (e) {
+    ui.error = "Couldn't reach the review server: " + e.message;
+  } finally {
+    ui.busy = false; render();
+  }
+}
+
 // ---- guide ----
 function guideView(name) {
   const html = GUIDE[name];
@@ -321,7 +424,7 @@ function render() {
   const app = document.getElementById("app");
   const focusFind = document.activeElement?.id === "find";
   const body = ui.view === "overview" ? overview() : ui.view === "inventory" ? inventoryView() : ui.view === "health" ? healthView()
-    : ui.view === "principles" || ui.view === "structure" ? guideView(ui.view) : caseView();
+    : ui.view === "principles" || ui.view === "structure" ? guideView(ui.view) : ui.view === "salvage" ? salvageView() : caseView();
   const scroll = document.querySelector("main")?.scrollTop || 0;
   app.innerHTML = `<div class="shell ${ui.collapsed ? "collapsed" : ""}">${sidebar()}<main>${body}</main></div>`;
   app.querySelector("main").scrollTop = scroll;
@@ -344,6 +447,23 @@ function render() {
     });
     if (!focusFind) { note.focus(); note.setSelectionRange(note.value.length, note.value.length); }
   }
+  const svNote = app.querySelector("#sv-note");
+  if (svNote) {
+    svNote.addEventListener("input", e => ui.svDraft = e.target.value);
+    svNote.addEventListener("keydown", e => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); salvageVerdict(ui.svEditing, "disagree", ui.svDraft); }
+      if (e.key === "Escape") { ui.svEditing = null; render(); }
+    });
+    if (!focusFind) { svNote.focus(); svNote.setSelectionRange(svNote.value.length, svNote.value.length); }
+  }
+  app.querySelectorAll("[data-sv-agree]").forEach(b => b.addEventListener("click", () => salvageVerdict(b.dataset.svAgree, "agree", "")));
+  app.querySelectorAll("[data-sv-disagree]").forEach(b => b.addEventListener("click", () => {
+    const id = b.dataset.svDisagree, r = SALVAGE.reviews?.[id];
+    ui.svEditing = id; ui.svDraft = r?.verdict === "disagree" ? r.note : ""; ui.error = null; render();
+  }));
+  app.querySelectorAll("[data-sv-send]").forEach(b => b.addEventListener("click", () => salvageVerdict(b.dataset.svSend, "disagree", ui.svDraft)));
+  app.querySelectorAll("[data-sv-cancel]").forEach(b => b.addEventListener("click", () => { ui.svEditing = null; render(); }));
+  app.querySelectorAll("details[data-sv-covered]").forEach(d => d.addEventListener("toggle", () => ui.svCoveredOpen = d.open));
   app.querySelectorAll("[data-chip]").forEach(b => b.addEventListener("click", () => {
     ui.draft = (ui.draft ? ui.draft.replace(/\s*$/, "") + " " : "") + b.dataset.chip + ". "; render();
   }));
@@ -412,7 +532,7 @@ document.addEventListener("keydown", e => {
 
 (async () => {
   try {
-    await Promise.all([load(), loadGuide()]);
+    await Promise.all([load(), loadGuide(), loadSalvage()]);
     readUrl(); syncUrl(); render();
   } catch (e) {
     document.getElementById("app").innerHTML = `<p class="loading">Couldn't load the review state: ${esc(e.message)}. Is the review server running?</p>`;

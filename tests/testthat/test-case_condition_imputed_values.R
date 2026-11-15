@@ -11,7 +11,8 @@ call <- function() {
 }
 
 covers("shared.imputation.message")
-judged_output("wording", call, type = "conditions")
+judged_output("wording", call, type = "conditions",
+              purpose = "A three-predictor model with nothing held imputes each unheld predictor with one message, and the plot still builds.")
 
 test_that("each unheld predictor is imputed with a message and the plot still builds", {
   expect_message(expect_message(p <- ggplot2::ggplot_build(call()), "`hp`"), "`qsec`")

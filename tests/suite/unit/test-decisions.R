@@ -72,11 +72,33 @@ test_that("a human approval keeps that version's form and views for comparison",
   expect_false(is.na(review_page_data(s$paths)[[id]]$states$approved_file))
 })
 
+test_that("a human rejection's note reaches the agent, and changing the case sends it back for review", {
+  s <- agent_approved()
+  expect_true(review_page_data(s$paths)[[id]]$new)
+  human_decide(id, "reject", "Use a factor predictor instead.", s$fp, s$paths)
+  r <- list_rejected(s$paths)
+  expect_named(r, id)
+  expect_equal(r[[id]][c("who", "note")], list(who = "human", note = "Use a factor predictor instead."))
+
+  run_suite(s$dir, s$paths)
+  expect_named(list_rejected(s$paths), id)
+  run_suite(renamed(), s$paths)
+  expect_length(list_rejected(s$paths), 0)
+  expect_equal(list_unreviewed(s$paths), id)
+})
+
+test_that("an output is new until a human approves it", {
+  s <- agent_approved()
+  human_decide(id, "approve", "", s$fp, s$paths)
+  expect_false(review_page_data(s$paths)[[id]]$new)
+})
+
 test_that("no agent command writes the decisions file", {
   paths <- temp_paths()
   dir <- case_copy()
   run_suite(dir, paths)
   list_unreviewed(paths)
+  list_rejected(paths)
   diff_output(id, paths)
   agent_decide(id, "reject", "Needs a subtitle.", paths)
   run_suite(renamed(), paths)

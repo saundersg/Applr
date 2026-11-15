@@ -15,7 +15,7 @@ reviewer judges. From the package root:
 
 ```sh
 Rscript tests/suite/suite.R run                 # run cases, fingerprint outputs
-Rscript tests/suite/suite.R list                # Unreviewed outputs
+Rscript tests/suite/suite.R list                # Unreviewed outputs, then Rejected ones with notes
 Rscript tests/suite/suite.R diff <id>           # text diff vs last human-approved version
 Rscript tests/suite/suite.R approve <id> "note" # agent approval (note required)
 Rscript tests/suite/suite.R reject  <id> "note"
@@ -26,6 +26,34 @@ Rscript tests/suite/mutate.R [workers] [--full] # mutation check of those tests
 Rscript tests/suite/ci.R [out_dir]              # the CI check, without writing state
 Rscript tests/suite/release.R                   # the release check, before CRAN
 ```
+
+## Writing and approving judged outputs (agents)
+
+Every judged output carries a **purpose**: one line, a string literal in the
+declaring call, saying what situation it puts the function in and why that
+matters. It stays in the case file for good and the review page shows it
+above the output.
+
+```r
+judged_output("band_named", band_named,
+              purpose = "A band named by the user, with its two levels pinned, labels each line by level.")
+raises("no_inverse", call, "warning", "no inverse", purpose = "A response transform with no known inverse warns and plots on the transformed scale.")
+```
+
+When you approve, the note says why the output is right: what you looked at
+and what it shows. When the output is **new** (never Human approved; the page
+marks it), the note also says why it exists: what it catches that no other
+output in its case or family already does, naming the closest one and how
+this differs. If you can't say that, it doesn't earn its place: change it so
+it does, or remove it, rather than approve it. An output you add without a
+purpose line is shown to the maintainer as missing one.
+
+`suite.R list` also lists every Rejected output with who rejected it and the
+note. A human rejection note is the maintainer's instruction: change the case
+as it asks (the data, the call, the purpose, or removing the output) and run
+again. A Rejected output stays Rejected until its fingerprint changes, so a
+fix that only rewrites the purpose line doesn't send it back for review; say
+so to the maintainer instead.
 
 `review_state.json`, `human_decisions.json`, `forms/`, `test_report.json` and
 `mutation_report.json` are committed. Views (PNGs, HTML, screenshots, live
@@ -62,7 +90,10 @@ load, so a re-run or an agent decision shows on refresh.
   view, unless the link names an output. The sidebar groups every output by
   status, with search; "your turn" is the inbox of Agent approved outputs.
   The page follows the system's light or dark setting.
-- Each output shows its expected behaviour (from the inventory entries its
+- Each output shows its purpose and the code that produces it (the declaring
+  call and the top-level lines before it that it depends on, read from the
+  case file by `case_outputs()` in `inventory.R`), whether it is new, its
+  expected behaviour (from the inventory entries its
   case cites), the agent note, and its view kind: an image with swipe or
   side-by-side comparison against the last human-approved render, a text
   diff, or sampled states plus the live widget.
@@ -73,7 +104,12 @@ load, so a re-run or an agent decision shows on refresh.
   health (latest `test.R` and `mutate.R` runs, with date and commit, and
   whether the mutation report is up to date with the suite's code), and, at
   the bottom, the guide (principles, structure) in `page/guide.html`.
-- Deep links: `?output=<id>`, `?case=<case>`, `?view=overview|inventory|health|principles|structure`.
+- Temporary, for ticket 4: a Salvage audit page (`?view=salvage`) shows
+  `for_devs/salvage_audit.yml` with each added test's code. The maintainer
+  agrees or disagrees with each line (`POST /api/salvage`, same rules as
+  decisions), and the server appends it to `salvage_review.json`, which the
+  hook protects like `human_decisions.json`. All of it goes at the clean-up.
+- Deep links: `?output=<id>`, `?case=<case>`, `?view=overview|inventory|health|principles|structure|salvage`.
   `suite.R` prints the link for each output it names.
 
 `server.R` accepts a decision only as JSON from the page's own origin

@@ -55,6 +55,23 @@ test_that("covers() is read from anywhere in a case file, without running it", {
   expect_equal(case_covers(f), c("gs.line", "shared.message"))
 })
 
+test_that("each output's purpose and code are read from its case file, with only the setup it depends on", {
+  f <- tempfile(fileext = ".R")
+  writeLines(c("base <- mtcars", "set.seed(1)", "unused <- 2", "m <- lm(mpg ~ wt, base)",
+               "base$w2 <- base$wt^2", "p <- plot_of(m, base)", "covers('gs.line')",
+               "judged_output('line', p, purpose = 'The plain case.')",
+               "raises('warns', function() geom_slice(m), 'warning')",
+               "test_that('t', stop('never run'))"), f)
+  out <- case_outputs(f)
+  expect_named(out, c("line", "warns"))
+  expect_equal(out$line$purpose, "The plain case.")
+  expect_equal(out$line$code, "judged_output('line', p, purpose = 'The plain case.')")
+  expect_equal(unlist(out$line$setup),
+               c("base <- mtcars", "set.seed(1)", "m <- lm(mpg ~ wt, base)", "base$w2 <- base$wt^2", "p <- plot_of(m, base)"))
+  expect_equal(out$warns$purpose, "")
+  expect_equal(unlist(out$warns$setup), c("base <- mtcars", "set.seed(1)", "m <- lm(mpg ~ wt, base)"))
+})
+
 test_that("each case gets its family from the first function entry it cites, and unknown IDs are flagged", {
   inv <- read_inventory(write_yaml_lines(inventory_lines))
   dir <- tempfile("case"); dir.create(dir)

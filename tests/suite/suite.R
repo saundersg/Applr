@@ -1,6 +1,6 @@
 # Agent command line for the judged-output suite. Run from the package root:
 #   Rscript tests/suite/suite.R run
-#   Rscript tests/suite/suite.R list
+#   Rscript tests/suite/suite.R list     Unreviewed, then Rejected with notes
 #   Rscript tests/suite/suite.R diff <id>
 #   Rscript tests/suite/suite.R approve <id> "<note>"
 #   Rscript tests/suite/suite.R reject  <id> "<note>"
@@ -28,6 +28,14 @@ switch(cmd,
       cat(sprintf("  %-40s %s\n", ids, vapply(ids, review_url, "")), sep = "")
     } else {
       cat("No Unreviewed outputs.\n")
+    }
+    rejected <- list_rejected()
+    if (length(rejected)) {
+      cat("\nRejected (change the case as the note asks, then run; it stays Rejected until its fingerprint changes):\n")
+      for (id in names(rejected)) {
+        r <- rejected[[id]]
+        cat(sprintf("  %s\n    by %s, %s: %s\n", id, r$who, r$when, gsub("\n", "\n      ", r$note)))
+      }
     }
   },
   diff = cat(diff_output(args[[2]]), sep = "\n"),

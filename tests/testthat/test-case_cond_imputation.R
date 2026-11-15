@@ -12,20 +12,25 @@ covers("shared.imputation.message", "shared.imputation.once-per-layer",
 
 raises("factor_and_character", function() {
   ggplot2::ggplot(d, ggplot2::aes(x, y)) + geom_slice(lm(y ~ x + f + s, d))
-}, c("message", "message"), c('Used most common: "c"', 'Used most common: "q"'))
+}, c("message", "message"), c('Used most common: "c"', 'Used most common: "q"'),
+       purpose = "A factor and a character predictor left unheld are each imputed with their most common value, one message each.")
 raises("once_per_layer", function() {
   ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) +
     geom_slice(lm(hwy ~ displ * drv + cyl + year, mpg)) + ggplot2::facet_wrap(~fl)
-}, c("message", "message"), c("`cyl`", "`year`"))
+}, c("message", "message"), c("`cyl`", "`year`"),
+       purpose = "Two imputed predictors on a plot with three colour groups and seven facets are announced once each, not per panel or group.")
 raises("companions_stay_quiet", function() {
   ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy)) +
     geom_slice(lm(hwy ~ displ + cyl + year, mpg), predict_vars = list(year = c(1999, 2008))) +
     geom_slice_text() + geom_slice_subtitle() + geom_slice_caption()
-}, "message", "Value for `cyl` not specified")
+}, "message", "Value for `cyl` not specified",
+       purpose = "Text, subtitle and caption layers re-resolve the slice without repeating geom_slice()'s imputation message.")
 raises("slice_2d_wording", function() {
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off())
   slice_2d(lm(y ~ x + f, d), x_axis = "x")
-}, "message", "Value for `f` not specified - Used first value: a", format = FALSE)
+}, "message", "Value for `f` not specified - Used first value: a", format = FALSE,
+       purpose = "slice_2d() imputes a factor with its first level, not the most common, in its own wording.")
 raises("slice_2d_character", function() slice_2d(lm(y ~ x + s, d), x_axis = "x"),
-       "error", 'unsupported class "character"')
+       "error", 'unsupported class "character"',
+       purpose = "slice_2d() stops on a character predictor that geom_slice() would impute.")
