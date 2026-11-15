@@ -1,8 +1,8 @@
 {
-  "when": "2026-11-13T20:04:34+0000",
-  "commit": "d7cae02",
-  "code": "48bd440e42778bc6f52c4c88e5ccb8e6",
-  "tests": 78,
+  "when": "2026-11-15T06:11:02+0000",
+  "commit": "ba4380f",
+  "code": "8ab36a999bf7fc7465caeed3fd114610",
+  "tests": 95,
   "full": false,
   "caught": 43,
   "breaks": [
@@ -20,7 +20,7 @@
       "file": "fingerprint.R",
       "caught": true,
       "caught_by": [
-        "test-contract.R: plotly_3d: sensitivity"
+        "test-fake-type.R: an unforeseen type goes from run to the review page's data"
       ],
       "crashed": false
     },
@@ -74,7 +74,7 @@
       "file": "store.R",
       "caught": true,
       "caught_by": [
-        "test-contract.R: base_graphics: completeness"
+        "test-check.R: the release audit compares fresh views with those kept at approval"
       ],
       "crashed": false
     },
@@ -281,7 +281,7 @@
       "file": "server.R",
       "caught": true,
       "caught_by": [
-        "test-server.R: only JSON from the page's own origin is accepted"
+        "test-salvage.R: only JSON from the page's own origin can record a verdict"
       ],
       "crashed": false
     },
@@ -290,7 +290,7 @@
       "file": "server.R",
       "caught": true,
       "caught_by": [
-        "test-server.R: only JSON from the page's own origin is accepted"
+        "test-salvage.R: only JSON from the page's own origin can record a verdict"
       ],
       "crashed": false
     },
