@@ -1,0 +1,13 @@
+--- checks
+expect_equal(d$y, log10(predicted(model, data.frame(disp = d$x))))
+--- source
+model <- lm(mpg ~ disp, data = mtcars)
+
+expectation("log_y_panel_units",
+            covers = "geom_slice.scale-transforms",
+            purpose = "Catches predictions placed in data units under scale_y_log10(), which would put the line far from the points.", {
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + geom_slice(model, n = 20) +
+    ggplot2::scale_y_log10()
+  d <- slice_data(p)
+  expect_equal(d$y, log10(predicted(model, data.frame(disp = d$x))))
+})

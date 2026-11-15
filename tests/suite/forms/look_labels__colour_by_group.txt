@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -178,3 +179,17 @@
 <text x='703.17' y='294.63' style='font-size: 8.80px; font-family: sans;' textLength='5.87px' lengthAdjust='spacingAndGlyphs'>B</text>
 </g>
 </svg>
+--- source
+set.seed(123)
+d <- data.frame(x = runif(80, -10, 10), x2 = runif(80, 0, 4),
+                g = factor(sample(c("A", "B"), 80, replace = TRUE)))
+d$y <- d$x * ifelse(d$g == "A", 0.5, 2) + ifelse(d$g == "A", 5, -5) + 4 * d$x2 + rnorm(80)
+model <- lm(y ~ x * g + x2, data = d)
+build <- function(p) suppressMessages(p)
+on_d <- function(mapping = ggplot2::aes(x, y)) ggplot2::ggplot(d, mapping) + ggplot2::geom_point(alpha = 0.5)
+colour_by_group <- build(on_d(ggplot2::aes(x, y, colour = g)) +
+  geom_slice(model, predict_vars = list(x2 = c(0, 2, 4))) + geom_slice_text())
+
+judged_output("colour_by_group", colour_by_group,
+              covers = c("geom_slice_text.colour-follows-line", "geom_slice_text.expand-fits-labels"),
+              purpose = "Labels on coloured groups: each must match its line's colour, and the panel must widen just enough that no label is clipped.")

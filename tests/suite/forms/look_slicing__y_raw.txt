@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -106,3 +107,13 @@
 <text x='32.79' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='77.77px' lengthAdjust='spacingAndGlyphs'>normal y axis</text>
 </g>
 </svg>
+--- source
+mpg <- ggplot2::mpg
+set.seed(123)
+logged <- lm(log(mpg) ~ disp + hp, data = mtcars)
+y_raw <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + ggplot2::geom_point() + geom_slice(logged) +
+  ggplot2::labs(title = "normal y axis")
+
+judged_output("y_raw", y_raw,
+              covers = "shared.back-transform.auto",
+              purpose = "One of three views of one log(mpg) model: on a raw axis the line must be a curve through the points.")

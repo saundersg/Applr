@@ -1,0 +1,15 @@
+--- checks
+expect_equal(d$x, seq(0, 8, length.out = 9))
+expect_equal(d$y, predicted(m, data.frame(wt = d$x)))
+--- source
+mpg <- ggplot2::mpg
+
+expectation("full_range_past_data",
+            covers = "geom_slice.full-range-beyond-data",
+            purpose = "Catches full_range stopping at the data when the user widened the scale limits, which is exactly when they want the line extrapolated.", {
+  m <- lm(mpg ~ wt, mtcars)
+  d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 9, full_range = TRUE) +
+                    ggplot2::scale_x_continuous(limits = c(0, 8)))
+  expect_equal(d$x, seq(0, 8, length.out = 9))
+  expect_equal(d$y, predicted(m, data.frame(wt = d$x)))
+})

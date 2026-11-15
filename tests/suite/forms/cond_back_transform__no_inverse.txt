@@ -1,3 +1,13 @@
+--- main
 warning
 Could not infer the inverse of the model's response `abs(mpg)`.
     Supply it directly, such as 'back_transform = exp'.
+--- source
+on_mpg <- function(model, y = quote(mpg), ...) function() {
+  ggplot2::ggplot(mtcars, ggplot2::aes(disp, !!y)) + geom_slice(model, ...)
+}
+
+raises("no_inverse", on_mpg(lm(abs(mpg) ~ disp, mtcars)), "warning",
+       "Could not infer the inverse of the model's response `abs(mpg)`",
+       covers = c("shared.back-transform.no-inverse", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A transform with no known inverse, abs(y): the warning must say the line stays on the transformed scale and point to back_transform =.")

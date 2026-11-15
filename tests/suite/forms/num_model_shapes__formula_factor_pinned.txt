@@ -1,0 +1,26 @@
+--- checks
+expect_equal(line$y, predicted(m, data.frame(wt = line$x, cyl = cyls[g])))
+expect_equal(d$y, predicted(m, data.frame(wt = d$x, cyl = 6)))
+expect_equal(expr_of(p, "colour"), "factor(cyl)")
+expect_equal(length(unique(slice_data(p)$group)), 3)
+--- source
+mpg <- ggplot2::mpg
+set.seed(3)
+expr_of <- function(p, aes) rlang::as_label(p$mapping[[aes]])
+
+expectation("formula_factor_pinned",
+            covers = "shared.slicing.factor-in-formula-pinned",
+            purpose = "Catches factor(cyl) made inside the formula breaking the line even when a grouping, predict_vars or autoplot() says which level to draw; num_imputation pins the unpinned case.", {
+  m <- lm(mpg ~ wt + as.factor(cyl), mtcars)
+  cyls <- sort(unique(mtcars$cyl))
+  d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg, colour = as.factor(cyl))) + geom_slice(m, n = 10))
+  for (g in unique(d$group)) {
+    line <- d[d$group == g, ]
+    expect_equal(line$y, predicted(m, data.frame(wt = line$x, cyl = cyls[g])))
+  }
+  d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 10, predict_vars = list(cyl = 6)))
+  expect_equal(d$y, predicted(m, data.frame(wt = d$x, cyl = 6)))
+  p <- suppressMessages(autoplot(m, summary = FALSE))
+  expect_equal(expr_of(p, "colour"), "factor(cyl)")
+  expect_equal(length(unique(slice_data(p)$group)), 3)
+})

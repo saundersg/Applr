@@ -1,6 +1,15 @@
+--- main
 error
 Problem while computing stat.
 i Error occurred in the 1st layer.
 Caused by error:
 ! Value "fast" for the numeric variable `hp` is not a number.
     Use a number, such as 'hp = 146.7'.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+on_plot <- function(...) function() ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(...)
+
+raises("predict_vars_not_number", on_plot(model, predict_vars = list(hp = "fast")), "error",
+       '"fast" for the numeric variable `hp`',
+       covers = c("shared.held-values.bad-level", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "The numeric half of the bad-value rule (predict_vars_bad_level is the factor half): the message must name hp and suggest a real number for it.")

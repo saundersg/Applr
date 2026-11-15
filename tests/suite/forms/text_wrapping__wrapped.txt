@@ -1,3 +1,4 @@
+--- main
 [unwrapped]
 Sepal.Length = 1.67 + 0.624*Sepal.Width + 0.283*(Species="versicolor") - 0.646*(Species="virginica") + 0.822*Petal.Length - 0.448*Sepal.Width:(Species="versicolor") - 0.286*Sepal.Width:(Species="virginica")
 held at: Sepal.Width = 3.057
@@ -54,3 +55,29 @@ y = 1.31 + 1.08*x
 - 0.115*(b="High")
 held at: a = "Low";
 b = "Mid"
+--- source
+iris_model <- lm(Sepal.Length ~ Sepal.Width * Species + Petal.Length, data = iris)
+on_iris <- function(...) {
+  suppressMessages(ggplot2::ggplot(iris, ggplot2::aes(Petal.Length, Sepal.Length, colour = Species)) +
+                     geom_slice(iris_model) + geom_slice_subtitle(...))
+}
+shared_level <- data.frame(
+  x = rep(1:6, 2), a = factor(rep(c("Low", "High"), 6), levels = c("Low", "High")),
+  b = factor(rep(c("Mid", "Mid", "High"), 4), levels = c("Mid", "High")),
+  y = c(2, 5, 4, 8, 6, 9, 3, 6, 5, 9, 7, 11)
+)
+ambiguous <- lm(y ~ x + a + b, data = shared_level)
+examples <- c(
+  unwrapped = annotation_of(on_iris(wrap = FALSE)),
+  wide_6in = annotation_of(on_iris(wrap = 6)),
+  brackets_3.5in = annotation_of(on_iris(wrap = 3.5)),
+  narrow_2in = annotation_of(on_iris(wrap = 2)),
+  prepend_4in = annotation_of(on_iris(wrap = 4, prepend = "Fitted: ")),
+  overlong_1in = annotation_of(on_iris(wrap = 1, model = TRUE)),
+  shared_level_1.5in = annotation_of(suppressMessages(
+    ggplot2::ggplot(shared_level, ggplot2::aes(x, y)) + geom_slice(ambiguous) + geom_slice_subtitle(wrap = 1.5)))
+)
+
+judged_output("wrapped", examples, type = "returned_text",
+              covers = c("shared.annotation-wrap.ladder", "shared.annotation-wrap.between-terms", "shared.annotation-wrap.prepend-equals", "shared.annotation-wrap.overlong-term", "shared.annotation-wrap.ambiguous-brackets"),
+              purpose = "One long subtitle at fixed widths, so you judge the breaks themselves independent of any device: where it breaks, the indent, when [level] appears and when nothing fits.")

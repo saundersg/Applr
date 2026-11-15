@@ -7,7 +7,8 @@ const STATUS_LABEL = { you: "your turn", rejected: "sent back", agent: "agent qu
 const GROUP_ORDER = ["you", "rejected", "agent", "approved"];
 const VIEW_KIND = { image: "image", text: "text diff", states: "states + live" };
 const QUICK_NOTES = ["Labels clipped", "Spacing too tight", "Line doesn't match the expected behaviour",
-  "Wording unclear", "Legend wrong", "Agent note doesn't match what I see"];
+  "Wording unclear", "Legend wrong", "Agent note doesn't match what I see",
+  "The purpose doesn't say why this exists", "Fix the package, not the test", "Remove this"];
 const PAGES = ["overview", "inventory", "health", "principles", "structure", "salvage"];
 
 const arr = x => x == null ? [] : Array.isArray(x) ? x : [x];
@@ -106,7 +107,7 @@ function sidebar() {
       ${SALVAGE ? nav("salvage", `⚖ Salvage audit${salvageLeft() ? ` <span class="pill s-you">${salvageLeft()} to review</span>` : ""}`) : ""}
       <div style="margin:10px 0 0"><input type="search" id="find" placeholder="Find an output…" value="${esc(ui.filter)}"></div>
       ${groups || `<p class="muted small">No judged outputs${ui.filter ? " match" : " yet: run <code>suite.R run</code>"}.</p>`}
-      <p class="muted small" style="margin-top:16px"><kbd>j</kbd>/<kbd>k</kbd> next/prev in your queue · <kbd>a</kbd> approve · <kbd>r</kbd> reject with note · <kbd>s</kbd> swipe/side by side · <kbd>o</kbd> overview · <kbd>[</kbd> sidebar</p>
+      <p class="muted small" style="margin-top:16px"><kbd>j</kbd>/<kbd>k</kbd> next/prev in your queue · <kbd>a</kbd> approve · <kbd>r</kbd> send back with note · <kbd>s</kbd> swipe/side by side · <kbd>o</kbd> overview · <kbd>[</kbd> sidebar</p>
     </div>
     <div class="side-foot"><div class="nav-h">Guide</div>${nav("principles", "Principles")}${nav("structure", "Structure")}</div></aside>`;
 }
@@ -165,7 +166,18 @@ function formView(id, open) {
 
 function textView(o) { return formView(o.id, true); }
 
+// An output that cites its own entries shows only those: for a test, what it
+// checks; otherwise what to judge it against, plus anything checked for you.
 function expected(o) {
+  const d = declared(o);
+  if (arr(d?.covers).length) {
+    const rules = arr(d.covers).map(id => ENTRIES[id]
+      ? `<li>${esc(ENTRIES[id].principle)} <a class="mono" href="?view=inventory" data-go="inventory">${esc(id)}</a></li>`
+      : `<li class="tag-bad">Cites ${esc(id)}, which isn't in the inventory.</li>`).join("");
+    const checks = arr(d.checks).length ? `<div class="expect"><b>Checked for you</b> <span class="muted small">(by the test this call runs; it passes)</span>
+      <ul>${arr(d.checks).map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>` : "";
+    return `<div class="expect"><b>${d.kind === "test" ? "The rule this test checks" : "Judge it against"}</b><ul>${rules}</ul></div>${checks}`;
+  }
   const c = caseOf(o);
   const cited = arr(c.covers).map(id => ENTRIES[id]).filter(Boolean);
   const unknown = arr(c.unknown);
@@ -197,19 +209,19 @@ function decisionBar(o) {
   if (k === "agent") return `<p class="muted small">Waiting for an agent pass. Outputs come to you once an agent approves them.</p>`;
   if (k !== "you") return "";
   if (!ui.rejecting) return `<div class="actions"><button class="approve" data-act="approve" ${ui.busy ? "disabled" : ""}>Approve <kbd class="on-solid">a</kbd></button>
-      <button class="reject" data-act="reject" ${ui.busy ? "disabled" : ""}>Reject… <kbd>r</kbd></button></div>`;
+      <button class="reject" data-act="reject" ${ui.busy ? "disabled" : ""}>Send back… <kbd>r</kbd></button></div>`;
   return `<div class="rejectbox"><b>Send back to the agent</b>
-    <div class="muted small">A note is required. The agent reads it before its next attempt.</div>
+    <div class="muted small">A note is required. It can ask for a change to the case or to the package code it tests, or for the item to be removed.</div>
     <div class="chips">${QUICK_NOTES.map(n => `<button data-chip="${esc(n)}">${esc(n)}</button>`).join("")}</div>
     <textarea id="note" placeholder="What's wrong, and what would right look like?">${esc(ui.draft)}</textarea>
-    <div class="actions"><button class="reject solid" data-act="confirm-reject" ${ui.busy ? "disabled" : ""}>Reject and send <kbd class="on-solid">Ctrl+Enter</kbd></button>
+    <div class="actions"><button class="reject solid" data-act="confirm-reject" ${ui.busy ? "disabled" : ""}>Send back <kbd class="on-solid">Ctrl+Enter</kbd></button>
       <button class="ghost" data-act="cancel-reject">Cancel <kbd>Esc</kbd></button></div></div>`;
 }
 
 function notes(o) {
   const k = key(o), by = o.who === "human" ? "you" : o.who === "agent" ? "the agent" : o.who;
   return [
-    k === "rejected" && o.rejection_note ? `<div class="yournote"><b>Rejected by ${esc(by)}:</b> ${esc(o.rejection_note)}</div>` : "",
+    k === "rejected" && o.rejection_note ? `<div class="yournote"><b>Sent back by ${esc(by)}:</b> ${esc(o.rejection_note)}</div>` : "",
     k === "approved" ? `<div class="oknote"><b>Approved by you</b> <span class="muted small">${esc(o.when)}</span>${o.human_note ? ": " + esc(o.human_note) : ""}</div>` : "",
     o.agent_note ? `<div class="agentnote"><b>Agent${o.new && k !== "approved" ? ` on a new output` : ""}:</b> ${esc(o.agent_note)}</div>` : ""
   ].join("");
@@ -485,7 +497,7 @@ function render() {
 async function decide(decision, note) {
   const o = OUT[ui.sel];
   if (!o || ui.busy) return;
-  if (decision === "reject" && !note.trim()) { ui.error = "A rejection needs a note for the agent."; render(); return; }
+  if (decision === "reject" && !note.trim()) { ui.error = "Sending back needs a note for the agent."; render(); return; }
   ui.busy = true; ui.error = null; render();
   try {
     const r = await fetch("/api/decide", { method: "POST", headers: { "Content-Type": "application/json" },

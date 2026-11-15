@@ -1,3 +1,4 @@
+--- main
 [prettier]
 Sepal.Length = 2.64 + 0.69*Sepal.Width + 0.901*(Species="versicolor") + 1.27*(Species="virginica") + 0.175*Sepal.Width:(Species="versicolor") + 0.211*Sepal.Width:(Species="virginica")
 
@@ -6,3 +7,14 @@ Sepal.Length = 2.64 + 0.69*Sepal.Width + 0.901*[versicolor] + 1.27*[virginica] +
 
 [raw]
 Sepal.Length = 2.64 + 0.69*Sepal.Width + 0.901*Speciesversicolor + 1.27*Speciesvirginica + 0.175*Sepal.Width:Speciesversicolor + 0.211*Sepal.Width:Speciesvirginica
+--- source
+model <- lm(Sepal.Length ~ Sepal.Width * Species, data = iris)
+equations <- c(
+  prettier = lm_equation(model),
+  brackets = lm_equation(model, style = "brackets"),
+  raw = lm_equation(model, style = "raw")
+)
+
+judged_output("equations", equations, type = "returned_text",
+              covers = "lm_equation.style",
+              purpose = "The returned_text type's demo for the suite's own tests, and the one place all three equation styles sit side by side on a factor interaction, so you can compare how each reads.")

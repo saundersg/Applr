@@ -1,3 +1,8 @@
+--- main
 error
 `model` must be TRUE or FALSE.
     For example, 'model = FALSE' to drop the equation line.
+--- source
+raises("subtitle_model", function() geom_slice_subtitle(model = "yes"), "error", "`model` must be TRUE or FALSE.",
+       covers = c("geom_slice_subtitle.arg-validation", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Here `model` is a TRUE/FALSE switch, not a fitted model as everywhere else in Applr; the hint must make clear what FALSE does.")

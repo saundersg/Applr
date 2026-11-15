@@ -30,7 +30,7 @@ test_that("a human decision for an old fingerprint has no effect", {
   human_decide(id, "approve", "", s$fp, s$paths)
   run_suite(renamed(), s$paths)
   expect_equal(review_records(s$paths)[[id]]$status, "Unreviewed")
-  expect_equal(list_unreviewed(s$paths), id)
+  expect_equal(list_unreviewed(s$paths), both)
   expect_length(read_decisions(s$paths), 1)
 })
 
@@ -84,7 +84,7 @@ test_that("a human rejection's note reaches the agent, and changing the case sen
   expect_named(list_rejected(s$paths), id)
   run_suite(renamed(), s$paths)
   expect_length(list_rejected(s$paths), 0)
-  expect_equal(list_unreviewed(s$paths), id)
+  expect_equal(list_unreviewed(s$paths), both)
 })
 
 test_that("an output is new until a human approves it", {

@@ -1,0 +1,34 @@
+--- checks
+expect_false(grepl("[", examples[["wide_6in"]], fixed = TRUE))
+expect_true(grepl("[virginica]", examples[["brackets_3.5in"]], fixed = TRUE))
+expect_false(grepl("[High]", examples[["shared_level_1.5in"]], fixed = TRUE))
+--- source
+iris_model <- lm(Sepal.Length ~ Sepal.Width * Species + Petal.Length, data = iris)
+on_iris <- function(...) {
+  suppressMessages(ggplot2::ggplot(iris, ggplot2::aes(Petal.Length, Sepal.Length, colour = Species)) +
+                     geom_slice(iris_model) + geom_slice_subtitle(...))
+}
+shared_level <- data.frame(
+  x = rep(1:6, 2), a = factor(rep(c("Low", "High"), 6), levels = c("Low", "High")),
+  b = factor(rep(c("Mid", "Mid", "High"), 4), levels = c("Mid", "High")),
+  y = c(2, 5, 4, 8, 6, 9, 3, 6, 5, 9, 7, 11)
+)
+ambiguous <- lm(y ~ x + a + b, data = shared_level)
+examples <- c(
+  unwrapped = annotation_of(on_iris(wrap = FALSE)),
+  wide_6in = annotation_of(on_iris(wrap = 6)),
+  brackets_3.5in = annotation_of(on_iris(wrap = 3.5)),
+  narrow_2in = annotation_of(on_iris(wrap = 2)),
+  prepend_4in = annotation_of(on_iris(wrap = 4, prepend = "Fitted: ")),
+  overlong_1in = annotation_of(on_iris(wrap = 1, model = TRUE)),
+  shared_level_1.5in = annotation_of(suppressMessages(
+    ggplot2::ggplot(shared_level, ggplot2::aes(x, y)) + geom_slice(ambiguous) + geom_slice_subtitle(wrap = 1.5)))
+)
+
+expectation("brackets_only_when_needed",
+            covers = c("shared.annotation-wrap.ladder", "shared.annotation-wrap.ambiguous-brackets"),
+            purpose = "Catches [level] shortening when full names fit, failing to shorten when they don't, or shortening two factors with a shared level to the same label.", {
+  expect_false(grepl("[", examples[["wide_6in"]], fixed = TRUE))
+  expect_true(grepl("[virginica]", examples[["brackets_3.5in"]], fixed = TRUE))
+  expect_false(grepl("[High]", examples[["shared_level_1.5in"]], fixed = TRUE))
+})

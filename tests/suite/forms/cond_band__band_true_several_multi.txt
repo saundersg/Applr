@@ -1,3 +1,16 @@
+--- main
 warning
 band = TRUE is ambiguous: several `predict_vars` variables have multiple values (`cyl`, `year`). No band is drawn.
     Name the one to span, such as 'band = "cyl"'.
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv + cyl + year, data = mpg)
+coloured <- function(...) function() {
+  ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(...)
+}
+
+raises("band_true_several_multi", coloured(model, band = TRUE,
+                                           predict_vars = list(cyl = c(4, 8), year = c(1999, 2008))),
+       "warning", "band = TRUE is ambiguous: several",
+       covers = c("shared.band.unresolvable", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "band = TRUE with two multi-value predict_vars entries can't pick; unlike band_true_several_candidates, the ambiguity comes from predict_vars, so the wording differs.")

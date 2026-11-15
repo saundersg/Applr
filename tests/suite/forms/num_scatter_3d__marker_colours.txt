@@ -1,0 +1,28 @@
+--- checks
+expect_equal(m$marker$color, mtcars$mpg)
+expect_equal(vapply(stops, function(s) as.numeric(s[[1]]), 0), c(0, 1))
+expect_equal(vapply(stops, function(s) s[[2]], ""), c("#A020F0", "#FFA500"))
+expect_equal(m$marker$colorbar$title, "mpg")
+expect_equal(vapply(flat$marker$colorscale, function(s) s[[2]], ""), c("#FF0000", "#FF0000"))
+--- source
+strip_api <- function(x) {
+  if (is.list(x)) return(lapply(x, strip_api))
+  attr(x, "apiSrc") <- NULL
+  x
+}
+built_traces <- function(widget) strip_api(plotly::plotly_build(widget)$x)
+markers_of <- function(x) Filter(function(t) identical(t$type, "scatter3d"), x$data)[[1]]
+
+expectation("marker_colours",
+            covers = "scatter_3d.marker-colours",
+            purpose = "Catches markers ignoring `colors`, a single colour giving an invalid ramp, or the colour bar losing the response's name.", {
+  x <- built_traces(scatter_3d(lm(mpg ~ wt + hp, mtcars), n = 5, colors = c("purple", "orange")))
+  m <- markers_of(x)
+  expect_equal(m$marker$color, mtcars$mpg)
+  stops <- m$marker$colorscale
+  expect_equal(vapply(stops, function(s) as.numeric(s[[1]]), 0), c(0, 1))
+  expect_equal(vapply(stops, function(s) s[[2]], ""), c("#A020F0", "#FFA500"))
+  expect_equal(m$marker$colorbar$title, "mpg")
+  flat <- markers_of(built_traces(scatter_3d(lm(mpg ~ wt + hp, mtcars), n = 5, colors = "red")))
+  expect_equal(vapply(flat$marker$colorscale, function(s) s[[2]], ""), c("#FF0000", "#FF0000"))
+})

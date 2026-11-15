@@ -1,0 +1,17 @@
+--- checks
+expect_equal(expr_of(quiet_autoplot(lm(hwy ~ drv + displ, mpg)), "x"), "displ")
+expect_equal(expr_of(quiet_autoplot(model, ggplot2::aes(x = cyl)), "x"), "cyl")
+expect_equal(expr_of(quiet_autoplot(model), "y"), "hwy")
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ + drv + cyl, data = mpg)
+quiet_autoplot <- function(...) suppressMessages(autoplot(..., summary = FALSE))
+expr_of <- function(p, aes) rlang::as_label(p$mapping[[aes]])
+
+expectation("x_first_numeric",
+            covers = "autoplot.x-first-numeric",
+            purpose = "Catches autoplot() putting a factor on x when a numeric predictor comes later, or ignoring a user's aes(x = ...).", {
+  expect_equal(expr_of(quiet_autoplot(lm(hwy ~ drv + displ, mpg)), "x"), "displ")
+  expect_equal(expr_of(quiet_autoplot(model, ggplot2::aes(x = cyl)), "x"), "cyl")
+  expect_equal(expr_of(quiet_autoplot(model), "y"), "hwy")
+})

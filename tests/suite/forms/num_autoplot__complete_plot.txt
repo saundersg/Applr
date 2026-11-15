@@ -1,0 +1,22 @@
+--- checks
+expect_s3_class(p$layers[[1]]$geom, "GeomPoint")
+expect_s3_class(p$layers[[2]]$stat, "StatSlice")
+expect_equal(d$ymin, unname(ci[, "lwr"]))
+expect_match(p$labels$subtitle, "^mpg = ")
+expect_equal((p + ggplot2::labs(title = "T"))$labels$title, "T")
+--- source
+mpg <- ggplot2::mpg
+quiet_autoplot <- function(...) suppressMessages(autoplot(..., summary = FALSE))
+
+expectation("complete_plot",
+            covers = "autoplot.complete-plot",
+            purpose = "Catches autoplot() returning something other than an ordinary, extendable ggplot: it must have points, a slice whose ribbon is the real confidence interval, a subtitle, and accept +.", {
+  p <- quiet_autoplot(lm(mpg ~ wt + hp, mtcars))
+  expect_s3_class(p$layers[[1]]$geom, "GeomPoint")
+  expect_s3_class(p$layers[[2]]$stat, "StatSlice")
+  d <- slice_data(p)
+  ci <- predict(lm(mpg ~ wt + hp, mtcars), data.frame(wt = d$x, hp = mean(mtcars$hp)), interval = "confidence")
+  expect_equal(d$ymin, unname(ci[, "lwr"]))
+  expect_match(p$labels$subtitle, "^mpg = ")
+  expect_equal((p + ggplot2::labs(title = "T"))$labels$title, "T")
+})

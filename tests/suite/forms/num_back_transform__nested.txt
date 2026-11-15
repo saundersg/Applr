@@ -1,0 +1,22 @@
+--- checks
+expect_equal(d$y, cs[[2]](predicted(cs[[1]], grid_of(d))))
+--- source
+grid_of <- function(d) data.frame(disp = d$x, hp = mean(mtcars$hp))
+on_axis <- function(model, y, ...) {
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, {{ y }})) + geom_slice(model, n = 15, ...)
+  slice_data(p)
+}
+
+expectation("nested",
+            covers = "shared.back-transform.nested",
+            purpose = "Catches nested transforms being undone in the wrong order or only partly, which simple ones like log(y) wouldn't reveal.", {
+  cases <- list(
+    list(lm(sqrt(log(mpg)) ~ disp + hp, mtcars), function(v) exp(v^2)),
+    list(lm(log(mpg + 1) ~ disp + hp, mtcars), function(v) exp(v) - 1),
+    list(lm(2 * log(mpg) ~ disp + hp, mtcars), function(v) exp(v / 2))
+  )
+  for (cs in cases) {
+    d <- on_axis(cs[[1]], mpg)
+    expect_equal(d$y, cs[[2]](predicted(cs[[1]], grid_of(d))))
+  }
+})

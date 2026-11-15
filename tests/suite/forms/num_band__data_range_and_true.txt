@@ -1,0 +1,22 @@
+--- checks
+expect_equal(inferred, named)
+expect_equal(named$ymin[named$group == 1], e$ymin)
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv + cyl, data = mpg)
+coloured <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv))
+edges <- function(line, drv, lo, hi) {
+  a <- predicted(model, data.frame(displ = line$x, drv = drv, cyl = lo))
+  b <- predicted(model, data.frame(displ = line$x, drv = drv, cyl = hi))
+  list(ymin = pmin(a, b), ymax = pmax(a, b), y = (a + b) / 2)
+}
+
+expectation("data_range_and_true",
+            covers = c("shared.band.range", "shared.band.infer-true"),
+            purpose = "Catches a band without predict_vars not spanning the data range, or band = TRUE choosing a different variable than naming it would.", {
+  named <- slice_data(coloured + geom_slice(model, n = 10, band = "cyl"))
+  inferred <- slice_data(coloured + geom_slice(model, n = 10, band = TRUE))
+  expect_equal(inferred, named)
+  e <- edges(named[named$group == 1, ], "4", min(mpg$cyl), max(mpg$cyl))
+  expect_equal(named$ymin[named$group == 1], e$ymin)
+})

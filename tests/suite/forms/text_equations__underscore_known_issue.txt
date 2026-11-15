@@ -1,0 +1,25 @@
+--- checks
+expect_match(latex[["underscore_name"]], "\\text{wt_lb}", fixed = TRUE)
+--- source
+models <- list(
+  simple = lm(mpg ~ wt, mtcars),
+  multiple = lm(mpg ~ disp + hp, mtcars),
+  transformed = lm(log(mpg) ~ wt + I(wt^2), mtcars),
+  no_intercept = lm(mpg ~ 0 + wt, mtcars),
+  rank_deficient = lm(mpg ~ wt + I(2 * wt), mtcars),
+  exact_fit = lm(y ~ x, data.frame(x = 1:5, y = 2 * (1:5))),
+  intercept_only = lm(mpg ~ 1, mtcars),
+  underscore_name = lm(mpg ~ wt_lb, transform(mtcars, wt_lb = wt * 1000))
+)
+latex <- vapply(models, function(m) {
+  out <- capture.output(v <- lm_latex(m))
+  v
+}, "")
+
+expectation("underscore_known_issue",
+            covers = "lm_latex.special-characters",
+            purpose = "Pins a known issue (an underscore unescaped, which breaks LaTeX) so its fix is noticed: when this fails, expect \\_.", {
+  # LaTeX needs \_ inside \text{}; this pins today's output. When it fails,
+  # the name is escaped: expect \\_ instead.
+  expect_match(latex[["underscore_name"]], "\\text{wt_lb}", fixed = TRUE)
+})

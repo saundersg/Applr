@@ -12,11 +12,13 @@ p <- ggplot2::ggplot(df, ggplot2::aes(x, y)) +
   geom_slice(model) +
   ggplot2::labs(title = "Single predictor")
 
-covers("geom_slice.line-is-prediction", "geom_slice.user-theme")
 judged_output("plot", p,
-              purpose = "A one-predictor model's line runs through the points in the user's plot, title and default theme.")
+              covers = "geom_slice.user-theme",
+              purpose = "The static_plot type's demo for the suite's own tests, and the simplest geom_slice() picture: one line in the user's plot, title and default theme, with nothing added.")
 
-test_that("the plotted line equals the model's prediction on the expected grid", {
+expectation("line_is_prediction",
+            covers = "geom_slice.line-is-prediction",
+            purpose = "Catches geom_slice()'s line not being predict() over an even grid across x's data range: the core promise of the package, in its simplest setting.", {
   d <- ggplot2::ggplot_build(p)$data[[2]]
   grid <- seq(min(df$x), max(df$x), length.out = 100)
   expect_equal(d$x, grid)

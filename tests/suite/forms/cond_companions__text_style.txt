@@ -1,3 +1,8 @@
+--- main
 error
 `style` must be one of "variable", "value", "legend".
     For example, 'style = "value"'.
+--- source
+raises("text_style", function() geom_slice_text(style = "fancy"), "error", "`style` must be one of",
+       covers = c("geom_slice_text.arg-validation", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "geom_slice_text()'s style names (variable, value, legend) differ from the subtitle's; the stop must list its own three.")

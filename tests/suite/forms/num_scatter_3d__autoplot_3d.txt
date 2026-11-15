@@ -1,0 +1,22 @@
+--- checks
+expect_equal(surface_of(a)$z, surface_of(b)$z)
+expect_equal(markers_of(a)$marker$colorscale, markers_of(b)$marker$colorscale)
+--- source
+strip_api <- function(x) {
+  if (is.list(x)) return(lapply(x, strip_api))
+  attr(x, "apiSrc") <- NULL
+  x
+}
+built_traces <- function(widget) strip_api(plotly::plotly_build(widget)$x)
+markers_of <- function(x) Filter(function(t) identical(t$type, "scatter3d"), x$data)[[1]]
+surface_of <- function(x) Filter(function(t) identical(t$type, "surface"), x$data)[[1]]
+
+expectation("autoplot_3d",
+            covers = "autoplot.type-3d",
+            purpose = "Catches autoplot(type = \"3d\") building something other than scatter_3d(), or dropping the arguments passed to it.", {
+  model <- lm(mpg ~ wt + hp, mtcars)
+  a <- built_traces(autoplot(model, type = "3d", summary = FALSE, n = 5, colors = "red"))
+  b <- built_traces(scatter_3d(model, n = 5, colors = "red"))
+  expect_equal(surface_of(a)$z, surface_of(b)$z)
+  expect_equal(markers_of(a)$marker$colorscale, markers_of(b)$marker$colorscale)
+})

@@ -1,3 +1,18 @@
+--- main
 warning
 The `xaxis` argument of `add_slice_2d()` is deprecated.
     Use `x_axis` instead.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+on_device <- function(code) function() {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  code()
+}
+
+raises("xaxis_deprecated_add", on_device(function() {
+  plot(mpg ~ wt, mtcars)
+  add_slice_2d(model, xaxis = "wt", hp = 100)
+}), "warning", "The `xaxis` argument of `add_slice_2d()` is deprecated.",
+       covers = c("shared.conditions.xaxis-deprecated", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "add_slice_2d()'s version; catches it naming slice_2d() in its warning, since the two share the check.")

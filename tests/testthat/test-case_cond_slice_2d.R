@@ -10,47 +10,55 @@ on_device <- function(code) function() {
   code()
 }
 
-covers("slice_2d.default-x-axis", "slice_2d.x-axis-errors", "shared.model-data.refit-needed",
-       "add_slice_2d.outside-plot", "add_slice_2d.no-plot", "shared.conditions.xaxis-deprecated")
-
 raises("x_axis_default", on_device(function() slice_2d(model, hp = 100)), "message",
        "X-axis not specified",
-       purpose = "slice_2d() with no x_axis picks the first predictor and says which.")
+       covers = c("slice_2d.default-x-axis", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "slice_2d() choosing the x-axis for the user; the message must say which one and how to choose. Note its hint lacks a final full stop, unlike other messages.")
 raises("x_axis_not_string", function() slice_2d(model, x_axis = 1), "error",
        "`x_axis` must be the name of one model predictor",
-       purpose = "slice_2d() refuses a number for x_axis, which must name a predictor.")
+       covers = c("slice_2d.x-axis-errors", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A number given as x_axis, perhaps a column position; the stop must say it needs a predictor's name as a string.")
 raises("x_axis_not_found", function() slice_2d(model, x_axis = "disp"), "error",
        '`x_axis` variable "disp" not found in the model.',
-       purpose = "slice_2d() refuses an x_axis that is not in the model, listing the predictors.")
+       covers = c("slice_2d.x-axis-errors", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "x_axis naming a column outside the model; unlike x_axis_not_string, the hint must list the predictors.")
 raises("x_axis_not_numeric", function() {
   slice_2d(lm(Sepal.Length ~ Species + Sepal.Width, iris), x_axis = "Species")
 }, "error", '`x_axis` must be numeric; the class "factor"',
-       purpose = "slice_2d() refuses a factor x_axis, naming its class.")
+       covers = c("slice_2d.x-axis-errors", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A factor x_axis can't carry a line; the stop must name its class and ask for a numeric variable.")
 raises("data_changed", function() {
   cars <- mtcars
   m <- lm(mpg ~ wt, data = cars)
   cars$mpg <- cars$mpg + 1
   slice_2d(m, x_axis = "wt")
 }, "error", "The data being plotted is not the data `m` was fitted to.",
-       purpose = "Data changed since the fit stops slice_2d(), naming the model and how to refit.")
+       covers = c("shared.model-data.refit-needed", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Data edited after fitting (common in a notebook) would draw a line for data the model never saw; the stop must name the model as the user called it (`m`) and show the refit.")
 raises("outside_plot", on_device(function() {
   plot(1:2, 1:2)
   add_slice_2d(model, x_axis = "wt", hp = 100)
 }), "warning", "Slice is outside the current plot range",
-       purpose = "add_slice_2d() on a plot whose range the slice misses warns that the line is outside it.")
+       covers = c("add_slice_2d.outside-plot", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "add_slice_2d() on a plot whose window the line misses; the warning must say why the user may see nothing.")
 raises("no_plot_open", on_device(function() add_slice_2d(model, x_axis = "wt", hp = 100)),
        c("warning", "error"), "plot.new has not been called yet", format = FALSE,
-       purpose = "add_slice_2d() with no plot open shows what users get today: Applr's range warning, then base R's plot.new error.")
+       covers = c("add_slice_2d.no-plot", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Pins what happens with no plot open: a misleading range warning, then base R's error. You can judge whether Applr should say 'no plot open' itself.")
 raises("xaxis_deprecated", on_device(function() slice_2d(model, xaxis = "wt", hp = 100)),
        "warning", "The `xaxis` argument of `slice_2d()` is deprecated.",
-       purpose = "slice_2d()'s old `xaxis` argument still works and warns, naming x_axis.")
+       covers = c("shared.conditions.xaxis-deprecated", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Old code using xaxis must keep working with a warning naming the new spelling.")
 raises("xaxis_deprecated_add", on_device(function() {
   plot(mpg ~ wt, mtcars)
   add_slice_2d(model, xaxis = "wt", hp = 100)
 }), "warning", "The `xaxis` argument of `add_slice_2d()` is deprecated.",
-       purpose = "add_slice_2d()'s old `xaxis` argument still works and warns in its own name.")
+       covers = c("shared.conditions.xaxis-deprecated", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "add_slice_2d()'s version; catches it naming slice_2d() in its warning, since the two share the check.")
 
-test_that("when both x_axis and xaxis are given, x_axis wins", {
+expectation("x_axis_wins",
+            covers = "shared.conditions.xaxis-deprecated",
+            purpose = "Catches the old xaxis overriding the new x_axis when a user gives both, for example after a half-finished update.", {
   prep <- suppressWarnings(suppressMessages(resolve_deprecated_xaxis("hp", "wt", "slice_2d")))
   expect_equal(prep, "hp")
 })

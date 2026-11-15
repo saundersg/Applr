@@ -1,3 +1,11 @@
+--- main
 error
 geom_slice() does not take an aesthetic mapping as an argument.
     Put the mapping in the plot instead: 'ggplot(data, aes(...)) + geom_slice(model)'.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("stray_aes", function() geom_slice(model, ggplot2::aes(wt, mpg)), "error",
+       "does not take an aesthetic mapping",
+       covers = c("geom_slice.stray-aes", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "ggplot users habitually pass aes() to a layer, where it would land in some other argument; the stop catches it first, and the hint must show where the mapping goes.")

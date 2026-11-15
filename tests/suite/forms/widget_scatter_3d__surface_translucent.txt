@@ -1,0 +1,16 @@
+--- checks
+expect_equal(s$opacity, 0.6)
+expect_false(s$showscale)
+--- source
+curved <- scatter_3d(lm(mpg ~ wt + I(wt^2) + hp, mtcars), n = 25, colors = c("purple", "orange"))
+twisted <- scatter_3d(lm(Sepal.Length ~ Sepal.Width * Petal.Length, iris), n = 25)
+
+expectation("surface_translucent",
+            covers = "scatter_3d.surface-style",
+            purpose = "Catches the surface becoming opaque or gaining its own colour bar, which would hide points behind it and duplicate the legend.", {
+  for (w in list(curved, twisted)) {
+    s <- Filter(function(t) identical(t$type, "surface"), plotly::plotly_build(w)$x$data)[[1]]
+    expect_equal(s$opacity, 0.6)
+    expect_false(s$showscale)
+  }
+})

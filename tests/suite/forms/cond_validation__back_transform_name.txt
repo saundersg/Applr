@@ -1,3 +1,10 @@
+--- main
 error
 "ln" is not a known `back_transform` name.
     Use one of "log", "log10", "log2", "sqrt", "exp", "inverse", "1/x", or pass a function such as 'back_transform = exp'.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("back_transform_name", function() geom_slice(model, back_transform = "ln"), "error", '"ln" is not a known',
+       covers = c("shared.validation.back-transform-arg", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "\"ln\" is a plausible but unknown name; this is the one message that lists every known back_transform name.")

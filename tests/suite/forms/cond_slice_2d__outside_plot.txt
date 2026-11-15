@@ -1,2 +1,17 @@
+--- main
 warning
 Slice is outside the current plot range; the line may not be visible or aligned.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+on_device <- function(code) function() {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  code()
+}
+
+raises("outside_plot", on_device(function() {
+  plot(1:2, 1:2)
+  add_slice_2d(model, x_axis = "wt", hp = 100)
+}), "warning", "Slice is outside the current plot range",
+       covers = c("add_slice_2d.outside-plot", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "add_slice_2d() on a plot whose window the line misses; the warning must say why the user may see nothing.")

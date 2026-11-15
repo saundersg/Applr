@@ -1,0 +1,24 @@
+--- checks
+expect_equal(s$x, seq(min(mtcars$wt), max(mtcars$wt), length.out = 6))
+expect_equal(s$y, seq(min(mtcars$hp), max(mtcars$hp), length.out = 6))
+expect_equal(unname(s$z), expected)
+--- source
+strip_api <- function(x) {
+  if (is.list(x)) return(lapply(x, strip_api))
+  attr(x, "apiSrc") <- NULL
+  x
+}
+built_traces <- function(widget) strip_api(plotly::plotly_build(widget)$x)
+surface_of <- function(x) Filter(function(t) identical(t$type, "surface"), x$data)[[1]]
+
+expectation("raw_predictors",
+            covers = "scatter_3d.raw-predictors",
+            purpose = "Catches a model with I(x^2) getting a third axis or an axis named I(x^2) instead of graphing over x and y.", {
+  model <- lm(mpg ~ wt + I(wt^2) + hp, mtcars)
+  x <- built_traces(scatter_3d(model, n = 6))
+  s <- surface_of(x)
+  expect_equal(s$x, seq(min(mtcars$wt), max(mtcars$wt), length.out = 6))
+  expect_equal(s$y, seq(min(mtcars$hp), max(mtcars$hp), length.out = 6))
+  expected <- outer(s$y, s$x, function(hp, wt) predicted(model, data.frame(wt = wt, hp = hp)))
+  expect_equal(unname(s$z), expected)
+})

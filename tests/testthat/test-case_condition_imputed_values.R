@@ -10,11 +10,13 @@ call <- function() {
     geom_slice(model)
 }
 
-covers("shared.imputation.message")
 judged_output("wording", call, type = "conditions",
-              purpose = "A three-predictor model with nothing held imputes each unheld predictor with one message, and the plot still builds.")
+              covers = c("shared.imputation.message", "shared.conditions.two-part-format", "shared.conditions.severity"),
+              purpose = "The numeric imputation message on its own, with nothing else raised; cond_imputation covers factors and characters. Also the conditions type's demo, used by the suite's own tests.")
 
-test_that("each unheld predictor is imputed with a message and the plot still builds", {
+expectation("imputed_and_built",
+            covers = "shared.imputation.message",
+            purpose = "Catches an unheld predictor going unannounced, or the plot failing to build after the messages.", {
   expect_message(expect_message(p <- ggplot2::ggplot_build(call()), "`hp`"), "`qsec`")
   expect_s3_class(p, "ggplot_built")
 })

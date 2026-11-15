@@ -1,0 +1,15 @@
+--- checks
+expect_equal(sort(unique(d$group)), 1:2)
+expect_equal(d$y[d$group == 2], predicted(m, data.frame(x = d$x[d$group == 2], g = "b")))
+--- source
+expectation("empty_group",
+            covers = "geom_slice.empty-group",
+            purpose = "Catches a factor level with no rows breaking the layer, or shifting the lines of the levels that do have rows.", {
+  df <- data.frame(x = rep(1:5, 2), g = factor(rep(c("a", "b"), each = 5), levels = c("a", "b", "c")))
+  df$y <- df$x * ifelse(df$g == "a", 1, 2)
+  m <- lm(y ~ x * g, data = df)
+  p <- ggplot2::ggplot(df, ggplot2::aes(x, y, colour = g)) + geom_slice(m)
+  d <- slice_data(p)
+  expect_equal(sort(unique(d$group)), 1:2)
+  expect_equal(d$y[d$group == 2], predicted(m, data.frame(x = d$x[d$group == 2], g = "b")))
+})

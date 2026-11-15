@@ -1,0 +1,17 @@
+--- checks
+expect_equal(drawn(dot), drawn(spelled))
+expect_equal(prep(dot), prep(spelled))
+--- source
+mpg <- ggplot2::mpg
+
+expectation("dot_formula",
+            covers = "shared.model-data.dot-formula",
+            purpose = "Catches y ~ . models losing their predictors when the raw variables are recovered from the formula, so they slice differently from the spelled-out model.", {
+  cars <- mtcars[c("mpg", "wt", "hp")]
+  dot <- lm(mpg ~ ., data = cars)
+  spelled <- lm(mpg ~ wt + hp, data = cars)
+  drawn <- function(m) slice_data(ggplot2::ggplot(cars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 10))
+  expect_equal(drawn(dot), drawn(spelled))
+  prep <- function(m) suppressMessages(prepare_slice_data(m, "wt", 10, TRUE, "none", list()))$line
+  expect_equal(prep(dot), prep(spelled))
+})

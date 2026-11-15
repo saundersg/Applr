@@ -1,3 +1,11 @@
+--- main
 error
 `predict_vars` value for `hp` must be one or more values.
     For example, 'predict_vars = list(hp = 1)' or 'predict_vars = list(hp = c(1, 2, 3))' for one line per value.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("predict_vars_empty", function() geom_slice(model, predict_vars = list(hp = NULL, wt = list(1))), "error",
+       "must be one or more values",
+       covers = c("shared.held-values.malformed", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A NULL value (often left from code that built the list) names a real predictor but holds nothing; the hint shows one value and several.")

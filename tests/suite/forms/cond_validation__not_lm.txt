@@ -1,3 +1,8 @@
+--- main
 error
 `model` must be a model fitted by `lm()`; received a "data.frame".
     Fit a model first, such as 'model <- lm(y ~ x, data = your_data)', then call 'geom_slice(model)'.
+--- source
+raises("not_lm", function() geom_slice(data.frame(x = 1)), "error", 'received a "data.frame"',
+       covers = c("shared.validation.model", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Unlike no_model, something was passed, so the message must name what it was; a data frame is the likeliest wrong thing.")

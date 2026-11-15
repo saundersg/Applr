@@ -1,3 +1,11 @@
+--- main
 error
 `full_range` and `fullrange` are the same argument; use only one.
     For example, 'full_range = TRUE'.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("full_range_twice", function() geom_slice(model, full_range = TRUE, fullrange = TRUE), "error",
+       "same argument",
+       covers = c("geom_slice.full-range-twice", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "full_range has an alias (fullrange, ggplot2's spelling); given both, the message must say they are one argument rather than pick one silently.")

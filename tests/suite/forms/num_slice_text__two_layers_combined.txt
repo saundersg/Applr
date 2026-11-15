@@ -1,0 +1,18 @@
+--- checks
+expect_equal(sort(t$label), c("Sepal.Width: 2", "Sepal.Width: 4"))
+expect_equal(t$colour[t$label == "Sepal.Width: 4"], "red")
+--- source
+iris_model <- lm(Sepal.Length ~ Sepal.Width + Petal.Length, data = iris)
+base <- ggplot2::ggplot(iris, ggplot2::aes(Petal.Length, Sepal.Length))
+
+expectation("two_layers_combined",
+            covers = "geom_slice_text.one-layer-per-slice",
+            purpose = "Catches labels being built from only one of two slice layers of the same model, so some lines go unlabelled or wrongly labelled.", {
+  p <- suppressMessages(base +
+    geom_slice(iris_model, predict_vars = list(Sepal.Width = 2)) +
+    geom_slice(iris_model, predict_vars = list(Sepal.Width = 4), colour = "red") +
+    geom_slice_text())
+  t <- slice_text_data(p)
+  expect_equal(sort(t$label), c("Sepal.Width: 2", "Sepal.Width: 4"))
+  expect_equal(t$colour[t$label == "Sepal.Width: 4"], "red")
+})

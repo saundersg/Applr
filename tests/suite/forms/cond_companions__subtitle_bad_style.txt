@@ -1,3 +1,13 @@
+--- main
 warning
 `style` must be one of "prettier", "brackets", "raw", so "prettier" was used.
     For example, 'style = "brackets"' to label factor terms by level alone.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+base <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg))
+
+raises("subtitle_bad_style", function() {
+  base + geom_slice(model, predict_vars = list(hp = 100)) + geom_slice_subtitle(style = "fancy")
+}, "warning", '`style` must be one of "prettier", "brackets", "raw"',
+       covers = c("shared.annotation-wrap.invalid-style", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "An unknown style is only caught at build time, so it warns instead of stopping like text_style; you can judge whether that inconsistency is acceptable.")

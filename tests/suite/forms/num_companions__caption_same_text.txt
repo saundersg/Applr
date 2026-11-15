@@ -1,0 +1,25 @@
+--- checks
+expect_identical(annotation_of(quiet(p + geom_slice_caption(wrap = FALSE)), "caption"), annotation_of(quiet(p + geom_slice_subtitle(wrap = FALSE))))
+expect_gt(length(caption), 2)
+expect_false(any(starts_blank(caption)))
+expect_true(any(starts_blank(subtitle[-1])))
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv + cyl + year, data = mpg)
+coloured <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv))
+quiet <- function(p) suppressMessages(p)
+
+expectation("caption_same_text",
+            covers = "geom_slice_caption.same-text-in-caption",
+            purpose = "Catches geom_slice_caption() drifting from geom_slice_subtitle(): it must hold exactly the same text, only without the indent.", {
+  p <- quiet(coloured + geom_slice(model))
+  expect_identical(annotation_of(quiet(p + geom_slice_caption(wrap = FALSE)), "caption"),
+                   annotation_of(quiet(p + geom_slice_subtitle(wrap = FALSE))))
+  lines_of <- function(q, what) strsplit(annotation_of(q, what), "\n", fixed = TRUE)[[1]]
+  caption <- lines_of(quiet(p + geom_slice_caption(wrap = 5)), "caption")
+  subtitle <- lines_of(quiet(p + geom_slice_subtitle(wrap = 5)), "subtitle")
+  starts_blank <- function(x) substr(x, 1, 1) %in% c(" ", "\u2002", "\u2009", "\u200a")
+  expect_gt(length(caption), 2)
+  expect_false(any(starts_blank(caption)))
+  expect_true(any(starts_blank(subtitle[-1])))
+})

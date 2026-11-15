@@ -4,9 +4,9 @@
 
 model <- lm(mpg ~ disp, data = mtcars)
 
-covers("geom_slice.scale-transforms")
-
-test_that("under scale_x_log10() the grid is even on the log axis", {
+expectation("log_x_grid",
+            covers = "geom_slice.scale-transforms",
+            purpose = "Catches an evenly spaced data-unit grid under scale_x_log10(), which bunches the points at the right of the log axis, or predictions at panel-unit x.", {
   p <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + geom_slice(model, n = 20) +
     ggplot2::scale_x_log10()
   d <- slice_data(p)
@@ -14,7 +14,9 @@ test_that("under scale_x_log10() the grid is even on the log axis", {
   expect_equal(d$y, predicted(model, data.frame(disp = 10^d$x)))
 })
 
-test_that("under scale_y_log10() predictions are placed in panel units", {
+expectation("log_y_panel_units",
+            covers = "geom_slice.scale-transforms",
+            purpose = "Catches predictions placed in data units under scale_y_log10(), which would put the line far from the points.", {
   p <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + geom_slice(model, n = 20) +
     ggplot2::scale_y_log10()
   d <- slice_data(p)

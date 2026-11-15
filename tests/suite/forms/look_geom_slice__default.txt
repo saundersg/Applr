@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -214,3 +215,12 @@
 <text x='27.90' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='66.04px' lengthAdjust='spacingAndGlyphs'>Default line</text>
 </g>
 </svg>
+--- source
+iris_model <- lm(Sepal.Length ~ Sepal.Width + Petal.Length, data = iris)
+points <- function(data, mapping) ggplot2::ggplot(data, mapping) + ggplot2::geom_point()
+default <- points(iris, ggplot2::aes(Petal.Length, Sepal.Length)) + geom_slice(iris_model) +
+  ggplot2::labs(title = "Default line")
+
+judged_output("default", default,
+              covers = "geom_slice.default-look",
+              purpose = "geom_slice() with no styling: the default skyblue line must sit in the user's plot and theme without changing anything else.")

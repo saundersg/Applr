@@ -1,0 +1,19 @@
+--- checks
+expect_null(d$ymin)
+expect_equal(d$y, predicted(lm(mpg ~ wt + hp, mtcars), data.frame(wt = d$x, hp = 100)))
+expect_equal(d$ymax, a)
+--- source
+mpg <- ggplot2::mpg
+quiet_autoplot <- function(...) suppressMessages(autoplot(..., summary = FALSE))
+
+expectation("dots_reach_geom_slice",
+            covers = "autoplot.dots-to-geom-slice",
+            purpose = "Catches arguments in ... not reaching geom_slice(): predict_vars must move the line, and a band must replace the default ribbon rather than error.", {
+  d <- slice_data(quiet_autoplot(lm(mpg ~ wt + hp, mtcars), interval = "none",
+                                 predict_vars = list(hp = 100)))
+  expect_null(d$ymin)
+  expect_equal(d$y, predicted(lm(mpg ~ wt + hp, mtcars), data.frame(wt = d$x, hp = 100)))
+  d <- slice_data(quiet_autoplot(lm(mpg ~ wt + hp, mtcars), band = "hp"))
+  a <- predicted(lm(mpg ~ wt + hp, mtcars), data.frame(wt = d$x, hp = min(mtcars$hp)))
+  expect_equal(d$ymax, a)
+})

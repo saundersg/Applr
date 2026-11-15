@@ -1,3 +1,13 @@
+--- main
 error
 The data on the plot is not the data `model` was fitted to.
     Fit a model to the plotted data, such as 'model <- lm(y ~ x, data = your_data)', or plot the data the model was fitted to.
+--- source
+mpg <- ggplot2::mpg
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("plot_data_mismatch", function() {
+  ggplot2::ggplot(mtcars[1:20, ], ggplot2::aes(wt, mpg)) + geom_slice(model)
+}, "error", "The data on the plot is not the data `model` was fitted to.",
+       covers = c("shared.model-data.plot-data-mismatch", "geom_slice.model-name", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Plotting a subset of the model's data would draw a slice of other data; the stop must name the model as the user called it (`model`). The only output showing that naming.")

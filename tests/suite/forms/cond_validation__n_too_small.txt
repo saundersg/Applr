@@ -1,3 +1,10 @@
+--- main
 error
 `n` must be a single number of at least 2.
     For example, 'n = 100'.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("n_too_small", function() geom_slice(model, n = 1), "error", "`n` must be",
+       covers = c("shared.validation.n", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "The only check of the `n` message: one point can't make a line, and the hint must give a usable n.")

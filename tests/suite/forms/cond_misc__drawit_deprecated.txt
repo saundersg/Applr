@@ -1,3 +1,15 @@
+--- main
 warning
 `drawit()` is deprecated; use `slice_2d()` instead.
     Call it as 'slice_2d(model, x_axis = "hp")'. Unlike `drawit()`, `slice_2d()` imputes any predictors you do not name rather than requiring them.
+--- source
+on_device <- function(code) function() {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  code()
+}
+
+raises("drawit_deprecated", on_device(function() drawit(lm(mpg ~ wt + hp, mtcars), "hp", wt = 3)),
+       "warning", "`drawit()` is deprecated; use `slice_2d()` instead.",
+       covers = c("drawit.warns-and-forwards", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "drawit() still appears in old scripts; the warning must give a slice_2d() call to copy and explain the one behaviour change.")

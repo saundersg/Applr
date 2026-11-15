@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -245,3 +246,11 @@
 <text x='27.90' y='48.69' style='font-size: 11.00px; font-family: sans;' textLength='308.61px' lengthAdjust='spacingAndGlyphs'>                        - 0.0943*I(Sepal.Length^2):(Species="virginica")</text>
 </g>
 </svg>
+--- source
+build <- function(p) suppressMessages(p)
+set.seed(123)
+iris_quick <- build(autoplot(lm(Petal.Length ~ Sepal.Length + I(Sepal.Length^2):Species, iris), summary = FALSE))
+
+judged_output("iris_quick", iris_quick,
+              covers = "autoplot.looks-complete",
+              purpose = "The README's first picture: if this looks wrong, it's the first thing a new user sees. Curved slices per species, ribbons and a wrapped equation, all from one call.")

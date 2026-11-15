@@ -1,3 +1,13 @@
+--- main
 warning
 The y-axis `hp` does not match the model's response `mpg`; the line may not display correctly.
     Plot the response variable on the y-axis, or supply 'back_transform ='.
+--- source
+on_mpg <- function(model, y = quote(mpg), ...) function() {
+  ggplot2::ggplot(mtcars, ggplot2::aes(disp, !!y)) + geom_slice(model, ...)
+}
+
+raises("y_axis_not_response", on_mpg(lm(mpg ~ disp, mtcars), quote(hp)), "warning",
+       "does not match the model's response",
+       covers = c("shared.back-transform.y-mismatch", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A y-axis that isn't the response usually means the line is meaningless there; the warning must say so while still drawing.")

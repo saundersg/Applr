@@ -1,5 +1,14 @@
+--- main
 warning
 NaNs produced
 
 warning
 no non-missing arguments to max; returning -Inf
+--- source
+two_rows <- data.frame(x = c(1, 2), y = c(1, 3))
+
+raises("interval_from_two_rows", function() {
+  ggplot2::ggplot(two_rows, ggplot2::aes(x, y)) + geom_slice(lm(y ~ x, two_rows), interval = "confidence")
+}, "warning", "NaNs produced", format = FALSE,
+       covers = c("shared.intervals.no-residual-df", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Pins what a user sees asking for an interval on a two-row model: base R's bare 'NaNs produced' and a confusing max() warning, while the plot still builds.")

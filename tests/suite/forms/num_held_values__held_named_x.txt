@@ -1,0 +1,16 @@
+--- checks
+expect_equal(prep$line$fit, predicted(m, data.frame(w = prep$line$x, x = 2)))
+expect_silent(slice_2d(m, x_axis = "w", x = 2))
+--- source
+expectation("held_named_x",
+            covers = "slice_2d.held-named-x",
+            purpose = "Catches R's partial argument matching taking a predictor literally named x as slice_2d()'s x_axis.", {
+  d <- data.frame(w = 1:10, x = c(2, 1, 4, 3, 6, 5, 8, 7, 10, 9))
+  d$y <- d$w + 2 * d$x
+  m <- lm(y ~ w + x, data = d)
+  prep <- prepare_slice_data(m, "w", 10, TRUE, "none", list(x = 2))
+  expect_equal(prep$line$fit, predicted(m, data.frame(w = prep$line$x, x = 2)))
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  expect_silent(slice_2d(m, x_axis = "w", x = 2))
+})

@@ -1,0 +1,17 @@
+--- checks
+expect_line(d[d$group == g, ], drv = "f", cyl = cyls[g])
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv + cyl, data = mpg)
+expect_line <- function(line, ...) {
+  expect_equal(line$y, predicted(model, data.frame(displ = line$x, ...)))
+}
+
+expectation("factor_wrapped_colour",
+            covers = "shared.slicing.factor-wrapped-aes",
+            purpose = "Catches colour = factor(cyl) going unrecognised as cyl, so each group's line uses the mean cyl instead of its own number.", {
+  d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = factor(cyl))) +
+                    geom_slice(model, n = 10, predict_vars = list(drv = "f")))
+  cyls <- sort(unique(mpg$cyl))
+  for (g in unique(d$group)) expect_line(d[d$group == g, ], drv = "f", cyl = cyls[g])
+})

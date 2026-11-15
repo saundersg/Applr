@@ -26,21 +26,28 @@ exact_composite <- ggplot2::ggplot(dat, ggplot2::aes(x = log(5 + x + x2 + x3 + 1
 zigzag <- ggplot2::ggplot(zig, ggplot2::aes(x * x2, y)) + ggplot2::geom_point() + geom_slice(zig_model) +
   ggplot2::labs(title = "Predictions that aren't a function of x * x2")
 
-covers("autoplot.looks-complete", "shared.composite-x.exact-fit", "shared.composite-x.zigzag")
 judged_output("iris_quick", iris_quick,
-              purpose = "The README's iris quick look: autoplot() alone gives curved slices with ribbons per species and the wrapped equation.")
+              covers = "autoplot.looks-complete",
+              purpose = "The README's first picture: if this looks wrong, it's the first thing a new user sees. Curved slices per species, ribbons and a wrapped equation, all from one call.")
 judged_output("chosen", chosen,
-              purpose = "autoplot() choosing colour by drv and facets by cyl itself gives a finished plot with lines pinned to each panel.")
+              covers = "autoplot.looks-complete",
+              purpose = "autoplot() choosing colour and facets itself; unlike iris_quick, there are facet strips and a legend to judge, and each panel's lines must sit in their own data.")
 judged_output("mapped", mapped,
-              purpose = "A user's colour mapping plus facet_wrap() replace autoplot()'s own choices, with each line pinned to its panel's drv.")
+              covers = "autoplot.looks-complete",
+              purpose = "The README's user mapping plus a facet added afterwards: the user's colours must replace autoplot()'s and each panel must show its own drv's lines.")
 judged_output("other_axis", other_axis,
-              purpose = "autoplot() with a user-chosen x-axis, bare lines and a title shows the same model from another angle.")
+              covers = "autoplot.looks-complete",
+              purpose = "The README's 'different angle': a discrete-looking numeric on x with bare lines (no ribbon) and a user title; checks nothing crowds or overlaps when the defaults are changed.")
 judged_output("exact_composite", exact_composite,
-              purpose = "An exact fit plotted against its full linear predictor puts every point on the line.")
+              covers = "shared.composite-x.exact-fit",
+              purpose = "The picture that justifies composite x-axes: against the full linear predictor every point sits on the line. A test confirms the numbers; you judge that it reads that way.")
 judged_output("zigzag", zigzag,
-              purpose = "A composite x-axis whose predictions aren't a function of it zigzags through the points, the honest picture rather than a bug.")
+              covers = "shared.composite-x.zigzag",
+              purpose = "Shows the zigzag a composite x-axis can honestly give, so you can confirm it reads as data, not a bug; nothing else in the suite shows it.")
 
-test_that("the exact fit's points lie on its composite-axis line", {
+expectation("exact_fit_on_line",
+            covers = "shared.composite-x.exact-fit",
+            purpose = "Catches the composite-axis line missing the points of an exact fit, which would mean the predictions are placed at the wrong x.", {
   d <- slice_data(exact_composite)
   expect_equal(d$y, (dat$y[order(log(5 + dat$x + dat$x2 + dat$x3 + dat$x * dat$x3 / 5 + 80 * dat$x4))]),
                tolerance = 1e-6)

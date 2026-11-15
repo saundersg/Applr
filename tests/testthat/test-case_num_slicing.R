@@ -6,15 +6,13 @@ mpg <- ggplot2::mpg
 model <- lm(hwy ~ displ * drv + cyl, data = mpg)
 cyl_mean <- mean(mpg$cyl)
 
-covers("shared.slicing.group-pins", "shared.slicing.facet-pins",
-       "shared.slicing.factor-wrapped-aes", "shared.slicing.facet-not-predictor",
-       "autoplot.user-facet-after")
-
 expect_line <- function(line, ...) {
   expect_equal(line$y, predicted(model, data.frame(displ = line$x, ...)))
 }
 
-test_that("each colour group is predicted at its own value", {
+expectation("colour_group_pins",
+            covers = "shared.slicing.group-pins",
+            purpose = "Catches each colour group's line being predicted at an imputed value instead of that group's own value, the central idea of slicing by aesthetic.", {
   d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(model, n = 10))
   lv <- levels(factor(mpg$drv))
   for (g in unique(d$group)) expect_line(d[d$group == g, ], drv = lv[g], cyl = cyl_mean)
@@ -22,7 +20,9 @@ test_that("each colour group is predicted at its own value", {
   for (g in unique(d$group)) expect_line(d[d$group == g, ], drv = lv[g], cyl = cyl_mean)
 })
 
-test_that("each panel is predicted at its own facet value, wrap or grid", {
+expectation("facet_pins",
+            covers = "shared.slicing.facet-pins",
+            purpose = "Catches facets failing to pin their predictor, for facet_wrap and facet_grid, which store their variables differently.", {
   lv <- levels(factor(mpg$drv))
   for (facet in list(ggplot2::facet_wrap(~drv), ggplot2::facet_grid(rows = ggplot2::vars(drv)))) {
     d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy)) + geom_slice(model, n = 10) + facet)
@@ -32,14 +32,18 @@ test_that("each panel is predicted at its own facet value, wrap or grid", {
   }
 })
 
-test_that("colour = factor(cyl) pins the numeric cyl at each group's number", {
+expectation("factor_wrapped_colour",
+            covers = "shared.slicing.factor-wrapped-aes",
+            purpose = "Catches colour = factor(cyl) going unrecognised as cyl, so each group's line uses the mean cyl instead of its own number.", {
   d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = factor(cyl))) +
                     geom_slice(model, n = 10, predict_vars = list(drv = "f")))
   cyls <- sort(unique(mpg$cyl))
   for (g in unique(d$group)) expect_line(d[d$group == g, ], drv = "f", cyl = cyls[g])
 })
 
-test_that("a facet on a variable the model doesn't use gives every panel the same line", {
+expectation("facet_not_predictor",
+            covers = "shared.slicing.facet-not-predictor",
+            purpose = "Catches a facet on a variable outside the model pinning something by mistake, which would draw different lines in panels that should match.", {
   m <- lm(mpg ~ wt, mtcars)
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 10) +
                     ggplot2::facet_wrap(~gear))
@@ -49,7 +53,9 @@ test_that("a facet on a variable the model doesn't use gives every panel the sam
   }
 })
 
-test_that("a facet added after autoplot() still pins its predictor for the line", {
+expectation("facet_after_autoplot",
+            covers = "autoplot.user-facet-after",
+            purpose = "Catches the README's autoplot(model) + facet_wrap(~drv) drawing the same line in every panel because the facet came after autoplot().", {
   m <- lm(hwy ~ displ + drv + cyl, data = mpg)
   p <- suppressMessages(autoplot(m, ggplot2::aes(colour = factor(cyl)), summary = FALSE)) +
     ggplot2::facet_wrap(~drv)

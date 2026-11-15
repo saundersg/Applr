@@ -1,3 +1,12 @@
+--- main
 error
 The model's response `I(mpg/hp)` does not use exactly one variable, so autoplot() cannot choose a y-axis.
     Build the plot yourself with ggplot() + geom_slice().
+--- source
+mpg <- ggplot2::mpg
+quiet_summary <- function(...) function() autoplot(..., summary = FALSE)
+
+raises("two_response_variables", quiet_summary(lm(I(mpg / hp) ~ wt, mtcars)), "error",
+       "does not use exactly one variable",
+       covers = c("autoplot.input-errors", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A response built from two variables, I(mpg / hp), has no y-axis to choose; unlike the other refusals, the way out is to build the plot by hand.")

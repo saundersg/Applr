@@ -1,0 +1,21 @@
+--- checks
+expect_equal(sort(unique(t$label)), c("cyl: 5", "cyl: 7"))
+expect_equal(t$y[i], predicted(model, data.frame(displ = t$x[i], drv = drv, cyl = cyl)))
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv + cyl, data = mpg)
+coloured <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv))
+
+expectation("text_labels_edges",
+            covers = "geom_slice_text.band-edges",
+            purpose = "Catches geom_slice_text() putting a band edge's label on the wrong edge: each label's position must be the prediction for the value it names.", {
+  p <- suppressMessages(coloured + geom_slice(model, band = "cyl", predict_vars = list(cyl = c(5, 7))) +
+                          geom_slice_text())
+  t <- slice_text_data(p)
+  expect_equal(sort(unique(t$label)), c("cyl: 5", "cyl: 7"))
+  for (i in seq_len(nrow(t))) {
+    cyl <- as.numeric(sub("cyl: ", "", t$label[i]))
+    drv <- levels(factor(mpg$drv))[t$colour[i] == unique(t$colour)]
+    expect_equal(t$y[i], predicted(model, data.frame(displ = t$x[i], drv = drv, cyl = cyl)))
+  }
+})

@@ -70,7 +70,10 @@ resolve_output_type <- function(entry) {
 }
 
 # Serialises one declared output through its type. Every part goes through
-# the common normalisation here, so no type can skip it.
+# the common normalisation here, so no type can skip it. An output that cites
+# its own inventory entries also gets a `source` part: its declaring call and
+# the setup lines it uses, as written. So a change to what is checked, or to
+# the purpose, sends it back for review even when what it shows is the same.
 serialise_output <- function(entry) {
   type <- resolve_output_type(entry)
   states <- type$states(entry$states)
@@ -81,6 +84,11 @@ serialise_output <- function(entry) {
   s <- type$serialise(entry$object, states)
   if (!is.list(s$parts) || !length(s$parts) || is.null(names(s$parts))) {
     stop("Output type '", type$name, "' must serialise to named parts.", call. = FALSE)
+  }
+  src <- entry$source
+  if (length(src$covers)) {
+    lines <- c(unlist(src$setup), if (length(src$setup)) "", src$code)
+    s$parts$source <- unlist(lapply(lines, function(l) if (nzchar(l)) strsplit(l, "\n", fixed = TRUE)[[1]] else ""))
   }
   s$parts <- lapply(s$parts, normalise_common)
   c(list(type = type, states = states), fingerprint_output(s), list(view = s$view))

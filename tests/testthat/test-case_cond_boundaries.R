@@ -3,9 +3,6 @@
 # outside its domain, an interval with no residual degrees of freedom, and
 # every entry point refusing a bad model or back_transform the same way.
 
-covers("shared.back-transform.outside-domain", "shared.intervals.no-residual-df",
-       "shared.validation.every-entry-point")
-
 # exp(y) predictions go negative at small x, where log() has no value
 low <- data.frame(x = 1:10, y = log(c(1, 1.2, 1.5, 2, 3, 5, 8, 13, 21, 34)))
 two_rows <- data.frame(x = c(1, 2), y = c(1, 3))
@@ -13,13 +10,17 @@ two_rows <- data.frame(x = c(1, 2), y = c(1, 3))
 raises("log_of_negative_prediction", function() {
   ggplot2::ggplot(low, ggplot2::aes(x, y)) + geom_slice(lm(exp(y) ~ x, low))
 }, c("message", "warning"), "NaNs produced", format = FALSE,
-       purpose = "A back-transform taken outside its domain (log of negative exp(y) predictions) shows what users get today: bare base R and ggplot2 warnings.")
+       covers = c("shared.back-transform.outside-domain", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Pins what a user sees when exp(y) predictions go negative: two bare warnings from base R and ggplot2 and nothing from Applr. You can judge whether Applr should explain the gap.")
 raises("interval_from_two_rows", function() {
   ggplot2::ggplot(two_rows, ggplot2::aes(x, y)) + geom_slice(lm(y ~ x, two_rows), interval = "confidence")
 }, "warning", "NaNs produced", format = FALSE,
-       purpose = "A confidence interval on a two-row model, with no residual degrees of freedom, shows base R's bare 'NaNs produced' while the plot still builds.")
+       covers = c("shared.intervals.no-residual-df", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Pins what a user sees asking for an interval on a two-row model: base R's bare 'NaNs produced' and a confusing max() warning, while the plot still builds.")
 
-test_that("every entry point refuses a non-lm model, `$` names and an unknown back_transform alike", {
+expectation("every_entry_point_same",
+            covers = "shared.validation.every-entry-point",
+            purpose = "Catches one entry point (slice_2d, add_slice_2d, autoplot, scatter_3d) drifting from geom_slice()'s refusal wording, or naming the wrong function in its hint; scatter_3d's wrong name is pinned as a known bug.", {
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off())
   plot(mpg ~ wt, mtcars)

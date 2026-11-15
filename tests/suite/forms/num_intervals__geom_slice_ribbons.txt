@@ -1,0 +1,19 @@
+--- checks
+expect_equal(d$y, unname(p[, "fit"]))
+expect_equal(d$ymin, unname(p[, "lwr"]))
+expect_equal(d$ymax, unname(p[, "upr"]))
+--- source
+model <- lm(hwy ~ displ + I(displ^2), data = ggplot2::mpg)
+base <- ggplot2::ggplot(ggplot2::mpg, ggplot2::aes(displ, hwy))
+
+expectation("geom_slice_ribbons",
+            covers = "shared.intervals.match-predict",
+            purpose = "Catches geom_slice()'s ribbon edges differing from predict()'s lwr and upr, for both confidence and prediction intervals.", {
+  for (iv in c("confidence", "prediction")) {
+    d <- slice_data(base + geom_slice(model, n = 10, interval = iv))
+    p <- predict(model, data.frame(displ = d$x), interval = iv)
+    expect_equal(d$y, unname(p[, "fit"]))
+    expect_equal(d$ymin, unname(p[, "lwr"]))
+    expect_equal(d$ymax, unname(p[, "upr"]))
+  }
+})

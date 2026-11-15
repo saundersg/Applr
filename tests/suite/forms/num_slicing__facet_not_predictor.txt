@@ -1,0 +1,16 @@
+--- checks
+expect_equal(line$y, predicted(m, data.frame(wt = line$x)))
+--- source
+mpg <- ggplot2::mpg
+
+expectation("facet_not_predictor",
+            covers = "shared.slicing.facet-not-predictor",
+            purpose = "Catches a facet on a variable outside the model pinning something by mistake, which would draw different lines in panels that should match.", {
+  m <- lm(mpg ~ wt, mtcars)
+  d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 10) +
+                    ggplot2::facet_wrap(~gear))
+  for (panel in unique(d$PANEL)) {
+    line <- d[d$PANEL == panel, ]
+    expect_equal(line$y, predicted(m, data.frame(wt = line$x)))
+  }
+})

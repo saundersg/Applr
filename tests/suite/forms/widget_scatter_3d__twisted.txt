@@ -111,3 +111,14 @@ plotly-binding 4.12.1
 plotly-htmlwidgets-css 2.25.2
 plotly-main 2.25.2
 typedarray 0.1
+--- source
+cameras <- list(
+  default = list(eye = list(x = 1.25, y = 1.25, z = 1.25)),
+  top = list(eye = list(x = 0, y = 0, z = 2.5)),
+  side = list(eye = list(x = 2.5, y = 0, z = 0))
+)
+twisted <- scatter_3d(lm(Sepal.Length ~ Sepal.Width * Petal.Length, iris), n = 25)
+
+judged_output("twisted", twisted, states = cameras,
+              covers = c("scatter_3d.twisted-surface", "scatter_3d.readable-from-any-angle"),
+              purpose = "An interaction surface looks flat from the default camera; this checks the side camera reveals the twist, which is the point of showing it in 3D.")

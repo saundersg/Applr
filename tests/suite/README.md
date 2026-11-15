@@ -27,20 +27,42 @@ Rscript tests/suite/ci.R [out_dir]              # the CI check, without writing 
 Rscript tests/suite/release.R                   # the release check, before CRAN
 ```
 
-## Writing and approving judged outputs (agents)
+## Writing and approving items (agents)
 
-Every judged output carries a **purpose**: one line, a string literal in the
-declaring call, saying what situation it puts the function in and why that
-matters. It stays in the case file for good and the review page shows it
-above the output.
+Everything in a case reaches the maintainer as an **item**: each judged
+output, and each test. A test is an `expectation()` rather than a bare
+`test_that()`; it runs as a testthat test (under CRAN too) and is also a
+judged output of type `test_block`, so the maintainer sees every test once,
+and again whenever it changes. Every item names the inventory entries it
+covers with `covers =`, and carries a **purpose**. Both are string literals,
+read from the case file; there is no case-wide `covers()`.
 
 ```r
 judged_output("band_named", band_named,
-              purpose = "A band named by the user, with its two levels pinned, labels each line by level.")
-raises("no_inverse", call, "warning", "no inverse", purpose = "A response transform with no known inverse warns and plots on the transformed scale.")
+              covers = "shared.band.look",
+              purpose = "Next to band_inferred, a band over two chosen values must look narrower; catches the two looking the same.")
+raises("no_inverse", call, "warning", "no inverse",
+       covers = c("shared.back-transform.no-inverse", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A transform with no known inverse: the warning must say the line stays on the transformed scale and point to back_transform =.")
+expectation("ribbon_upright",
+            covers = "shared.back-transform.ribbons-upright",
+            purpose = "Catches a decreasing back-transform (1/y) flipping the ribbon so its lower edge sits above its upper edge.", {
+  ...
+})
 ```
 
-When you approve, the note says why the output is right: what you looked at
+- A purpose says **why**: what the item would catch that no other does,
+  naming the closest sibling where there is one. A purpose that restates the
+  call ("slice_2d() on a two-predictor model draws...") is sent back. A test
+  that pins a known bug says so, and says what to expect once it's fixed.
+- `covers` lists only the entries this item is judged against (an output) or
+  checks (a test). For a `raises()`, the page also lists what its hidden
+  test checks, in words, worked out from its arguments.
+- Each item gets a `source` part: its declaring call and the setup lines it
+  uses. So changing what a test checks, the data an output uses, or a
+  purpose sends the item back for review.
+
+When you approve, the note says why the item is right: what you looked at
 and what it shows. When the output is **new** (never Human approved; the page
 marks it), the note also says why it exists: what it catches that no other
 output in its case or family already does, naming the closest one and how
@@ -50,10 +72,14 @@ purpose line is shown to the maintainer as missing one.
 
 `suite.R list` also lists every Rejected output with who rejected it and the
 note. A human rejection note is the maintainer's instruction: change the case
-as it asks (the data, the call, the purpose, or removing the output) and run
-again. A Rejected output stays Rejected until its fingerprint changes, so a
-fix that only rewrites the purpose line doesn't send it back for review; say
-so to the maintainer instead.
+as it asks and run again. On the page this is **Send back** (the status is
+still called Rejected), and the note can ask for a change to the case (the
+data, the call, the purpose), a change to the package code it tests, or the
+item's removal. A Rejected item stays Rejected until its fingerprint changes;
+since the purpose is part of the `source` part, rewriting it is enough.
+
+You may delete an item you added, until the maintainer has decided on it.
+After that, remove one only when a Send back note asks for it.
 
 `review_state.json`, `human_decisions.json`, `forms/`, `test_report.json` and
 `mutation_report.json` are committed. Views (PNGs, HTML, screenshots, live
@@ -161,8 +187,9 @@ shared:
     edge_cases: [...]
 ```
 
-A case cites what it covers with `covers("<id>", ...)` (string literals,
-anywhere in the file); the page reads them without running the case. An ID
+Each item cites what it covers with `covers =` in its declaring call (string
+literals); the page reads them without running the case. A bare
+`covers("<id>", ...)` call is still read, but no case uses one. An ID
 used twice, an entry with no principle, or a case citing an unknown ID is
 flagged. A case's overview family is that of the first function entry it
 cites.
@@ -200,13 +227,15 @@ A registration gives:
 | `mutations` | Named functions, each changing one input of `list(object, states)`. The shared tests assert that each one changes the fingerprint. |
 | `demo` | The case the shared tests use. |
 
-Registered: `static_plot`, `base_graphics`, `conditions`, `returned_text` and
-`plotly_3d`, with demo cases `single_predictor_line`, `base_slice_2d`,
-`condition_imputed_values`, `text_lm_equation_styles` and
-`scatter_3d_two_predictors`. `returned_text` is for strings a function
-returns (an equation, a subtitle, a label), judged for wording like
-condition text; a named vector shows several examples under `[name]`
-headers.
+Registered: `static_plot`, `base_graphics`, `conditions`, `returned_text`,
+`plotly_3d` and `test_block`, with demo cases `single_predictor_line`,
+`base_slice_2d`, `condition_imputed_values`, `text_lm_equation_styles` and
+`scatter_3d_two_predictors` (`test_block` shares `base_slice_2d`). `returned_text` is for
+strings a function returns (an equation, a subtitle, a label), judged for
+wording like condition text; a named vector shows several examples under
+`[name]` headers. `test_block` is a test declared with `expectation()`: its
+part lists the test's `expect_*()` calls, and the core's `source` part holds
+its code.
 
 Views are rendered only for Unreviewed outputs, when the fingerprint is new
 or the views are missing. A human approval keeps a copy of them under

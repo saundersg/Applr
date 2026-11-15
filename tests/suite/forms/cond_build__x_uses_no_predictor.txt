@@ -1,3 +1,4 @@
+--- main
 warning
 The x-axis `drat` uses none of the model's predictors, so the slice will be a flat line.
     The model's predictors are `wt`.
@@ -5,3 +6,11 @@ The x-axis `drat` uses none of the model's predictors, so the slice will be a fl
 message
 Value for `wt` not specified - Used mean: 3.217
     To choose a slice, use 'predict_vars = list(wt = 3.217)'.
+--- source
+mpg <- ggplot2::mpg
+on_mtcars <- function(mapping, ...) function() ggplot2::ggplot(mtcars, mapping) + geom_slice(...)
+
+raises("x_uses_no_predictor", on_mtcars(ggplot2::aes(drat, mpg), lm(mpg ~ wt, mtcars)),
+       c("warning", "message"), "uses none of the model's predictors",
+       covers = c("geom_slice.x-uses-no-predictor", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "An x-axis outside the model gives a flat line that looks like 'no effect'; the warning must say why it's flat and list the predictors.")

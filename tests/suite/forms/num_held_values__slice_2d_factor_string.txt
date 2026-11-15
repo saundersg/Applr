@@ -1,0 +1,13 @@
+--- checks
+expect_equal(prep$line$fit, predicted(model, data.frame(displ = prep$line$x, cyl = 6, drv = "r")))
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ + cyl + drv, data = mpg)
+
+expectation("slice_2d_factor_string",
+            covers = "shared.held-values.base-not-coerced",
+            purpose = "The slice_2d() path, which passes ... to predict() without coercing: a factor level given as a string must still predict at that level.", {
+  prep <- suppressMessages(prepare_slice_data(model, "displ", 10, TRUE, "none",
+                                              list(cyl = 6, drv = "r")))
+  expect_equal(prep$line$fit, predicted(model, data.frame(displ = prep$line$x, cyl = 6, drv = "r")))
+})

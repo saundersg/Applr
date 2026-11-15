@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -319,3 +320,14 @@
 <text x='32.79' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='236.99px' lengthAdjust='spacingAndGlyphs'>The Same Model From a Different Angle</text>
 </g>
 </svg>
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ + drv + cyl, data = mpg)
+build <- function(p) suppressMessages(p)
+set.seed(123)
+other_axis <- build(autoplot(model, ggplot2::aes(x = cyl, colour = factor(drv)), interval = "none", summary = FALSE) +
+  ggplot2::labs(title = "The Same Model From a Different Angle"))
+
+judged_output("other_axis", other_axis,
+              covers = "autoplot.looks-complete",
+              purpose = "The README's 'different angle': a discrete-looking numeric on x with bare lines (no ribbon) and a user title; checks nothing crowds or overlaps when the defaults are changed.")

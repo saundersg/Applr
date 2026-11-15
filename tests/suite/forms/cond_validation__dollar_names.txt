@@ -1,3 +1,10 @@
+--- main
 error
 Models with `$` in their variable names (`cars$mpg`) are not supported.
     Refit using the data argument, such as 'lm(y ~ x, data = your_data)'.
+--- source
+cars <- mtcars
+
+raises("dollar_names", function() geom_slice(lm(cars$mpg ~ cars$wt)), "error", "`cars$mpg`",
+       covers = c("shared.validation.dollar-names", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A model fitted as lm(cars$mpg ~ cars$wt) is common in teaching code and would otherwise fail obscurely later; the message must show the offending name and how to refit.")

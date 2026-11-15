@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -280,3 +281,17 @@
 <text x='35.24' y='24.93' style='font-size: 11.00px; font-family: sans;' textLength='202.43px' lengthAdjust='spacingAndGlyphs'>projection band: x2 spanning from 0 to 10</text>
 </g>
 </svg>
+--- source
+set.seed(123)
+n <- 80
+dat <- data.frame(x = runif(n, 0.1, 10), x2 = runif(n, 0.1, 10),
+                  x3 = sample(c(1, 20, 40), n, replace = TRUE), x4 = sample(c(1, 2), n, replace = TRUE))
+dat$y <- log(5 + dat$x + dat$x2 + dat$x3 + 1 / 5 * dat$x * dat$x3 + 80 * dat$x4)
+exact <- lm(exp(y) ~ x * x3 + x2 + x4, data = dat)
+exact_fit_clear <- suppressMessages(ggplot2::ggplot(dat, ggplot2::aes(x, y, colour = factor(x3))) +
+  ggplot2::geom_point() + geom_slice(exact, band = "x2", predict_vars = list(x2 = c(0, 10))) +
+  ggplot2::facet_wrap(~x4) + geom_slice_text() + geom_slice_subtitle())
+
+judged_output("exact_fit_clear", exact_fit_clear,
+              covers = c("shared.slicing.facets-look", "geom_slice_text.facets"),
+              purpose = "The README's showcase, every companion at once: colour, facets, band, labels and subtitle must all fit and read together.")

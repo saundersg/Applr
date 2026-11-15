@@ -1,0 +1,16 @@
+--- checks
+expect_equal(prep$line$x, grid)
+expect_equal(prep$line$fit, unname(predict(model, data.frame(wt = grid, hp = 150))))
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+expectation("line_is_prediction",
+            covers = "slice_2d.line-is-prediction",
+            purpose = "Catches slice_2d() drawing anything but the model's prediction, or ignoring a held value: the line must equal predict() at hp = 150 along an even wt grid.", {
+  prep <- prepare_slice_data(model = model, x_axis = "wt", n = 100, back_transform = TRUE,
+                             interval = "none", dots = list(hp = 150), model_name = "model",
+                             fn = "slice_2d")
+  grid <- seq(min(mtcars$wt), max(mtcars$wt), length.out = 100)
+  expect_equal(prep$line$x, grid)
+  expect_equal(prep$line$fit, unname(predict(model, data.frame(wt = grid, hp = 150))))
+})

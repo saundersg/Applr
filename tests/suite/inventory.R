@@ -44,7 +44,8 @@ read_inventory <- function(file) {
   list(groups = groups, entries = entries)
 }
 
-# The inventory IDs a case file cites through covers(), in order.
+# The inventory IDs a case file cites, in order: through covers(), and the
+# `covers =` of each declaring call.
 case_covers <- function(file) {
   found <- character()
   walk <- function(x) {
@@ -53,6 +54,7 @@ case_covers <- function(file) {
     if (identical(x[[1]], as.name("covers"))) {
       found <<- c(found, unlist(Filter(is.character, args)))
     }
+    if (is.name(x[[1]]) && as.character(x[[1]]) %in% declaring) found <<- c(found, cited(x$covers))
     for (i in seq_along(args)) {
       if (!identical(args[[i]], quote(expr = ))) walk(args[[i]])
     }
@@ -65,7 +67,32 @@ case_covers <- function(file) {
 # name: its `purpose`, the top-level call that declares it, and the top-level
 # lines before that call it depends on. Those are the definitions of the
 # names it uses, followed back, and the plain calls (set.seed()) among them.
-declaring <- c("judged_output", "raises")
+# An output that names its own inventory entries (`covers =`) also gets
+# `kind` ("test" for an expectation(), else "output") and, for raises(), the
+# `checks` its hidden test makes, in words.
+declaring <- c("judged_output", "raises", "expectation")
+
+cited <- function(x) {
+  if (is.character(x)) return(x)
+  if (is.call(x) && identical(x[[1]], as.name("c"))) return(unlist(Filter(is.character, as.list(x)[-1])))
+  character()
+}
+
+# raises()'s signature (tests/testthat/helper-slice.R), to read its arguments
+# by name, and what its test checks given them.
+raises_args <- function(name, call, kinds, has = character(), format = TRUE, purpose = NULL, covers = NULL) NULL
+
+raises_checks <- function(e) {
+  a <- as.list(match.call(raises_args, e))
+  lit <- function(x, default) if (is.null(x)) default else if (is.call(x)) eval(x, baseenv()) else x
+  kinds <- lit(a$kinds, character())
+  format <- isTRUE(lit(a$format, TRUE))
+  c(paste0("Raises, in order: ", paste(kinds, collapse = ", ")),
+    unlist(lapply(lit(a$has, character()), function(h) c(
+      paste0("A message contains '", h, "'"),
+      if (format) "That message is in the two-part format"))),
+    if (!"error" %in% kinds) "The call still finishes and builds its plot")
+}
 
 case_outputs <- function(file) {
   parsed <- parse(file, keep.source = TRUE)
@@ -98,8 +125,15 @@ case_outputs <- function(file) {
       }
     }
     if (any(keep)) keep <- keep | (plain[seq_len(k - 1)] & seq_len(k - 1) < max(which(keep)))
-    out[[e[[2]]]] <- list(purpose = if (is.character(e$purpose)) e$purpose else "",
-                          setup = as.list(src[which(keep)]), code = src[k])
+    rec <- list(purpose = if (is.character(e$purpose)) e$purpose else "",
+                setup = as.list(src[which(keep)]), code = src[k])
+    covers <- cited(e$covers)
+    if (length(covers)) {
+      rec$covers <- as.list(covers)
+      rec$kind <- if (head_of(e) == "expectation") "test" else "output"
+      if (head_of(e) == "raises") rec$checks <- as.list(raises_checks(e))
+    }
+    out[[e[[2]]]] <- rec
   }
   out
 }

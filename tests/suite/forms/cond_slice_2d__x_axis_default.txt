@@ -1,3 +1,16 @@
+--- main
 message
 X-axis not specified - Used first x variable as x-axis
     To specify, use 'x_axis = "var_name"' such as 'x_axis = "wt"'
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+on_device <- function(code) function() {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  code()
+}
+
+raises("x_axis_default", on_device(function() slice_2d(model, hp = 100)), "message",
+       "X-axis not specified",
+       covers = c("slice_2d.default-x-axis", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "slice_2d() choosing the x-axis for the user; the message must say which one and how to choose. Note its hint lacks a final full stop, unlike other messages.")

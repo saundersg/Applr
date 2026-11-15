@@ -1,0 +1,21 @@
+--- checks
+expect_equal(d$x, log(rows$disp))
+expect_equal(d$y, predicted(m, rows))
+expect_equal(prep$line$x, log(rows$disp))
+expect_equal(prep$line$fit, predicted(m, rows))
+--- source
+mpg <- ggplot2::mpg
+
+expectation("one_predictor_expression",
+            covers = "shared.composite-x.one-predictor",
+            purpose = "Catches an x-axis like log(disp) being treated as a plain variable with an even grid; unlike num_composite_x, only one predictor is involved, which takes a different branch.", {
+  m <- lm(mpg ~ log(disp) + hp, mtcars)
+  rows <- mtcars[order(mtcars$disp), ]
+  rows$hp <- 120
+  d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(log(disp), mpg)) + geom_slice(m, n = 5, predict_vars = list(hp = 120)))
+  expect_equal(d$x, log(rows$disp))
+  expect_equal(d$y, predicted(m, rows))
+  prep <- prepare_slice_data(m, "log(disp)", 5, TRUE, "none", list(hp = 120))
+  expect_equal(prep$line$x, log(rows$disp))
+  expect_equal(prep$line$fit, predicted(m, rows))
+})

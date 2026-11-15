@@ -1,3 +1,11 @@
+--- main
 error
 scatter_3d() needs numeric predictors, but `Species` is a "factor".
     Use two numeric predictors, or reach for geom_slice() to show a categorical predictor as groups.
+--- source
+built <- function(...) function() plotly::plotly_build(scatter_3d(...))
+
+raises("factor_predictor", built(lm(Sepal.Length ~ Sepal.Width + Species, iris)), "error",
+       'but `Species` is a "factor"',
+       covers = c("scatter_3d.shape-errors", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A factor has no axis in 3D; the stop must name it and point to geom_slice(), which shows categories as groups.")

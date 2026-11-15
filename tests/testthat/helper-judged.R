@@ -1,11 +1,12 @@
 # Declares a judged output from inside a case. `type` names a registered
 # output type, or is worked out by the suite when the object alone says it
 # (a ggplot, a plotly widget). `states` are the case's declared states, such
-# as camera presets. `purpose` is one line on why the output exists, as a
-# string literal: the review page reads it from the case file, so it plays no
-# part at run time. A no-op unless the dev-only suite runner (tests/suite/)
-# has installed a registry, so it is harmless under R CMD check.
-judged_output <- function(name, object, type = NULL, states = NULL, purpose = NULL) {
+# as camera presets. `purpose` is one line on why the output exists, and
+# `covers` the inventory entries it is judged against, both as string
+# literals: the suite reads them from the case file, so they play no part at
+# run time. A no-op unless the dev-only suite runner (tests/suite/) has
+# installed a registry, so it is harmless under R CMD check.
+judged_output <- function(name, object, type = NULL, states = NULL, purpose = NULL, covers = NULL) {
   registry <- getOption("applr.judged_registry")
   case <- getOption("applr.judged_case")
   if (is.environment(registry) && !is.null(case)) {
@@ -13,6 +14,15 @@ judged_output <- function(name, object, type = NULL, states = NULL, purpose = NU
            envir = registry)
   }
   invisible(object)
+}
+
+# A test_that() block that reaches the reviewer like a judged output: once,
+# and again whenever its code changes. `purpose` says what it would catch and
+# is also the test's name; `covers` names the inventory entries it checks.
+expectation <- function(name, code, purpose, covers) {
+  code <- substitute(code)
+  judged_output(name, code, type = "test_block")
+  eval(bquote(testthat::test_that(.(purpose), .(code))), parent.frame())
 }
 
 # Names the behaviour inventory entries a case covers, as string literals.

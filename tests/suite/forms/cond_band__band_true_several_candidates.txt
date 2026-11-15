@@ -1,3 +1,4 @@
+--- main
 warning
 band = TRUE is ambiguous: any of `cyl`, `year` could be spanned. No band is drawn.
     Name the one to span, such as 'band = "cyl"'.
@@ -9,3 +10,14 @@ Value for `cyl` not specified - Used mean: 5.889
 message
 Value for `year` not specified - Used mean: 2004
     To choose a slice, use 'predict_vars = list(year = 2004)'.
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv + cyl + year, data = mpg)
+coloured <- function(...) function() {
+  ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(...)
+}
+
+raises("band_true_several_candidates", coloured(model, band = TRUE),
+       c("warning", "message", "message"), "band = TRUE is ambiguous: any of",
+       covers = c("shared.band.unresolvable", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "band = TRUE with two free predictors (cyl, year): the warning must list them and show how to name one.")

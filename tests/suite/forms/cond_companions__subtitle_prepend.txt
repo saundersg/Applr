@@ -1,3 +1,8 @@
+--- main
 error
 `prepend` must be a single string.
     For example, 'prepend = "Model: "'.
+--- source
+raises("subtitle_prepend", function() geom_slice_subtitle(prepend = 1), "error", "`prepend` must be a single string.",
+       covers = c("geom_slice_subtitle.arg-validation", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A number given as prepend must stop rather than be pasted in; the hint shows a typical prefix.")

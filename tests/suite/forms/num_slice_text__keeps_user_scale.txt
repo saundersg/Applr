@@ -1,0 +1,33 @@
+--- checks
+expect_false(any(grepl("already present", msgs)))
+expect_equal(sc$name, "Petal length")
+expect_equal(sc$limits, c(0, 8))
+expect_equal(sc$breaks, c(0, 4, 8))
+expect_equal(sc$expand[1], 0.2)
+expect_gt(sc$expand[3], 0.05)
+expect_equal(geom_slice_text(expand = FALSE)$expand, FALSE)
+expect_null(untouched$scales$get_scales("x"))
+--- source
+iris_model <- lm(Sepal.Length ~ Sepal.Width + Petal.Length, data = iris)
+base <- ggplot2::ggplot(iris, ggplot2::aes(Petal.Length, Sepal.Length))
+
+expectation("keeps_user_scale",
+            covers = "geom_slice_text.expand-keeps-scale",
+            purpose = "Catches the room made for labels replacing the user's own x scale (limits, breaks, name) or printing ggplot2's 'Scale for x is already present'.", {
+  p <- base + geom_slice(iris_model, predict_vars = list(Sepal.Width = c(2, 4))) +
+    ggplot2::scale_x_continuous("Petal length", limits = c(0, 8), breaks = c(0, 4, 8),
+                                expand = ggplot2::expansion(mult = c(0.2, 0.05)))
+  msgs <- character()
+  p <- withCallingHandlers(p + geom_slice_text(),
+                           message = function(m) { msgs <<- c(msgs, conditionMessage(m)); invokeRestart("muffleMessage") })
+  expect_false(any(grepl("already present", msgs)))
+  sc <- p$scales$get_scales("x")
+  expect_equal(sc$name, "Petal length")
+  expect_equal(sc$limits, c(0, 8))
+  expect_equal(sc$breaks, c(0, 4, 8))
+  expect_equal(sc$expand[1], 0.2)
+  expect_gt(sc$expand[3], 0.05)
+  expect_equal(geom_slice_text(expand = FALSE)$expand, FALSE)
+  untouched <- suppressMessages(base + geom_slice(iris_model) + geom_slice_text(expand = FALSE))
+  expect_null(untouched$scales$get_scales("x"))
+})

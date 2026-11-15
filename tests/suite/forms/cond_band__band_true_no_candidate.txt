@@ -1,3 +1,14 @@
+--- main
 warning
 band = TRUE, but no variable is available - every model predictor is already shown on the plot. No band is drawn.
     A projection band spans a predictor not represented on the plot; add another predictor to the model, such as `lm(y ~ x + new_predictor, ...)`
+--- source
+mpg <- ggplot2::mpg
+coloured <- function(...) function() {
+  ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(...)
+}
+
+raises("band_true_no_candidate", coloured(lm(hwy ~ displ * drv, mpg), band = TRUE),
+       "warning", "no variable is available",
+       covers = c("shared.band.unresolvable", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "band = TRUE when every predictor is already on the plot: nothing can band, so the hint has to explain what a band needs rather than list options.")

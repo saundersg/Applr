@@ -20,7 +20,7 @@ test_that("the page, its data and the views are served", {
   expect_equal(call_app(s$app, "/page/app.js")$status, 200L)
 
   data <- json_body(call_app(s$app, "/api/data"))
-  out <- data$outputs[[1]]
+  out <- Filter(function(o) identical(o$id, id), data$outputs)[[1]]
   expect_equal(out[c("id", "status", "view", "agent_note")],
                list(id = id, status = "Agent approved", view = "image", agent_note = "Line follows the points."))
   png <- call_app(s$app, out$states[[1]]$url)

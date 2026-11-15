@@ -1,3 +1,16 @@
+--- main
 warning
 geom_slice_text() found geom_slice() layers with different models (`model`, `other`), so no labels were drawn.
     Use the same model in every geom_slice() layer, or remove the layers whose model differs.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+other <- lm(mpg ~ wt + qsec, data = mtcars)
+base <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg))
+two_models <- function(companion) function() {
+  base + geom_slice(model, predict_vars = list(hp = 100)) +
+    geom_slice(other, predict_vars = list(qsec = 18)) + companion()
+}
+
+raises("text_two_models", two_models(geom_slice_text), "warning", "different models (`model`, `other`)",
+       covers = c("shared.companions.different-models", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Labels from two different models would be mixed on one plot; the warning must name both models (as the user called them) and say how to fix it.")

@@ -1,3 +1,4 @@
+--- main
 warning
 `band` variable `drv` is not numeric, so it has no range to span. No band is drawn.
     Bands span a numeric predictor; for a factor, map it to a grouping aesthetic for one line per level instead.
@@ -5,3 +6,11 @@ warning
 message
 Value for `drv` not specified - Used most common: "f"
     To choose a slice, use 'predict_vars = list(drv = "f")'.
+--- source
+mpg <- ggplot2::mpg
+
+raises("band_not_numeric", function() {
+  ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy)) + geom_slice(lm(hwy ~ displ + drv, mpg), band = "drv")
+}, c("warning", "message"), "is not numeric, so it has no range",
+       covers = c("shared.band.unresolvable", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A band named for a factor has no range; unlike the other band warnings, the hint suggests a grouping aesthetic instead of another band variable.")

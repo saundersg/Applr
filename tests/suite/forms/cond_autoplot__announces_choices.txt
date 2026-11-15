@@ -1,3 +1,4 @@
+--- main
 message
 The first predictor `drv` is not numeric - used `displ` for the x-axis.
     To choose the x-axis, use 'mapping = aes(x = displ)'.
@@ -13,3 +14,13 @@ Faceted the plot by `cyl` - one panel per level.
 message
 Value for `year` not specified - Used mean: 2004
     To choose a slice, use 'predict_vars = list(year = 2004)'.
+--- source
+mpg <- ggplot2::mpg
+quiet_summary <- function(...) function() autoplot(..., summary = FALSE)
+
+raises("announces_choices", quiet_summary(lm(hwy ~ drv + displ + cyl + year, mpg)),
+       c("message", "message", "message", "message"),
+       c("The first predictor `drv` is not numeric - used `displ`", "Coloured the plot by `drv`",
+         "Faceted the plot by `cyl`", "Value for `year` not specified"),
+       covers = c("autoplot.x-first-numeric", "autoplot.categorical-to-colour-facet", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "The one place every choice autoplot() makes on the user's behalf (x-axis, colour, facet, imputed value) is announced together, in order, each with how to change it.")

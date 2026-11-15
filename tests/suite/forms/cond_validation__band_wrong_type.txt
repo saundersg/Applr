@@ -1,3 +1,10 @@
+--- main
 error
 `band` must be TRUE, FALSE, or the name of one model predictor.
     For example, 'band = TRUE' or 'band = "x2"'.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("band_wrong_type", function() geom_slice(model, band = 3), "error", "`band` must be TRUE, FALSE",
+       covers = c("shared.band.with-interval", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "band takes TRUE, FALSE or a name, which is unusual; given a number, the message must show both accepted forms.")

@@ -1,0 +1,14 @@
+--- checks
+expect_true(any(grepl("Residual standard error", out)))
+expect_length(capture.output(quiet_autoplot(lm(mpg ~ wt, mtcars))), 0)
+--- source
+mpg <- ggplot2::mpg
+quiet_autoplot <- function(...) suppressMessages(autoplot(..., summary = FALSE))
+
+expectation("summary_first",
+            covers = "autoplot.summary-first",
+            purpose = "Catches the summary going missing, or printing when the user turned it off with summary = FALSE.", {
+  out <- capture.output(p <- suppressMessages(autoplot(lm(mpg ~ wt, mtcars))))
+  expect_true(any(grepl("Residual standard error", out)))
+  expect_length(capture.output(quiet_autoplot(lm(mpg ~ wt, mtcars))), 0)
+})

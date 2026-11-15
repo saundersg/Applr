@@ -1,0 +1,17 @@
+--- checks
+expect_equal(line$y, predicted(m, data.frame(disp = line$x, hp = 110, cyl = cyls[as.integer(panel)])))
+--- source
+mpg <- ggplot2::mpg
+
+expectation("numeric_facet",
+            covers = "shared.slicing.numeric-facet",
+            purpose = "Catches a facet on a numeric predictor being treated as text, so panels aren't pinned to their numbers; num_slicing covers factor facets.", {
+  m <- lm(mpg ~ disp + hp + cyl, mtcars)
+  d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + geom_slice(m, n = 10, predict_vars = list(hp = 110)) +
+                    ggplot2::facet_wrap(~cyl))
+  cyls <- sort(unique(mtcars$cyl))
+  for (panel in unique(d$PANEL)) {
+    line <- d[d$PANEL == panel, ]
+    expect_equal(line$y, predicted(m, data.frame(disp = line$x, hp = 110, cyl = cyls[as.integer(panel)])))
+  }
+})

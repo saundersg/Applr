@@ -1,3 +1,10 @@
+--- main
 error
 `back_transform` must be TRUE/FALSE, a one-argument function, or a transformation name; received a "numeric".
     Use a function such as 'back_transform = exp', or 'back_transform = FALSE' to turn it off.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("back_transform_class", function() geom_slice(model, back_transform = 2), "error", 'received a "numeric"',
+       covers = c("shared.validation.back-transform-arg", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "The wrong kind of value entirely (a number), so the message must name the class received and the kinds allowed.")

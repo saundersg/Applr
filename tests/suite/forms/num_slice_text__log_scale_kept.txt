@@ -1,0 +1,11 @@
+--- checks
+expect_equal(p$scales$get_scales("x")$get_transformation()$name, "log-10")
+--- source
+expectation("log_scale_kept",
+            covers = "geom_slice_text.date-or-log-axis",
+            purpose = "Catches widening for labels quietly turning a log x axis into a linear one.", {
+  m <- lm(mpg ~ disp + hp, mtcars)
+  p <- suppressMessages(ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + ggplot2::scale_x_log10() +
+                          geom_slice(m, predict_vars = list(hp = c(100, 200))) + geom_slice_text())
+  expect_equal(p$scales$get_scales("x")$get_transformation()$name, "log-10")
+})

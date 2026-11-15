@@ -111,3 +111,14 @@ plotly-binding 4.12.1
 plotly-htmlwidgets-css 2.25.2
 plotly-main 2.25.2
 typedarray 0.1
+--- source
+cameras <- list(
+  default = list(eye = list(x = 1.25, y = 1.25, z = 1.25)),
+  top = list(eye = list(x = 0, y = 0, z = 2.5)),
+  side = list(eye = list(x = 2.5, y = 0, z = 0))
+)
+curved <- scatter_3d(lm(mpg ~ wt + I(wt^2) + hp, mtcars), n = 25, colors = c("purple", "orange"))
+
+judged_output("curved", curved, states = cameras,
+              covers = c("scatter_3d.surface-style", "scatter_3d.readable-from-any-angle"),
+              purpose = "A curved surface with a custom gradient: from every camera the points must stay visible through it and the colours must match the gradient asked for.")

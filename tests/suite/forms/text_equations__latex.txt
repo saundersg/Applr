@@ -1,3 +1,4 @@
+--- main
 [simple]
 $$\underbrace{\hat{Y_i}}_{\text{Pred. mpg}} = 37.3 - 5.34\underbrace{X_{1i}}_{\text{wt}}$$
 
@@ -21,3 +22,22 @@ $$\underbrace{\hat{Y_i}}_{\text{Pred. mpg}} = 20.1 + \underbrace{X_{i}}_{\text{}
 
 [underscore_name]
 $$\underbrace{\hat{Y_i}}_{\text{Pred. mpg}} = 37.3 - 0.00534\underbrace{X_{1i}}_{\text{wt_lb}}$$
+--- source
+models <- list(
+  simple = lm(mpg ~ wt, mtcars),
+  multiple = lm(mpg ~ disp + hp, mtcars),
+  transformed = lm(log(mpg) ~ wt + I(wt^2), mtcars),
+  no_intercept = lm(mpg ~ 0 + wt, mtcars),
+  rank_deficient = lm(mpg ~ wt + I(2 * wt), mtcars),
+  exact_fit = lm(y ~ x, data.frame(x = 1:5, y = 2 * (1:5))),
+  intercept_only = lm(mpg ~ 1, mtcars),
+  underscore_name = lm(mpg ~ wt_lb, transform(mtcars, wt_lb = wt * 1000))
+)
+latex <- vapply(models, function(m) {
+  out <- capture.output(v <- lm_latex(m))
+  v
+}, "")
+
+judged_output("latex", latex, type = "returned_text",
+              covers = c("lm_latex.format", "lm_latex.special-characters"),
+              purpose = "lm_latex() on the same shapes: the underbraced form must read well typeset, and you can see the known unescaped underscore and empty intercept-only term.")

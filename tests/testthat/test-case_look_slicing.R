@@ -30,23 +30,31 @@ y_expression <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, log(mpg))) + ggplot2:
 y_scale <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + ggplot2::geom_point() + geom_slice(logged) +
   ggplot2::scale_y_log10() + ggplot2::labs(title = "scale_y_log10() axis")
 
-covers("shared.band.look", "shared.slicing.facets-look", "geom_slice_text.facets")
 judged_output("band_inferred", band_inferred,
-              purpose = "band = TRUE finds cyl and draws one labelled band per colour group over cyl's data range.")
+              covers = "shared.band.look",
+              purpose = "band = TRUE on coloured groups: each band must be one translucent ribbon in its line's colour with both edges drawn, and the labels must say which edge is which.")
 judged_output("band_named", band_named,
-              purpose = "A band named by the user, with its two values pinned, is narrower than the inferred one and labels each edge.")
+              covers = "shared.band.look",
+              purpose = "Next to band_inferred, a band over two chosen values must look narrower; catches the two looking the same.")
 judged_output("exact_fit_clear", exact_fit_clear,
-              purpose = "The README's four-predictor exact fit made clear with colour, facets, a band, labels and a subtitle: every point inside its band.")
+              covers = c("shared.slicing.facets-look", "geom_slice_text.facets"),
+              purpose = "The README's showcase, every companion at once: colour, facets, band, labels and subtitle must all fit and read together.")
 judged_output("facet_grid", facet_grid,
-              purpose = "facet_grid() over two predictors pins each panel's line and ribbon to that panel's values.")
+              covers = "shared.slicing.facets-look",
+              purpose = "facet_grid() over two predictors, the busiest panel layout: each panel's line and ribbon must sit in that panel's own data.")
 judged_output("y_raw", y_raw,
-              purpose = "A log(mpg) model on a raw mpg axis is back-transformed into a curve through the points.")
+              covers = "shared.back-transform.auto",
+              purpose = "One of three views of one log(mpg) model: on a raw axis the line must be a curve through the points.")
 judged_output("y_expression", y_expression,
-              purpose = "The same model on a log(mpg) axis expression stays on the model's scale, a straight line.")
+              covers = "shared.back-transform.axis-expression",
+              purpose = "The second view: on a log(mpg) axis the same model must be a straight line.")
 judged_output("y_scale", y_scale,
-              purpose = "The same model under scale_y_log10() is straight on the log axis with mpg tick labels.")
+              covers = "geom_slice.scale-transforms",
+              purpose = "The third view: under scale_y_log10() the line must be straight with mpg tick labels; the three side by side catch one view drifting.")
 
-test_that("every point of the exact fit sits inside its panel's band", {
+expectation("exact_fit_panels",
+            covers = "geom_slice_text.facets",
+            purpose = "Catches labels missing from a facet panel (there must be 12), a panel lost, or a band with its edges swapped. Despite its old name, it doesn't check points are inside the bands.", {
   d <- slice_data(exact_fit_clear)
   expect_true(all(d$ymin <= d$ymax))
   expect_equal(length(unique(d$PANEL)), 2)

@@ -1,0 +1,15 @@
+--- checks
+expect_equal(range(d$x[d$group == g]), range(mpg$displ))
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv, data = mpg)
+
+expectation("full_range",
+            covers = "geom_slice.full-range",
+            purpose = "Catches full_range, or its ggplot2 spelling fullrange, failing to extend every line to the panel's range.", {
+  for (layer in list(geom_slice(model, full_range = TRUE), geom_slice(model, fullrange = TRUE))) {
+    p <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + layer
+    d <- slice_data(p)
+    for (g in unique(d$group)) expect_equal(range(d$x[d$group == g]), range(mpg$displ))
+  }
+})

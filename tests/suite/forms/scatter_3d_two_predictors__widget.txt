@@ -111,3 +111,14 @@ plotly-binding 4.12.1
 plotly-htmlwidgets-css 2.25.2
 plotly-main 2.25.2
 typedarray 0.1
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+widget <- scatter_3d(model, n = 20)
+
+judged_output("widget", widget, states = list(
+  default = list(eye = list(x = 1.25, y = 1.25, z = 1.25)),
+  top = list(eye = list(x = 0, y = 0, z = 2.5)),
+  side = list(eye = list(x = 2.5, y = 0, z = 0))
+),
+              covers = "scatter_3d.readable-from-any-angle",
+              purpose = "The plotly_3d type's demo for the suite's own tests, and the plainest scatter_3d(): a flat surface through the points, from three cameras and live. widget_scatter_3d covers curved and twisted ones.")

@@ -1,0 +1,29 @@
+--- checks
+expect_equal(d$y, cs[[2]](predicted(cs[[1]], grid_of(d))))
+expect_equal(prep$line$fit, exp(predicted(m, data.frame(disp = prep$line$x, hp = 120))))
+--- source
+grid_of <- function(d) data.frame(disp = d$x, hp = mean(mtcars$hp))
+on_axis <- function(model, y, ...) {
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, {{ y }})) + geom_slice(model, n = 15, ...)
+  slice_data(p)
+}
+
+expectation("inverted_on_raw_axis",
+            covers = "shared.back-transform.auto",
+            purpose = "Catches a transformed response being drawn in transformed units on a raw y-axis, for each common transform, in both geom_slice() and slice_2d().", {
+  cases <- list(
+    list(lm(log(mpg) ~ disp + hp, mtcars), exp),
+    list(lm(sqrt(mpg) ~ disp + hp, mtcars), function(v) v^2),
+    list(lm(1 / mpg ~ disp + hp, mtcars), function(v) 1 / v),
+    list(lm(log10(mpg) ~ disp + hp, mtcars), function(v) 10^v),
+    list(lm(mpg + 1 ~ disp + hp, mtcars), function(v) v - 1)
+  )
+  for (cs in cases) {
+    d <- on_axis(cs[[1]], mpg)
+    expect_equal(d$y, cs[[2]](predicted(cs[[1]], grid_of(d))))
+  }
+  # slice_2d() does the same with no y-axis to read: it always plots raw mpg
+  m <- cases[[1]][[1]]
+  prep <- suppressMessages(prepare_slice_data(m, "disp", 15, TRUE, "none", list(hp = 120)))
+  expect_equal(prep$line$fit, exp(predicted(m, data.frame(disp = prep$line$x, hp = 120))))
+})

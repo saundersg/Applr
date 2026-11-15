@@ -1,0 +1,23 @@
+--- checks
+expect_match(examples[["equation_factor_call"]], "*(factor(cyl)=\"6\")", fixed = TRUE)
+expect_match(examples[["equation_as_factor_interaction"]], "wt:(as.factor(am)=\"1\")", fixed = TRUE)
+--- source
+iris_model <- lm(Sepal.Length ~ Sepal.Width * Species, data = iris)
+latex_of <- function(...) {
+  out <- capture.output(v <- lm_latex(...))
+  v
+}
+examples <- c(
+  latex_prettier = latex_of(iris_model),
+  latex_brackets = latex_of(iris_model, style = "brackets"),
+  latex_raw = latex_of(iris_model, style = "raw"),
+  equation_factor_call = lm_equation(lm(mpg ~ disp + factor(cyl), mtcars)),
+  equation_as_factor_interaction = lm_equation(lm(mpg ~ wt * as.factor(am), mtcars))
+)
+
+expectation("formula_factor_names",
+            covers = "lm_equation.response-and-term-names",
+            purpose = "Catches factor(cyl) or as.factor(am) losing their call in the term name, which would hide that the factor was made in the formula.", {
+  expect_match(examples[["equation_factor_call"]], '*(factor(cyl)="6")', fixed = TRUE)
+  expect_match(examples[["equation_as_factor_interaction"]], 'wt:(as.factor(am)="1")', fixed = TRUE)
+})

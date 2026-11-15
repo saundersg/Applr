@@ -6,16 +6,16 @@ mpg <- ggplot2::mpg
 model <- lm(hwy ~ displ + cyl + drv, data = mpg)
 base <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy))
 
-covers("shared.held-values.single", "shared.held-values.multi-crossed",
-       "shared.held-values.coerced", "shared.held-values.beats-pinning",
-       "shared.held-values.base-not-coerced", "slice_2d.held-named-x")
-
-test_that("a held predictor is held at that value along the whole line", {
+expectation("held_single",
+            covers = "shared.held-values.single",
+            purpose = "Catches a predictor named in predict_vars being imputed or varied instead of held at the value given.", {
   d <- slice_data(base + geom_slice(model, n = 10, predict_vars = list(cyl = 6, drv = "r")))
   expect_equal(d$y, predicted(model, data.frame(displ = d$x, cyl = 6, drv = "r")))
 })
 
-test_that("several values are crossed into one line per combination, each its own group", {
+expectation("crossed",
+            covers = "shared.held-values.multi-crossed",
+            purpose = "Catches several multi-value entries being paired up instead of crossed (3 x 2 must give 6 lines), or two lines sharing a group and being joined.", {
   d <- slice_data(base + geom_slice(model, n = 10,
                                     predict_vars = list(cyl = c(4, 6, 8), drv = c("f", "r"))))
   expect_equal(length(unique(d$group)), 6)
@@ -26,14 +26,18 @@ test_that("several values are crossed into one line per combination, each its ow
   }
 })
 
-test_that("values are coerced to the predictor's type", {
+expectation("coerced",
+            covers = "shared.held-values.coerced",
+            purpose = "Catches a value of the wrong type (a string for a factor, \"3\" for a number) being passed to predict() as is, where it fails or predicts at the wrong level.", {
   as_given <- slice_data(base + geom_slice(model, n = 10, predict_vars = list(cyl = "6", drv = "r")))
   typed <- slice_data(base + geom_slice(model, n = 10,
                                         predict_vars = list(cyl = 6, drv = factor("r"))))
   expect_equal(as_given$y, typed$y)
 })
 
-test_that("a held value beats the pin a grouping aesthetic or facet would give", {
+expectation("beats_pinning",
+            covers = "shared.held-values.beats-pinning",
+            purpose = "Catches a colour or facet's pinned value overriding what the user explicitly asked to hold.", {
   coloured <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) +
     geom_slice(model, n = 10, predict_vars = list(drv = "4", cyl = 4))
   d <- slice_data(coloured)
@@ -47,13 +51,17 @@ test_that("a held value beats the pin a grouping aesthetic or facet would give",
   }
 })
 
-test_that("slice_2d() predicts at a factor value given as a string", {
+expectation("slice_2d_factor_string",
+            covers = "shared.held-values.base-not-coerced",
+            purpose = "The slice_2d() path, which passes ... to predict() without coercing: a factor level given as a string must still predict at that level.", {
   prep <- suppressMessages(prepare_slice_data(model, "displ", 10, TRUE, "none",
                                               list(cyl = 6, drv = "r")))
   expect_equal(prep$line$fit, predicted(model, data.frame(displ = prep$line$x, cyl = 6, drv = "r")))
 })
 
-test_that("a held predictor named x is a held value, not x_axis", {
+expectation("held_named_x",
+            covers = "slice_2d.held-named-x",
+            purpose = "Catches R's partial argument matching taking a predictor literally named x as slice_2d()'s x_axis.", {
   d <- data.frame(w = 1:10, x = c(2, 1, 4, 3, 6, 5, 8, 7, 10, 9))
   d$y <- d$w + 2 * d$x
   m <- lm(y ~ w + x, data = d)

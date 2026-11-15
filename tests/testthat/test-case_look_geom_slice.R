@@ -25,24 +25,31 @@ fill_set <- points(mpg, ggplot2::aes(displ, hwy, colour = drv)) +
 full_range <- points(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(grouped, full_range = TRUE) +
   ggplot2::labs(title = "full_range = TRUE")
 
-covers("geom_slice.default-look", "geom_slice.fixed-aesthetics", "geom_slice.ribbon-follows-line",
-       "shared.intervals.look")
 judged_output("default", default,
-              purpose = "geom_slice() with no styling draws one skyblue line in the user's plot and theme, adding nothing else.")
+              covers = "geom_slice.default-look",
+              purpose = "geom_slice() with no styling: the default skyblue line must sit in the user's plot and theme without changing anything else.")
 judged_output("styled", styled,
-              purpose = "Fixed colour, linewidth and linetype all reach the line.")
+              covers = "geom_slice.fixed-aesthetics",
+              purpose = "Colour, linewidth and linetype set together; catches one of them not reaching the line, which default can't show.")
 judged_output("confidence", confidence,
-              purpose = "A confidence ribbon on a quadratic slice, narrow where the data are dense and widening where they thin out.")
+              covers = "shared.intervals.look",
+              purpose = "A confidence ribbon by itself, so you can judge its translucency and shape (narrow where data are dense).")
 judged_output("prediction", prediction,
-              purpose = "A prediction ribbon on the same slice, far wider than the confidence one and covering most points.")
+              covers = "shared.intervals.look",
+              purpose = "The same slice with a prediction ribbon; next to confidence, it must look clearly wider and cover most points.")
 judged_output("ribbon_per_group", ribbon_per_group,
-              purpose = "Ribbons on lines coloured by group take their own line's colour, each over its group's range.")
+              covers = "geom_slice.ribbon-follows-line",
+              purpose = "Ribbons on coloured groups must each take their own line's colour; a single-colour plot couldn't show this.")
 judged_output("fill_set", fill_set,
-              purpose = "A fixed fill overrides the line colours for every ribbon while the lines keep theirs.")
+              covers = "geom_slice.ribbon-follows-line",
+              purpose = "Unlike ribbon_per_group, a fixed fill must win for every ribbon while the lines keep their colours.")
 judged_output("full_range", full_range,
-              purpose = "full_range = TRUE extends every group's line over the whole panel rather than its own data range.")
+              covers = "geom_slice.full-range",
+              purpose = "What full_range = TRUE looks like: every group's line across the whole panel, past its own data. A test checks the numbers; you judge whether it reads as extrapolation.")
 
-test_that("ribbons take the line's colour unless fill is set", {
+expectation("ribbon_colour",
+            covers = c("geom_slice.ribbon-follows-line", "geom_slice.default-look"),
+            purpose = "Catches ribbons not taking their line's colour, a fixed fill not winning, or the default colour changing from skyblue.", {
   # The swap happens as the ribbon is drawn
   d <- slice_data(ribbon_per_group)
   expect_equal(slice_ribbon_fill(d, GeomSlice$default_aes$fill), d$colour)

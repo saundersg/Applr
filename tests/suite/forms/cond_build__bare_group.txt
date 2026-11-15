@@ -1,3 +1,4 @@
+--- main
 warning
 `group = cyl` cannot pin `cyl` to each group's value, so it will be held constant instead.
     Map it to a visible aesthetic, such as 'aes(color = cyl)'.
@@ -5,3 +6,11 @@ warning
 message
 Value for `cyl` not specified - Used mean: 6.188
     To choose a slice, use 'predict_vars = list(cyl = 6.188)'.
+--- source
+mpg <- ggplot2::mpg
+on_mtcars <- function(mapping, ...) function() ggplot2::ggplot(mtcars, mapping) + geom_slice(...)
+
+raises("bare_group", on_mtcars(ggplot2::aes(wt, mpg, group = cyl), lm(mpg ~ wt + cyl, mtcars)),
+       c("warning", "message"), "cannot pin `cyl`",
+       covers = c("shared.slicing.bare-group", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "group = cyl looks like it should give one line per cyl but can't pin values; the warning must say so and suggest colour.")

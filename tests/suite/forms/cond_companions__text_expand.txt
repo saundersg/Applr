@@ -1,3 +1,8 @@
+--- main
 error
 `expand` must be TRUE or FALSE.
     For example, 'expand = FALSE'.
+--- source
+raises("text_expand", function() geom_slice_text(expand = NA), "error", "`expand` must be TRUE or FALSE.",
+       covers = c("geom_slice_text.arg-validation", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "NA slips through many TRUE/FALSE checks; this is the one confirming expand refuses it.")

@@ -1,3 +1,9 @@
+--- main
 error
 `geom_fit()` has been removed; use `geom_slice()` instead.
     It takes the model the same way, such as 'geom_slice(model)'. For a ribbon use 'interval = "confidence"'; instead of 'new_data' use 'predict_vars = list(hp = 110)'.
+--- source
+raises("geom_fit_defunct", function() geom_fit(lm(mpg ~ wt, mtcars)), "error",
+       "`geom_fit()` has been removed; use `geom_slice()` instead.",
+       covers = c("geom_fit.errors-with-pointer", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Old course material still calls geom_fit(); the stop must name geom_slice() and how each old argument maps, so students can update their code.")

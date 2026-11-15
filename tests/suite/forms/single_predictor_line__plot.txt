@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -121,3 +122,16 @@
 <text x='35.72' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='91.72px' lengthAdjust='spacingAndGlyphs'>Single predictor</text>
 </g>
 </svg>
+--- source
+set.seed(1)
+df <- data.frame(x = runif(50, -10, 10))
+df$y <- 2 * df$x + 3 + rnorm(50)
+model <- lm(y ~ x, data = df)
+p <- ggplot2::ggplot(df, ggplot2::aes(x, y)) +
+  ggplot2::geom_point() +
+  geom_slice(model) +
+  ggplot2::labs(title = "Single predictor")
+
+judged_output("plot", p,
+              covers = "geom_slice.user-theme",
+              purpose = "The static_plot type's demo for the suite's own tests, and the simplest geom_slice() picture: one line in the user's plot, title and default theme, with nothing added.")

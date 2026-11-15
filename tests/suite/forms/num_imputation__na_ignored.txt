@@ -1,0 +1,20 @@
+--- checks
+expect_equal(d$y, predicted(m, data.frame(x = d$x, num = mean(na_df$num, na.rm = TRUE))))
+--- source
+df <- data.frame(
+  x = 1:9,
+  num = c(3, 1, 4, 1, 5, 9, 2, 6, 14),
+  fac = factor(c("a", "b", "b", "c", "c", "c", "a", "b", "c"), levels = c("a", "b", "c")),
+  chr = c("p", "q", "q", "q", "p", "q", "p", "q", "q"),
+  y = c(3, 5, 4, 8, 9, 12, 10, 13, 16)
+)
+
+expectation("na_ignored",
+            covers = "shared.imputation.na-values",
+            purpose = "Catches one missing value turning the imputed mean into NA, so the whole line disappears.", {
+  na_df <- df
+  na_df$num[1] <- NA
+  m <- lm(y ~ x + num, data = na_df)
+  d <- slice_data(ggplot2::ggplot(na_df, ggplot2::aes(x, y)) + geom_slice(m, n = 9))
+  expect_equal(d$y, predicted(m, data.frame(x = d$x, num = mean(na_df$num, na.rm = TRUE))))
+})

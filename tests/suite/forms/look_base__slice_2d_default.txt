@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -91,3 +92,10 @@
 <text x='59.04' y='48.96' style='font-size: 12.00px; fill: #666666; font-family: sans;' textLength='50.05px' lengthAdjust='spacingAndGlyphs'>hp: 146.7</text>
 </g>
 </svg>
+--- source
+logged <- lm(log(mpg) ~ disp + hp, data = mtcars)
+quietly <- function(code) function() suppressMessages(code())
+
+judged_output("slice_2d_default", quietly(function() slice_2d(logged)), type = "base_graphics",
+              covers = c("slice_2d.plot-labels", "slice_2d.caption"),
+              purpose = "slice_2d() with every default on a log(mpg) model: the back-transformed curve and a caption of filled-in values, both absent from base_slice_2d/plot.")

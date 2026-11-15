@@ -1,3 +1,11 @@
+--- main
 error
 The `back_transform` function must take exactly one argument.
     Use a one-argument function, such as 'back_transform = function(x) 1/x'.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("back_transform_arity", function() geom_slice(model, back_transform = function(a, b) a), "error",
+       "exactly one argument",
+       covers = c("shared.validation.back-transform-arg", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A function is the right kind of value here but the wrong shape, so the message differs from back_transform_class: it must say one argument and show one.")

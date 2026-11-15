@@ -1,5 +1,14 @@
+--- main
 warning
 Computation failed in `stat_slice()`.
 Caused by error:
 ! geom_slice() needs a continuous x-axis, but the x scale is discrete.
     Map a numeric variable or expression to this axis.
+--- source
+mpg <- ggplot2::mpg
+
+raises("discrete_x", function() {
+  ggplot2::ggplot(mpg, ggplot2::aes(drv, hwy)) + geom_slice(lm(hwy ~ drv, mpg))
+}, "warning", "needs a continuous x-axis", format = FALSE,
+       covers = c("geom_slice.discrete-axis", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A factor on x fails inside the stat, so ggplot2 turns Applr's error into a warning and the line just disappears; you can judge whether the wrapped wording is clear enough.")

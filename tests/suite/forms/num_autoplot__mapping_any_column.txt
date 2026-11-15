@@ -1,0 +1,14 @@
+--- checks
+expect_equal(nrow(ggplot2::layer_data(p, 1)), nrow(mtcars))
+expect_equal(length(unique(ggplot2::layer_data(p, 1)$shape)), 3)
+--- source
+mpg <- ggplot2::mpg
+quiet_autoplot <- function(...) suppressMessages(autoplot(..., summary = FALSE))
+
+expectation("mapping_any_column",
+            covers = "autoplot.mapping-any-column",
+            purpose = "Catches autoplot() dropping columns the model doesn't use, so a mapping like shape = factor(gear) would fail or lose rows.", {
+  p <- quiet_autoplot(lm(mpg ~ wt, mtcars), ggplot2::aes(shape = factor(gear)))
+  expect_equal(nrow(ggplot2::layer_data(p, 1)), nrow(mtcars))
+  expect_equal(length(unique(ggplot2::layer_data(p, 1)$shape)), 3)
+})

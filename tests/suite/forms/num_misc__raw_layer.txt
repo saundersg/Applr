@@ -1,0 +1,15 @@
+--- checks
+expect_equal(slice_data(raw)[c("x", "y")], slice_data(layered)[c("x", "y")])
+--- source
+expectation("raw_layer",
+            covers = "ggproto_objects.raw-layer",
+            purpose = "Catches StatSlice used directly through layer() drifting from what geom_slice() draws, for users and extension authors who build layers by hand.", {
+  m <- lm(mpg ~ disp + hp + cyl, mtcars)
+  base <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg))
+  raw <- base + ggplot2::layer(stat = StatSlice, geom = GeomSlice, position = "identity",
+                               inherit.aes = TRUE,
+                               params = list(model = m, predict_vars = list(hp = 110),
+                                             mapping = ggplot2::aes(disp, mpg)))
+  layered <- base + geom_slice(m, predict_vars = list(hp = 110))
+  expect_equal(slice_data(raw)[c("x", "y")], slice_data(layered)[c("x", "y")])
+})

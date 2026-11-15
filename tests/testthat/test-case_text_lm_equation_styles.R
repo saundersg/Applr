@@ -9,11 +9,13 @@ equations <- c(
   raw = lm_equation(model, style = "raw")
 )
 
-covers("lm_equation.format", "lm_equation.style", "lm_equation.terms-from-coefficients")
 judged_output("equations", equations, type = "returned_text",
-              purpose = "lm_equation() on a factor-by-numeric interaction in each style: spelled-out levels, [level] brackets and raw coefficient names.")
+              covers = "lm_equation.style",
+              purpose = "The returned_text type's demo for the suite's own tests, and the one place all three equation styles sit side by side on a factor interaction, so you can compare how each reads.")
 
-test_that("each style names the factor terms its own way", {
+expectation("style_terms",
+            covers = c("lm_equation.style", "lm_equation.terms-from-coefficients"),
+            purpose = "Catches a style naming factor or interaction terms another style's way, or a partial style name like \"b\" not matching brackets.", {
   expect_match(equations[["prettier"]], '(Species="versicolor")', fixed = TRUE)
   expect_match(equations[["prettier"]], 'Sepal.Width:(Species="virginica")', fixed = TRUE)
   expect_match(equations[["brackets"]], "*[versicolor]", fixed = TRUE)
@@ -21,7 +23,9 @@ test_that("each style names the factor terms its own way", {
   expect_equal(lm_equation(model, style = "b"), equations[["brackets"]])
 })
 
-test_that("the equation starts with the response and the rounded intercept", {
+expectation("starts_with_response",
+            covers = "lm_equation.format",
+            purpose = "Catches the equation losing its response, mis-rounding the intercept, or writing '+ -' instead of '- '.", {
   co <- coef(model)
   expect_match(equations[["raw"]], paste0("^Sepal.Length = ", signif(co[[1]], 3), " "))
   expect_false(grepl("+ -", equations[["raw"]], fixed = TRUE))

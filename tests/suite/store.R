@@ -66,7 +66,8 @@ write_form <- function(dir, id, form) {
 }
 
 # Runs one case file under testthat. Returns whether every expectation
-# passed, plus the judged outputs it declared.
+# passed, plus the judged outputs it declared, each with what the case file
+# says of it (`source`, from case_outputs()).
 case_name <- function(file) sub("^test-case_?", "", sub("\\.R$", "", basename(file)))
 
 run_case_file <- function(file) {
@@ -82,10 +83,13 @@ run_case_file <- function(file) {
                           t$results), conditionMessage, "")
     paste0(t$test, ": ", msgs)
   }))
+  outputs <- as.list(registry)
+  declared <- case_outputs(file)
+  for (id in names(outputs)) outputs[[id]]$source <- declared[[substring(id, nchar(case) + 2)]]
   list(case = case,
        passed = nrow(df) > 0 && !any(bad),
        failures = failures,
-       outputs = as.list(registry))
+       outputs = outputs)
 }
 
 

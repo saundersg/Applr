@@ -1,6 +1,16 @@
+--- main
 error
 Problem while computing stat.
 i Error occurred in the 1st layer.
 Caused by error:
 ! geom_slice() needs both `x` and `y` mapped in aes().
     For example, 'ggplot(your_data, aes(x = disp, y = mpg))'.
+--- source
+mpg <- ggplot2::mpg
+model <- lm(mpg ~ wt + hp, data = mtcars)
+on_mtcars <- function(mapping, ...) function() ggplot2::ggplot(mtcars, mapping) + geom_slice(...)
+
+raises("inherit_aes_false", on_mtcars(ggplot2::aes(wt, mpg), model, inherit.aes = FALSE),
+       "error", "needs both `x` and `y` mapped",
+       covers = c("geom_slice.unmapped-axis", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "inherit.aes = FALSE removes the plot's axes from the layer, a less obvious way to reach axis_unmapped; the message is the same, which you can judge is still helpful here.")

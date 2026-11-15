@@ -1,3 +1,14 @@
+--- main
 message
 Band range for `cyl` not specified - used the min/max data range: 4 to 8.
     To choose the range, use 'predict_vars = list(cyl = c(4, 8))'.
+--- source
+mpg <- ggplot2::mpg
+coloured <- function(...) function() {
+  ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(...)
+}
+
+raises("band_range_message", coloured(lm(hwy ~ displ * drv + cyl, mpg), band = "cyl"),
+       "message", "Band range for `cyl` not specified",
+       covers = c("shared.band.range", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A band named without values quietly uses the data range; the only message that says which range was used and how to choose another.")

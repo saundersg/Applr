@@ -1,3 +1,4 @@
+--- main
 [simple]
 mpg = 37.3 - 5.34*wt
 
@@ -21,3 +22,19 @@ mpg = 20.1 + *
 
 [underscore_name]
 mpg = 37.3 - 0.00534*wt_lb
+--- source
+models <- list(
+  simple = lm(mpg ~ wt, mtcars),
+  multiple = lm(mpg ~ disp + hp, mtcars),
+  transformed = lm(log(mpg) ~ wt + I(wt^2), mtcars),
+  no_intercept = lm(mpg ~ 0 + wt, mtcars),
+  rank_deficient = lm(mpg ~ wt + I(2 * wt), mtcars),
+  exact_fit = lm(y ~ x, data.frame(x = 1:5, y = 2 * (1:5))),
+  intercept_only = lm(mpg ~ 1, mtcars),
+  underscore_name = lm(mpg ~ wt_lb, transform(mtcars, wt_lb = wt * 1000))
+)
+equations <- vapply(models, lm_equation, "")
+
+judged_output("equations", equations, type = "returned_text",
+              covers = c("lm_equation.format", "lm_equation.no-intercept", "lm_equation.na-and-residue", "lm_equation.intercept-only"),
+              purpose = "lm_equation() on the awkward model shapes students meet (no intercept, rank-deficient, exact fit, intercept-only) so you can judge each reads naturally; the intercept-only one is a known bug.")

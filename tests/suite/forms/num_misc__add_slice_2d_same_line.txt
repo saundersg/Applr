@@ -1,0 +1,21 @@
+--- checks
+expect_silent(add_slice_2d(m, x_axis = "disp", hp = 150))
+expect_equal(graphics::par("usr"), usr)
+expect_equal(a$line, b$line)
+expect_equal(a$line$fit, predicted(m, data.frame(disp = a$line$x, hp = 150)))
+--- source
+expectation("add_slice_2d_same_line",
+            covers = "add_slice_2d.line-is-prediction",
+            purpose = "Catches add_slice_2d() drawing a different line from the one slice_2d() would for the same arguments.", {
+  m <- lm(mpg ~ disp + hp, mtcars)
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  plot(mpg ~ disp, data = mtcars)
+  usr <- graphics::par("usr")
+  expect_silent(add_slice_2d(m, x_axis = "disp", hp = 150))
+  expect_equal(graphics::par("usr"), usr)
+  a <- prepare_slice_data(m, "disp", 100, TRUE, "none", list(hp = 150), fn = "add_slice_2d")
+  b <- prepare_slice_data(m, "disp", 100, TRUE, "none", list(hp = 150), fn = "slice_2d")
+  expect_equal(a$line, b$line)
+  expect_equal(a$line$fit, predicted(m, data.frame(disp = a$line$x, hp = 150)))
+})

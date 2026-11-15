@@ -1,0 +1,26 @@
+--- checks
+expect_equal(r$kinds, "message")
+expect_true(any(raw < 0))
+expect_true(all(is.na(d$y[raw < 0])))
+expect_equal(d$y[raw >= 0], sqrt(raw[raw >= 0]))
+expect_true(all(is.na(prep$line$fit[predicted(m, data.frame(x = prep$line$x)) < 0])))
+--- source
+expectation("outside_domain_known_issue",
+            covers = "shared.back-transform.outside-domain",
+            purpose = "Pins a known issue: where the back-transform has no value, the line silently has a gap and Applr says nothing. If Applr starts warning, this fails and should be updated.", {
+  # KNOWN ISSUE (for_devs/known_issues.Rmd): sqrt() of a negative y^2
+  # prediction is NaN. slice_2d() drops those points without a word;
+  # geom_slice() only through ggplot2's "Removed rows" warning at draw time.
+  # This pins today's build-time behaviour; when Applr warns, expect it here.
+  s <- data.frame(x = 1:10, y = c(0.3, 0.3, 0.4, 0.5, 2, 3, 3.5, 4, 4.4, 4.8))
+  m <- lm(y^2 ~ x, s)
+  r <- conditions_of(function() ggplot2::ggplot(s, ggplot2::aes(x, y)) + geom_slice(m, n = 10))
+  expect_equal(r$kinds, "message")
+  d <- r$value$data[[1]]
+  raw <- predicted(m, data.frame(x = d$x))
+  expect_true(any(raw < 0))
+  expect_true(all(is.na(d$y[raw < 0])))
+  expect_equal(d$y[raw >= 0], sqrt(raw[raw >= 0]))
+  prep <- prepare_slice_data(m, "x", 10, TRUE, "none", list())
+  expect_true(all(is.na(prep$line$fit[predicted(m, data.frame(x = prep$line$x)) < 0])))
+})

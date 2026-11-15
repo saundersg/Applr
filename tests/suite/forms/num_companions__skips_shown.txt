@@ -1,0 +1,25 @@
+--- checks
+expect_match(s, "^held at: cyl = 5.889; year = 2004$")
+expect_match(s, "^held at: year = 2004$")
+expect_match(s, "^held at: cyl = 5.889$")
+expect_match(s, "^held at: cyl = 6; year = 2004$")
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv + cyl + year, data = mpg)
+coloured <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv))
+quiet <- function(p) suppressMessages(p)
+
+expectation("skips_shown",
+            covers = c("geom_slice_subtitle.skips-shown", "geom_slice_subtitle.held-line"),
+            purpose = "Catches the subtitle's held line repeating what the plot already shows (the x variable, a legend, a facet, a text label), which would tell the reader something false or redundant.", {
+  held <- function(p) strsplit(annotation_of(p), "\n", fixed = TRUE)[[1]][2]
+  s <- held(quiet(coloured + geom_slice(model) + geom_slice_subtitle(wrap = FALSE)))
+  expect_match(s, "^held at: cyl = 5.889; year = 2004$")
+  s <- held(quiet(coloured + ggplot2::facet_wrap(~cyl) + geom_slice(model) + geom_slice_subtitle(wrap = FALSE)))
+  expect_match(s, "^held at: year = 2004$")
+  s <- held(quiet(coloured + geom_slice(model, predict_vars = list(year = c(1999, 2008))) +
+                    geom_slice_text() + geom_slice_subtitle(wrap = FALSE)))
+  expect_match(s, "^held at: cyl = 5.889$")
+  s <- held(quiet(coloured + geom_slice(model, predict_vars = list(cyl = 6)) + geom_slice_subtitle(wrap = FALSE)))
+  expect_match(s, "^held at: cyl = 6; year = 2004$")
+})

@@ -1,3 +1,11 @@
+--- main
 error
 `x_axis` variable "disp" not found in the model.
     Specify one of the model's predictors (`wt`, `hp`), such as 'x_axis = "wt"', or an expression of them.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("x_axis_not_found", function() slice_2d(model, x_axis = "disp"), "error",
+       '`x_axis` variable "disp" not found in the model.',
+       covers = c("slice_2d.x-axis-errors", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "x_axis naming a column outside the model; unlike x_axis_not_string, the hint must list the predictors.")

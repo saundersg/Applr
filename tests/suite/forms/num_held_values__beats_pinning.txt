@@ -1,0 +1,23 @@
+--- checks
+expect_equal(d$y[d$group == 1], predicted(model, data.frame(displ = d$x[d$group == 1], cyl = 4, drv = "4")))
+expect_equal(line$y, predicted(model, data.frame(displ = line$x, cyl = 4, drv = "4")))
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ + cyl + drv, data = mpg)
+base <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy))
+
+expectation("beats_pinning",
+            covers = "shared.held-values.beats-pinning",
+            purpose = "Catches a colour or facet's pinned value overriding what the user explicitly asked to hold.", {
+  coloured <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) +
+    geom_slice(model, n = 10, predict_vars = list(drv = "4", cyl = 4))
+  d <- slice_data(coloured)
+  expect_equal(d$y[d$group == 1], predicted(model, data.frame(displ = d$x[d$group == 1], cyl = 4, drv = "4")))
+  faceted <- base + geom_slice(model, n = 10, predict_vars = list(drv = "4", cyl = 4)) +
+    ggplot2::facet_wrap(~drv)
+  d <- slice_data(faceted)
+  for (panel in unique(d$PANEL)) {
+    line <- d[d$PANEL == panel, ]
+    expect_equal(line$y, predicted(model, data.frame(displ = line$x, cyl = 4, drv = "4")))
+  }
+})

@@ -1,0 +1,21 @@
+--- checks
+expect_equal(line$y, predicted(m, data.frame(displ = line$x, drv = lv[as.integer(key$PANEL)], cyl = cyls[key$group])))
+--- source
+mpg <- ggplot2::mpg
+
+expectation("facet_after_autoplot",
+            covers = "autoplot.user-facet-after",
+            purpose = "Catches the README's autoplot(model) + facet_wrap(~drv) drawing the same line in every panel because the facet came after autoplot().", {
+  m <- lm(hwy ~ displ + drv + cyl, data = mpg)
+  p <- suppressMessages(autoplot(m, ggplot2::aes(colour = factor(cyl)), summary = FALSE)) +
+    ggplot2::facet_wrap(~drv)
+  d <- slice_data(p)
+  lv <- levels(factor(mpg$drv))
+  cyls <- sort(unique(mpg$cyl))
+  for (k in seq_len(nrow(unique(d[c("PANEL", "group")])))) {
+    key <- unique(d[c("PANEL", "group")])[k, ]
+    line <- d[d$PANEL == key$PANEL & d$group == key$group, ]
+    expect_equal(line$y, predicted(m, data.frame(displ = line$x, drv = lv[as.integer(key$PANEL)],
+                                                 cyl = cyls[key$group])))
+  }
+})

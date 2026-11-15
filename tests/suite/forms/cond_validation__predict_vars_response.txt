@@ -1,3 +1,11 @@
+--- main
 error
 `mpg` is the model's response and cannot be held at a value.
     Only predictors can be set in `predict_vars`.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("predict_vars_response", function() geom_slice(model, predict_vars = list(mpg = 20)), "error",
+       "`mpg` is the model's response",
+       covers = c("shared.held-values.malformed", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Holding the response is a conceptual slip (it is what's predicted), not a typo, so the message explains rather than lists names.")

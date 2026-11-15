@@ -11,7 +11,7 @@ good_audit <- function() audit_file(c(
   "additions:",
   "  - id: line-check",
   "    case: single_predictor_line",
-  "    tests: [\"plot\", \"the plotted line equals the model's prediction on the expected grid\"]",
+  "    tests: [\"plot\", \"line_is_prediction\"]",
   "    entries: [geom_slice.line-is-prediction]",
   "    why: Lines were judged by eye.",
   "old:",
@@ -33,8 +33,8 @@ test_that("the audit is served with each addition's code and the old lines it ca
   data <- json_body(call_app(s$app, "/api/salvage"))
   a <- data$additions[[1]]
   expect_equal(a$from, list("gs_01"))
-  expect_match(a$tests[[1]]$code, '^judged_output\\("plot", p\\)')
-  expect_match(a$tests[[2]]$code, "^test_that\\(")
+  expect_match(a$tests[[1]]$code, '^judged_output\\("plot", p,')
+  expect_match(a$tests[[2]]$code, '^expectation\\("line_is_prediction",')
   expect_length(data$old, 3)
   expect_length(data$reviews, 0)
 })

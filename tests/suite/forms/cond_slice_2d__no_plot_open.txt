@@ -1,5 +1,18 @@
+--- main
 warning
 Slice is outside the current plot range; the line may not be visible or aligned.
 
 error
 plot.new has not been called yet
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+on_device <- function(code) function() {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  code()
+}
+
+raises("no_plot_open", on_device(function() add_slice_2d(model, x_axis = "wt", hp = 100)),
+       c("warning", "error"), "plot.new has not been called yet", format = FALSE,
+       covers = c("add_slice_2d.no-plot", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Pins what happens with no plot open: a misleading range warning, then base R's error. You can judge whether Applr should say 'no plot open' itself.")

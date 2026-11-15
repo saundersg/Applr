@@ -1,3 +1,8 @@
+--- main
 error
 `wrap` must be TRUE, FALSE, or a width in inches.
     For example, 'wrap = 6' to wrap to a 6-inch plot.
+--- source
+raises("subtitle_wrap", function() geom_slice_subtitle(wrap = -1), "error", "`wrap` must be TRUE, FALSE",
+       covers = c("geom_slice_subtitle.arg-validation", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "wrap takes TRUE, FALSE or a width in inches, an unusual mix; the stop must list all three and give an example width.")

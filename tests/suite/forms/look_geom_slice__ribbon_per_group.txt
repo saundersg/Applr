@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -334,3 +335,13 @@
 <text x='32.79' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='188.16px' lengthAdjust='spacingAndGlyphs'>Ribbons follow their line's colour</text>
 </g>
 </svg>
+--- source
+mpg <- ggplot2::mpg
+grouped <- lm(hwy ~ displ + I(displ^2) + displ:drv, data = mpg)
+points <- function(data, mapping) ggplot2::ggplot(data, mapping) + ggplot2::geom_point()
+ribbon_per_group <- points(mpg, ggplot2::aes(displ, hwy, colour = drv)) +
+  geom_slice(grouped, interval = "confidence") + ggplot2::labs(title = "Ribbons follow their line's colour")
+
+judged_output("ribbon_per_group", ribbon_per_group,
+              covers = "geom_slice.ribbon-follows-line",
+              purpose = "Ribbons on coloured groups must each take their own line's colour; a single-colour plot couldn't show this.")

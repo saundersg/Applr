@@ -1,0 +1,17 @@
+--- checks
+expect_equal(d$ymin, pmin(a, b))
+expect_equal(d$ymax, pmax(a, b))
+--- source
+mpg <- ggplot2::mpg
+
+expectation("true_picks_multi_value",
+            covers = "shared.band.infer-true",
+            purpose = "Unlike data_range_and_true, the predict_vars entry with several values must win over the variable the plot doesn't show.", {
+  m <- lm(hwy ~ displ + cyl + year, data = mpg)
+  d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy)) +
+                    geom_slice(m, n = 10, band = TRUE, predict_vars = list(year = c(1999, 2008), cyl = 6)))
+  a <- predicted(m, data.frame(displ = d$x, cyl = 6, year = 1999))
+  b <- predicted(m, data.frame(displ = d$x, cyl = 6, year = 2008))
+  expect_equal(d$ymin, pmin(a, b))
+  expect_equal(d$ymax, pmax(a, b))
+})

@@ -33,11 +33,13 @@ examples <- c(
                                  geom_slice(model, predict_vars = list(x2 = c(0, 4))) + geom_slice_text())
 )
 
-covers("geom_slice_text.label-predict-vars", "geom_slice_text.label-group", "geom_slice_text.style")
 judged_output("labels", examples, type = "returned_text",
-              purpose = "The label strings geom_slice_text() writes in each style, from predict_vars and from a colour group, and which wins when both vary.")
+              covers = c("geom_slice_text.label-predict-vars", "geom_slice_text.label-group", "geom_slice_text.style"),
+              purpose = "Every label wording side by side (each style, from predict_vars and from a group) so you can judge them; group_and_single_value gives two lines the same label, which may be a bug.")
 
-test_that("labels name the values, crossed in predict_vars order, to 4 significant figures", {
+expectation("values_crossed",
+            covers = c("geom_slice_text.label-predict-vars", "geom_slice_text.style"),
+            purpose = "Catches labels out of predict_vars order, numbers not cut to 4 significant figures, or a style writing another style's form.", {
   expect_equal(strsplit(examples[["variable"]], "\n")[[1]],
                c("x2: 0; g: A", "x2: 0; g: B", "x2: 2.123; g: A", "x2: 2.123; g: B"))
   expect_equal(strsplit(examples[["value"]], "\n")[[1]], c("0; A", "0; B", "2.123; A", "2.123; B"))
@@ -45,7 +47,9 @@ test_that("labels name the values, crossed in predict_vars order, to 4 significa
   expect_equal(examples[["legend_key"]], "labels: x2; g")
 })
 
-test_that("with no predict_vars variation labels name the group; predict_vars win otherwise", {
+expectation("group_or_values",
+            covers = "geom_slice_text.label-group",
+            purpose = "Catches labels naming the group when predict_vars also vary, or failing to name it when they don't.", {
   expect_equal(strsplit(examples[["group"]], "\n")[[1]], c("g: A", "g: B"))
   expect_equal(strsplit(examples[["group_and_single_value"]], "\n")[[1]], c("x2: 2", "x2: 2"))
   expect_equal(strsplit(examples[["group_and_values"]], "\n")[[1]], c("x2: 0", "x2: 0", "x2: 4", "x2: 4"))

@@ -1,5 +1,13 @@
+--- main
 warning
 Computation failed in `stat_slice()`.
 Caused by error:
 ! predict() failed for this slice: factor drv has new level x
     Check that `predict_vars` values match the model's variable types.
+--- source
+raises("predict_vars_unknown_character", function() {
+  ggplot2::ggplot(ggplot2::mpg, ggplot2::aes(displ, hwy)) +
+    geom_slice(lm(hwy ~ displ + drv, ggplot2::mpg), predict_vars = list(drv = "x"))
+}, "warning", "predict() failed for this slice", format = FALSE,
+       covers = c("shared.held-values.bad-level", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "The same mistake as predict_vars_bad_level on a character column instead of a factor: it only warns and the line goes missing, which you may judge too weak.")

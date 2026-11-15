@@ -1,0 +1,11 @@
+--- checks
+expect_equal(nrow(slice_data(p)), 7)
+--- source
+mpg <- ggplot2::mpg
+
+expectation("n_points",
+            covers = "geom_slice.n-points",
+            purpose = "Catches n being ignored or off by one, on a single line (the default is 100, so n = 7 makes a change obvious).", {
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(lm(mpg ~ wt, mtcars), n = 7)
+  expect_equal(nrow(slice_data(p)), 7)
+})

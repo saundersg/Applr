@@ -1,0 +1,14 @@
+--- checks
+expect_false(v$visible)
+expect_equal(out, v$value)
+expect_match(v$value, "^\\$\\$.*\\$\\$$")
+--- source
+expectation("lm_latex_returns",
+            covers = "lm_latex.prints-and-returns",
+            purpose = "Catches lm_latex() printing without returning its string, or returning it visibly so it prints twice.", {
+  m <- lm(mpg ~ wt, mtcars)
+  out <- capture.output(v <- withVisible(lm_latex(m)))
+  expect_false(v$visible)
+  expect_equal(out, v$value)
+  expect_match(v$value, "^\\$\\$.*\\$\\$$")
+})

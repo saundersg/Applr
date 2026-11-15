@@ -1,6 +1,14 @@
+--- main
 error
 Problem while computing stat.
 i Error occurred in the 1st layer.
 Caused by error:
 ! The model variable `flag` has unsupported class "logical".
     geom_slice() supports numeric, factor, and character predictors.
+--- source
+raises("unsupported_class", function() {
+  d <- data.frame(x = 1:6, flag = c(TRUE, FALSE, TRUE, TRUE, FALSE, FALSE), y = c(1, 3, 2, 5, 4, 6))
+  ggplot2::ggplot(d, ggplot2::aes(x, y)) + geom_slice(lm(y ~ x + flag, d))
+}, "error", 'unsupported class "logical"',
+       covers = c("shared.imputation.unsupported-class", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A logical predictor has no imputation rule; the stop must name the variable and its class, and list the classes that work.")

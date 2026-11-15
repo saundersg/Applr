@@ -37,6 +37,9 @@ temp_paths <- function() {
 # The demo static case, and a copy of it with one visible change.
 renamed <- function() case_copy(edit = c('title = "Single predictor"', 'title = "Renamed"'))
 id <- "single_predictor_line/plot"
+# Its test, an item too; it uses the plot `p`, so renamed() changes it as well.
+test_id <- "single_predictor_line/line_is_prediction"
+both <- sort(c(id, test_id))
 view_file <- function(paths) file.path(paths$views, "single_predictor_line__plot", "plot.png")
 
 # The review server's app, with a request built as httpuv hands it over.

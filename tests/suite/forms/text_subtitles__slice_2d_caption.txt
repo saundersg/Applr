@@ -1,0 +1,32 @@
+--- checks
+expect_equal(examples[["slice_2d_caption"]], "drv: f; cyl: 5.9; year: 2003.5")
+expect_equal(examples[["slice_2d_caption_empty"]], "")
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv + cyl + year, data = mpg)
+coloured <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv))
+subtitle <- function(p) annotation_of(suppressMessages(p))
+examples <- c(
+  imputed = subtitle(coloured + geom_slice(model) + geom_slice_subtitle(wrap = FALSE)),
+  held_values = subtitle(coloured + geom_slice(model, predict_vars = list(cyl = c(4, 8), year = 2008)) +
+                           geom_slice_subtitle(wrap = FALSE)),
+  band = subtitle(coloured + geom_slice(model, band = "cyl", predict_vars = list(year = 1999)) +
+                    geom_slice_subtitle(wrap = FALSE)),
+  no_equation = subtitle(coloured + geom_slice(model) + geom_slice_subtitle(model = FALSE)),
+  prepend_append = subtitle(coloured + geom_slice(model) +
+                              geom_slice_subtitle(prepend = "Fitted: ", append = " (mpg data)", wrap = FALSE)),
+  style_brackets = subtitle(coloured + geom_slice(model) + geom_slice_subtitle(style = "brackets", wrap = FALSE)),
+  string_value = subtitle(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy)) +
+                            geom_slice(lm(hwy ~ displ + drv, mpg), predict_vars = list(drv = "r")) +
+                            geom_slice_subtitle(wrap = FALSE)),
+  slice_2d_caption = suppressMessages(prepare_slice_data(model, "displ", 10, TRUE, "none",
+                                                         list(drv = "f")))$caption_text,
+  slice_2d_caption_empty = prepare_slice_data(lm(hwy ~ displ, mpg), "displ", 10, TRUE, "none", list())$caption_text
+)
+
+expectation("slice_2d_caption",
+            covers = c("slice_2d.caption", "slice_2d.caption-nothing-held"),
+            purpose = "Catches slice_2d()'s caption rounding to other than 1 decimal, missing a held predictor, or leaving a stray separator when nothing is held.", {
+  expect_equal(examples[["slice_2d_caption"]], "drv: f; cyl: 5.9; year: 2003.5")
+  expect_equal(examples[["slice_2d_caption_empty"]], "")
+})

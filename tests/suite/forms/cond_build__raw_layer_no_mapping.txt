@@ -1,6 +1,17 @@
+--- main
 error
 Problem while computing stat.
 i Error occurred in the 1st layer.
 Caused by error:
 ! geom_slice() needs both `x` and `y` mapped in aes().
     For example, 'ggplot(your_data, aes(x = disp, y = mpg))'.
+--- source
+mpg <- ggplot2::mpg
+
+raises("raw_layer_no_mapping", function() {
+  ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) +
+    ggplot2::layer(stat = StatSlice, geom = GeomSlice, position = "identity",
+                   params = list(model = lm(mpg ~ disp, mtcars)))
+}, "error", "needs both `x` and `y` mapped",
+       covers = c("ggproto_objects.raw-layer-no-mapping", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "For extension authors building layer(stat = StatSlice) by hand: forgetting the mapping must give axis_unmapped's message, not an obscure failure.")

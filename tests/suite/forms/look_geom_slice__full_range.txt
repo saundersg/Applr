@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -322,3 +323,13 @@
 <text x='32.79' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='108.96px' lengthAdjust='spacingAndGlyphs'>full_range = TRUE</text>
 </g>
 </svg>
+--- source
+mpg <- ggplot2::mpg
+grouped <- lm(hwy ~ displ + I(displ^2) + displ:drv, data = mpg)
+points <- function(data, mapping) ggplot2::ggplot(data, mapping) + ggplot2::geom_point()
+full_range <- points(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(grouped, full_range = TRUE) +
+  ggplot2::labs(title = "full_range = TRUE")
+
+judged_output("full_range", full_range,
+              covers = "geom_slice.full-range",
+              purpose = "What full_range = TRUE looks like: every group's line across the whole panel, past its own data. A test checks the numbers; you judge whether it reads as extrapolation.")

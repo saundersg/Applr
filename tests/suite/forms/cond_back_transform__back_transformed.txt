@@ -1,3 +1,13 @@
+--- main
 message
 Predictions of `log(mpg)` were back-transformed to match the `mpg` axis.
     To turn this off, use 'back_transform = FALSE'.
+--- source
+on_mpg <- function(model, y = quote(mpg), ...) function() {
+  ggplot2::ggplot(mtcars, ggplot2::aes(disp, !!y)) + geom_slice(model, ...)
+}
+
+raises("back_transformed", on_mpg(lm(log(mpg) ~ disp, mtcars)), "message",
+       "were back-transformed to match the `mpg` axis",
+       covers = c("shared.back-transform.message", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "The most common case, log(y) on a raw axis: the message must say the line was changed and how to turn that off, since a student may not expect it.")

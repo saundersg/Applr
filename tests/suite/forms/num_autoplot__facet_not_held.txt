@@ -1,0 +1,13 @@
+--- checks
+expect_false(grepl("cyl =", s, fixed = TRUE))
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ + drv + cyl, data = mpg)
+quiet_autoplot <- function(...) suppressMessages(autoplot(..., summary = FALSE))
+
+expectation("facet_not_held",
+            covers = "autoplot.facet-before-subtitle",
+            purpose = "Catches the subtitle being added before the facet, which would report the facet variable as held at one value.", {
+  s <- quiet_autoplot(model)$labels$subtitle
+  expect_false(grepl("cyl =", s, fixed = TRUE))
+})

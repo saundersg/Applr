@@ -1,3 +1,4 @@
+--- main
 message
 Value for `f` not specified - Used most common: "c"
     To choose a slice, use 'predict_vars = list(f = "c")'.
@@ -5,3 +6,12 @@ Value for `f` not specified - Used most common: "c"
 message
 Value for `s` not specified - Used most common: "q"
     To choose a slice, use 'predict_vars = list(s = "q")'.
+--- source
+d <- data.frame(x = 1:9, f = factor(c("a", "b", "b", "c", "c", "c", "a", "b", "c")),
+                s = c("p", "q", "q", "q", "p", "q", "p", "q", "q"), y = c(3, 5, 4, 8, 9, 12, 10, 13, 16))
+
+raises("factor_and_character", function() {
+  ggplot2::ggplot(d, ggplot2::aes(x, y)) + geom_slice(lm(y ~ x + f + s, d))
+}, c("message", "message"), c('Used most common: "c"', 'Used most common: "q"'),
+       covers = c("shared.imputation.message", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "The imputation message for a factor and a character predictor, the two non-numeric kinds; condition_imputed_values/wording has the numeric one.")

@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -330,3 +331,14 @@
 <text x='704.15' y='303.27' style='font-size: 8.80px; font-family: sans;' textLength='2.93px' lengthAdjust='spacingAndGlyphs'>r</text>
 </g>
 </svg>
+--- source
+mpg <- ggplot2::mpg
+set.seed(123)
+band_model <- lm(hwy ~ displ * drv + cyl, data = mpg)
+band_named <- suppressMessages(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) +
+  ggplot2::geom_point() + geom_slice(band_model, band = "cyl", predict_vars = list(cyl = c(5, 7))) +
+  geom_slice_text())
+
+judged_output("band_named", band_named,
+              covers = "shared.band.look",
+              purpose = "Next to band_inferred, a band over two chosen values must look narrower; catches the two looking the same.")

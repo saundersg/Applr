@@ -1,3 +1,4 @@
+--- main
 warning
 `color = hp` is on a continuous scale, so it cannot pin `hp` per group; it will be held constant instead.
     For one line per value, use 'aes(color = factor(hp))'.
@@ -5,3 +6,12 @@ warning
 message
 Value for `hp` not specified - Used mean: 146.7
     To choose a slice, use 'predict_vars = list(hp = 146.7)'.
+--- source
+mpg <- ggplot2::mpg
+model <- lm(mpg ~ wt + hp, data = mtcars)
+on_mtcars <- function(mapping, ...) function() ggplot2::ggplot(mtcars, mapping) + geom_slice(...)
+
+raises("continuous_colour", on_mtcars(ggplot2::aes(wt, mpg, colour = hp), model),
+       c("warning", "message"), "is on a continuous scale",
+       covers = c("shared.slicing.continuous-colour", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "colour = hp on a continuous scale can't split lines; unlike bare_group, the fix is factor(), which the hint must show.")

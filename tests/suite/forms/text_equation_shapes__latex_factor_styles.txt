@@ -1,0 +1,29 @@
+--- checks
+expect_match(examples[["latex_prettier"]], "\\text{(Species=\"versicolor\")}", fixed = TRUE)
+expect_match(examples[["latex_prettier"]], "\\text{Sepal.Width:(Species=\"virginica\")}", fixed = TRUE)
+expect_match(examples[["latex_brackets"]], "\\text{[versicolor]}", fixed = TRUE)
+expect_match(examples[["latex_raw"]], "\\text{Sepal.Width:Speciesvirginica}", fixed = TRUE)
+expect_equal(latex_of(iris_model, style = "bracket"), examples[["latex_brackets"]])
+--- source
+iris_model <- lm(Sepal.Length ~ Sepal.Width * Species, data = iris)
+latex_of <- function(...) {
+  out <- capture.output(v <- lm_latex(...))
+  v
+}
+examples <- c(
+  latex_prettier = latex_of(iris_model),
+  latex_brackets = latex_of(iris_model, style = "brackets"),
+  latex_raw = latex_of(iris_model, style = "raw"),
+  equation_factor_call = lm_equation(lm(mpg ~ disp + factor(cyl), mtcars)),
+  equation_as_factor_interaction = lm_equation(lm(mpg ~ wt * as.factor(am), mtcars))
+)
+
+expectation("latex_factor_styles",
+            covers = "lm_latex.factor-styles",
+            purpose = "Catches lm_latex() labelling factor terms differently from lm_equation() in any style, or the abbreviation \"bracket\" not resolving.", {
+  expect_match(examples[["latex_prettier"]], '\\text{(Species="versicolor")}', fixed = TRUE)
+  expect_match(examples[["latex_prettier"]], '\\text{Sepal.Width:(Species="virginica")}', fixed = TRUE)
+  expect_match(examples[["latex_brackets"]], "\\text{[versicolor]}", fixed = TRUE)
+  expect_match(examples[["latex_raw"]], "\\text{Sepal.Width:Speciesvirginica}", fixed = TRUE)
+  expect_equal(latex_of(iris_model, style = "bracket"), examples[["latex_brackets"]])
+})

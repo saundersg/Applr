@@ -1,0 +1,21 @@
+--- checks
+expect_equal(equations[["intercept_only"]], "mpg = 20.1 + *")
+--- source
+models <- list(
+  simple = lm(mpg ~ wt, mtcars),
+  multiple = lm(mpg ~ disp + hp, mtcars),
+  transformed = lm(log(mpg) ~ wt + I(wt^2), mtcars),
+  no_intercept = lm(mpg ~ 0 + wt, mtcars),
+  rank_deficient = lm(mpg ~ wt + I(2 * wt), mtcars),
+  exact_fit = lm(y ~ x, data.frame(x = 1:5, y = 2 * (1:5))),
+  intercept_only = lm(mpg ~ 1, mtcars),
+  underscore_name = lm(mpg ~ wt_lb, transform(mtcars, wt_lb = wt * 1000))
+)
+equations <- vapply(models, lm_equation, "")
+
+expectation("intercept_only_known_bug",
+            covers = "lm_equation.intercept-only",
+            purpose = "Pins a known bug ('mpg = 20.1 + *') so its fix is noticed: when this fails, expect 'mpg = 20.1'.", {
+  # KNOWN BUG (for_devs/known_issues.Rmd): should be "mpg = 20.1".
+  expect_equal(equations[["intercept_only"]], "mpg = 20.1 + *")
+})

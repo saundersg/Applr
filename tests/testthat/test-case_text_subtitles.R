@@ -25,15 +25,15 @@ examples <- c(
   slice_2d_caption_empty = prepare_slice_data(lm(hwy ~ displ, mpg), "displ", 10, TRUE, "none", list())$caption_text
 )
 
-covers("geom_slice_subtitle.equation-line", "geom_slice_subtitle.held-line",
-       "geom_slice_subtitle.band-line", "geom_slice_subtitle.prepend-append",
-       "geom_slice_subtitle.dots-to-equation", "slice_2d.caption", "slice_2d.caption-nothing-held")
 judged_output("subtitles", examples, type = "returned_text",
-              purpose = "geom_slice_subtitle()'s equation, held-value and band lines, with its options, unwrapped, plus slice_2d()'s caption and its empty form.")
+              covers = c("geom_slice_subtitle.equation-line", "geom_slice_subtitle.held-line", "geom_slice_subtitle.band-line", "geom_slice_subtitle.prepend-append", "slice_2d.caption", "slice_2d.caption-nothing-held"),
+              purpose = "Every kind of subtitle and slice_2d() caption text, unwrapped so you judge wording, not layout (look_labels judges layout). Note the two engines word held values differently (= vs :).")
 
 lines <- function(name) strsplit(examples[[name]], "\n", fixed = TRUE)[[1]]
 
-test_that("the equation comes first and the held values second, unless dropped", {
+expectation("equation_then_held",
+            covers = c("geom_slice_subtitle.equation-line", "geom_slice_subtitle.held-line"),
+            purpose = "Catches the lines coming out of order, held values formatted unlike geom_slice()'s messages, several values not joined with ', ', or a string value losing its quotes.", {
   expect_equal(lines("imputed")[1], lm_equation(model))
   expect_equal(lines("imputed")[2], "held at: cyl = 5.889; year = 2004")
   expect_equal(lines("held_values")[2], "held at: cyl = 4, 8; year = 2008")
@@ -41,13 +41,17 @@ test_that("the equation comes first and the held values second, unless dropped",
   expect_equal(lines("string_value")[2], 'held at: drv = "r"')
 })
 
-test_that("a band gets its own line, and prepend, append and style apply", {
+expectation("band_and_options",
+            covers = c("geom_slice_subtitle.band-line", "geom_slice_subtitle.prepend-append", "geom_slice_subtitle.dots-to-equation"),
+            purpose = "Catches a banded variable reported as held instead of on its own line, prepend or append in the wrong place, or style not reaching the equation.", {
   expect_equal(lines("band")[2:3], c("held at: year = 1999", "projection band: cyl spanning from 4 to 8"))
   expect_match(examples[["prepend_append"]], "^Fitted: hwy = .* \\(mpg data\\)$")
   expect_equal(lines("style_brackets")[1], lm_equation(model, style = "brackets"))
 })
 
-test_that("slice_2d()'s caption lists held values to 1 decimal, and is empty with none", {
+expectation("slice_2d_caption",
+            covers = c("slice_2d.caption", "slice_2d.caption-nothing-held"),
+            purpose = "Catches slice_2d()'s caption rounding to other than 1 decimal, missing a held predictor, or leaving a stray separator when nothing is held.", {
   expect_equal(examples[["slice_2d_caption"]], "drv: f; cyl: 5.9; year: 2003.5")
   expect_equal(examples[["slice_2d_caption_empty"]], "")
 })

@@ -1,0 +1,9 @@
+--- checks
+expect_equal(prep, "hp")
+--- source
+expectation("x_axis_wins",
+            covers = "shared.conditions.xaxis-deprecated",
+            purpose = "Catches the old xaxis overriding the new x_axis when a user gives both, for example after a half-finished update.", {
+  prep <- suppressWarnings(suppressMessages(resolve_deprecated_xaxis("hp", "wt", "slice_2d")))
+  expect_equal(prep, "hp")
+})

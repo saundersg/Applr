@@ -1,0 +1,25 @@
+--- checks
+expect_equal(sort(unique(t$colour)), sort(unique(slice_data(colour_by_group)$colour)))
+expect_equal(unname(key$aes_params$colour), "darkgreen")
+--- source
+set.seed(123)
+d <- data.frame(x = runif(80, -10, 10), x2 = runif(80, 0, 4),
+                g = factor(sample(c("A", "B"), 80, replace = TRUE)))
+d$y <- d$x * ifelse(d$g == "A", 0.5, 2) + ifelse(d$g == "A", 5, -5) + 4 * d$x2 + rnorm(80)
+model <- lm(y ~ x * g + x2, data = d)
+build <- function(p) suppressMessages(p)
+on_d <- function(mapping = ggplot2::aes(x, y)) ggplot2::ggplot(d, mapping) + ggplot2::geom_point(alpha = 0.5)
+colour_by_group <- build(on_d(ggplot2::aes(x, y, colour = g)) +
+  geom_slice(model, predict_vars = list(x2 = c(0, 2, 4))) + geom_slice_text())
+legend_one_colour <- build(on_d() + geom_slice(model, predict_vars = list(x2 = c(0, 4)), colour = "darkgreen") +
+  geom_slice_text(style = "legend"))
+
+expectation("label_and_key_colours",
+            covers = c("geom_slice_text.colour-follows-line", "geom_slice_text.legend-key-colour"),
+            purpose = "Catches labels not matching their lines' colours, or a one-colour plot's legend key turning grey. Note its old name said 'grey for mixed colours', which it doesn't check.", {
+  t <- slice_text_data(colour_by_group)
+  expect_equal(sort(unique(t$colour)), sort(unique(slice_data(colour_by_group)$colour)))
+  key <- Filter(function(l) inherits(l$geom, "GeomText") && !inherits(l$geom, "GeomSliceText"),
+                legend_one_colour$layers)[[1]]
+  expect_equal(unname(key$aes_params$colour), "darkgreen")
+})

@@ -1,3 +1,4 @@
+--- main
 message
 Factor terms were shortened to fit the subtitle - wrote `[versicolor]` for `(Species="versicolor")`.
     To keep the full names, use 'geom_slice_subtitle(style = "prettier")' - the subtitle may then run past the edge of the plot.
@@ -5,3 +6,11 @@ Factor terms were shortened to fit the subtitle - wrote `[versicolor]` for `(Spe
 message
 Value for `Sepal.Width` not specified - Used mean: 3.057
     To choose a slice, use 'predict_vars = list(Sepal.Width = 3.057)'.
+--- source
+raises("brackets_used", function() {
+  m <- lm(Sepal.Length ~ Sepal.Width * Species + Petal.Length, iris)
+  ggplot2::ggplot(iris, ggplot2::aes(Petal.Length, Sepal.Length, colour = Species)) +
+    geom_slice(m) + geom_slice_subtitle(wrap = 3.5)
+}, c("message", "message"), "Factor terms were shortened to fit the subtitle",
+       covers = c("shared.annotation-wrap.brackets-message", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Shortened factor terms ([versicolor]) could confuse a reader; the message must show one term both ways and how to keep full names.")

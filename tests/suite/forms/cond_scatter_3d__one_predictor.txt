@@ -1,3 +1,10 @@
+--- main
 error
 scatter_3d() needs exactly two predictor variables, but the model has 1.
     Reduce the model to two predictors, such as 'lm(z ~ x + y, data = your_data)'.
+--- source
+built <- function(...) function() plotly::plotly_build(scatter_3d(...))
+
+raises("one_predictor", built(lm(mpg ~ wt, mtcars)), "error", "needs exactly two predictor variables",
+       covers = c("scatter_3d.shape-errors", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A one-predictor model has no surface; the stop must say exactly two are needed and how many the model has.")

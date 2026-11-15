@@ -1,0 +1,23 @@
+--- checks
+expect_match(equations[["prettier"]], "(Species=\"versicolor\")", fixed = TRUE)
+expect_match(equations[["prettier"]], "Sepal.Width:(Species=\"virginica\")", fixed = TRUE)
+expect_match(equations[["brackets"]], "*[versicolor]", fixed = TRUE)
+expect_match(equations[["raw"]], "*Speciesversicolor", fixed = TRUE)
+expect_equal(lm_equation(model, style = "b"), equations[["brackets"]])
+--- source
+model <- lm(Sepal.Length ~ Sepal.Width * Species, data = iris)
+equations <- c(
+  prettier = lm_equation(model),
+  brackets = lm_equation(model, style = "brackets"),
+  raw = lm_equation(model, style = "raw")
+)
+
+expectation("style_terms",
+            covers = c("lm_equation.style", "lm_equation.terms-from-coefficients"),
+            purpose = "Catches a style naming factor or interaction terms another style's way, or a partial style name like \"b\" not matching brackets.", {
+  expect_match(equations[["prettier"]], '(Species="versicolor")', fixed = TRUE)
+  expect_match(equations[["prettier"]], 'Sepal.Width:(Species="virginica")', fixed = TRUE)
+  expect_match(equations[["brackets"]], "*[versicolor]", fixed = TRUE)
+  expect_match(equations[["raw"]], "*Speciesversicolor", fixed = TRUE)
+  expect_equal(lm_equation(model, style = "b"), equations[["brackets"]])
+})

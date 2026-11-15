@@ -1,0 +1,26 @@
+--- checks
+expect_equal(equations[["multiple"]], paste0("mpg = ", co[[1]], " - ", abs(co[["disp"]]), "*disp - ", abs(co[["hp"]]), "*hp"))
+expect_equal(equations[["transformed"]], sub("^", "", equations[["transformed"]]))
+expect_match(equations[["transformed"]], "^log\\(mpg\\) = .*\\*I\\(wt\\^2\\)$")
+--- source
+models <- list(
+  simple = lm(mpg ~ wt, mtcars),
+  multiple = lm(mpg ~ disp + hp, mtcars),
+  transformed = lm(log(mpg) ~ wt + I(wt^2), mtcars),
+  no_intercept = lm(mpg ~ 0 + wt, mtcars),
+  rank_deficient = lm(mpg ~ wt + I(2 * wt), mtcars),
+  exact_fit = lm(y ~ x, data.frame(x = 1:5, y = 2 * (1:5))),
+  intercept_only = lm(mpg ~ 1, mtcars),
+  underscore_name = lm(mpg ~ wt_lb, transform(mtcars, wt_lb = wt * 1000))
+)
+equations <- vapply(models, lm_equation, "")
+
+expectation("rounding_and_signs",
+            covers = "lm_equation.format",
+            purpose = "Catches coefficients not rounded to 3 significant figures, '+ -' instead of '- ', or a transformed response losing its name.", {
+  co <- signif(coef(models$multiple), 3)
+  expect_equal(equations[["multiple"]],
+               paste0("mpg = ", co[[1]], " - ", abs(co[["disp"]]), "*disp - ", abs(co[["hp"]]), "*hp"))
+  expect_equal(equations[["transformed"]], sub("^", "", equations[["transformed"]]))
+  expect_match(equations[["transformed"]], "^log\\(mpg\\) = .*\\*I\\(wt\\^2\\)$")
+})

@@ -1,0 +1,20 @@
+--- checks
+expect_line(d[d$group == g, ], drv = lv[g], cyl = cyl_mean)
+expect_line(d[d$group == g, ], drv = lv[g], cyl = cyl_mean)
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv + cyl, data = mpg)
+cyl_mean <- mean(mpg$cyl)
+expect_line <- function(line, ...) {
+  expect_equal(line$y, predicted(model, data.frame(displ = line$x, ...)))
+}
+
+expectation("colour_group_pins",
+            covers = "shared.slicing.group-pins",
+            purpose = "Catches each colour group's line being predicted at an imputed value instead of that group's own value, the central idea of slicing by aesthetic.", {
+  d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(model, n = 10))
+  lv <- levels(factor(mpg$drv))
+  for (g in unique(d$group)) expect_line(d[d$group == g, ], drv = lv[g], cyl = cyl_mean)
+  d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, linetype = drv)) + geom_slice(model, n = 10))
+  for (g in unique(d$group)) expect_line(d[d$group == g, ], drv = lv[g], cyl = cyl_mean)
+})

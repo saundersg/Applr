@@ -1,3 +1,11 @@
+--- main
 warning
 geom_slice_subtitle() found no geom_slice() layer to describe, so no subtitle was added.
     Add the slice first, such as 'geom_slice(model) + geom_slice_subtitle()'.
+--- source
+base <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg))
+
+raises("subtitle_no_slice", function() base + geom_slice_subtitle(), "warning",
+       "geom_slice_subtitle() found no geom_slice() layer",
+       covers = c("shared.companions.no-slice-layer", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "The subtitle's version of text_no_slice, with its own wording; catches the companions drifting apart.")

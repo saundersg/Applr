@@ -1,1 +1,8 @@
+--- main
 (no conditions)
+--- source
+built <- function(...) function() plotly::plotly_build(scatter_3d(...))
+
+raises("builds_quietly", built(lm(mpg ~ wt + hp, mtcars), n = 10), character(),
+       covers = c("scatter_3d.no-build-warnings", "shared.conditions.severity"),
+       purpose = "Catches plotly warnings leaking into a normal build, which students read as errors; the only scatter_3d() output that must say nothing.")

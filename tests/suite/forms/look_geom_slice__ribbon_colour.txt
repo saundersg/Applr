@@ -1,0 +1,25 @@
+--- checks
+expect_equal(slice_ribbon_fill(d, GeomSlice$default_aes$fill), d$colour)
+expect_equal(unique(slice_data(fill_set)$fill), "grey50")
+expect_equal(unique(slice_data(default)$colour), "skyblue")
+--- source
+mpg <- ggplot2::mpg
+iris_model <- lm(Sepal.Length ~ Sepal.Width + Petal.Length, data = iris)
+grouped <- lm(hwy ~ displ + I(displ^2) + displ:drv, data = mpg)
+points <- function(data, mapping) ggplot2::ggplot(data, mapping) + ggplot2::geom_point()
+default <- points(iris, ggplot2::aes(Petal.Length, Sepal.Length)) + geom_slice(iris_model) +
+  ggplot2::labs(title = "Default line")
+ribbon_per_group <- points(mpg, ggplot2::aes(displ, hwy, colour = drv)) +
+  geom_slice(grouped, interval = "confidence") + ggplot2::labs(title = "Ribbons follow their line's colour")
+fill_set <- points(mpg, ggplot2::aes(displ, hwy, colour = drv)) +
+  geom_slice(grouped, interval = "confidence", fill = "grey50") + ggplot2::labs(title = "fill = \"grey50\" wins")
+
+expectation("ribbon_colour",
+            covers = c("geom_slice.ribbon-follows-line", "geom_slice.default-look"),
+            purpose = "Catches ribbons not taking their line's colour, a fixed fill not winning, or the default colour changing from skyblue.", {
+  # The swap happens as the ribbon is drawn
+  d <- slice_data(ribbon_per_group)
+  expect_equal(slice_ribbon_fill(d, GeomSlice$default_aes$fill), d$colour)
+  expect_equal(unique(slice_data(fill_set)$fill), "grey50")
+  expect_equal(unique(slice_data(default)$colour), "skyblue")
+})

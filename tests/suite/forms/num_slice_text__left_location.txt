@@ -1,0 +1,16 @@
+--- checks
+expect_equal(unique(t$x), min(iris$Petal.Length))
+expect_equal(unique(t$hjust), 1)
+--- source
+iris_model <- lm(Sepal.Length ~ Sepal.Width + Petal.Length, data = iris)
+base <- ggplot2::ggplot(iris, ggplot2::aes(Petal.Length, Sepal.Length))
+three <- function(...) suppressMessages(
+  base + geom_slice(iris_model, predict_vars = list(Sepal.Width = c(2, 3, 4))) + geom_slice_text(...))
+
+expectation("left_location",
+            covers = "geom_slice_text.location",
+            purpose = "Catches location = \"left\" being ignored, or its labels left-justified so they run over the line.", {
+  t <- slice_text_data(three(location = "left"))
+  expect_equal(unique(t$x), min(iris$Petal.Length))
+  expect_equal(unique(t$hjust), 1)
+})

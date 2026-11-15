@@ -8,11 +8,9 @@ on_axis <- function(model, y, ...) {
   slice_data(p)
 }
 
-covers("shared.back-transform.auto", "shared.back-transform.axis-expression",
-       "shared.back-transform.override", "shared.back-transform.nested",
-       "shared.back-transform.box-cox")
-
-test_that("common response transforms are inverted onto a raw y-axis", {
+expectation("inverted_on_raw_axis",
+            covers = "shared.back-transform.auto",
+            purpose = "Catches a transformed response being drawn in transformed units on a raw y-axis, for each common transform, in both geom_slice() and slice_2d().", {
   cases <- list(
     list(lm(log(mpg) ~ disp + hp, mtcars), exp),
     list(lm(sqrt(mpg) ~ disp + hp, mtcars), function(v) v^2),
@@ -30,7 +28,9 @@ test_that("common response transforms are inverted onto a raw y-axis", {
   expect_equal(prep$line$fit, exp(predicted(m, data.frame(disp = prep$line$x, hp = 120))))
 })
 
-test_that("an axis expression of the response gets predictions in its own units", {
+expectation("axis_expression_units",
+            covers = "shared.back-transform.axis-expression",
+            purpose = "Catches geom_slice() ignoring a y-axis like aes(y = log(mpg)): the line must be in the axis's units whether the model was fitted on log(mpg) or mpg.", {
   logged <- lm(log(mpg) ~ disp + hp, mtcars)
   raw <- lm(mpg ~ disp + hp, mtcars)
   d <- on_axis(logged, log(mpg))
@@ -39,7 +39,9 @@ test_that("an axis expression of the response gets predictions in its own units"
   expect_equal(d$y, log(predicted(raw, grid_of(d))))
 })
 
-test_that("back_transform overrides the inferred mapping", {
+expectation("override",
+            covers = "shared.back-transform.override",
+            purpose = "Catches back_transform being ignored: FALSE, a function, every known name (in any case) and TRUE must each give exactly their own mapping.", {
   m <- lm(log(mpg) ~ disp + hp, mtcars)
   d <- on_axis(m, mpg, back_transform = FALSE)
   expect_equal(d$y, predicted(m, grid_of(d)))
@@ -53,7 +55,9 @@ test_that("back_transform overrides the inferred mapping", {
   expect_equal(on_axis(m, mpg, back_transform = TRUE)$y, on_axis(m, mpg)$y)
 })
 
-test_that("nested transforms are inverted in order", {
+expectation("nested",
+            covers = "shared.back-transform.nested",
+            purpose = "Catches nested transforms being undone in the wrong order or only partly, which simple ones like log(y) wouldn't reveal.", {
   cases <- list(
     list(lm(sqrt(log(mpg)) ~ disp + hp, mtcars), function(v) exp(v^2)),
     list(lm(log(mpg + 1) ~ disp + hp, mtcars), function(v) exp(v) - 1),
@@ -65,7 +69,9 @@ test_that("nested transforms are inverted in order", {
   }
 })
 
-test_that("a box_cox(y, lambda) response is inverted (known bug: only the first point)", {
+expectation("box_cox_known_bug",
+            covers = "shared.back-transform.box-cox",
+            purpose = "Pins a known bug (only the first box_cox point survives) so its fix is noticed: when this fails, the test should become the full inverse.", {
   # KNOWN BUG (for_devs/known_issues.Rmd): the inverse wraps a scalar
   # condition in ifelse(), so only the first prediction survives and the rest
   # are NA. This pins today's behaviour; when it fails, the bug is fixed and

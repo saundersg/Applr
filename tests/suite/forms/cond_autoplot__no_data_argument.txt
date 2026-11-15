@@ -1,3 +1,14 @@
+--- main
 error
 The model was fitted without a `data` argument, so autoplot() cannot recover its data.
     Refit model with a data argument, such as 'lm(y ~ x, data = your_data)'.
+--- source
+mpg <- ggplot2::mpg
+
+raises("no_data_argument", function() {
+  y <- mtcars$mpg
+  x <- mtcars$wt
+  autoplot(lm(y ~ x), summary = FALSE)
+}, "error", "fitted without a `data` argument",
+       covers = c("autoplot.input-errors", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A model fitted as lm(y ~ x) from loose vectors is common in intro courses, and autoplot() can't find its data; the message must say why and show the refit.")

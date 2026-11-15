@@ -1,0 +1,16 @@
+--- checks
+expect_true(all(d$ymin <= d$y & d$y <= d$ymax))
+expect_equal(d$ymin, unname(p[, "upr"]))
+expect_true(all(prep$line$lwr <= prep$line$upr))
+--- source
+expectation("ribbon_upright",
+            covers = "shared.back-transform.ribbons-upright",
+            purpose = "Catches a decreasing back-transform (1/y) flipping the ribbon so its lower edge sits above its upper edge.", {
+  m <- lm(1 / mpg ~ wt, data = mtcars)
+  d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 10, interval = "confidence"))
+  p <- 1 / predict(m, data.frame(wt = d$x), interval = "confidence")
+  expect_true(all(d$ymin <= d$y & d$y <= d$ymax))
+  expect_equal(d$ymin, unname(p[, "upr"]))
+  prep <- prepare_slice_data(m, "wt", 10, TRUE, "confidence", list())
+  expect_true(all(prep$line$lwr <= prep$line$upr))
+})

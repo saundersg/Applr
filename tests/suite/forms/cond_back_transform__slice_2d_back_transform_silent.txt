@@ -1,3 +1,15 @@
+--- main
 message
 X-axis not specified - Used first x variable as x-axis
     To specify, use 'x_axis = "var_name"' such as 'x_axis = "disp"'
+--- source
+base_slice <- function(...) function() {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  slice_2d(..., caption = FALSE)
+}
+
+raises("slice_2d_back_transform_silent", base_slice(lm(log(mpg) ~ disp, mtcars)), "message",
+       "X-axis not specified",
+       covers = c("shared.back-transform.engines-differ", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Shows that slice_2d() back-transforms with no message, unlike back_transformed in geom_slice(); you can judge whether that difference is wanted.")

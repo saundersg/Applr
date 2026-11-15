@@ -1,3 +1,11 @@
+--- main
 error
 The model has no predictors, so autoplot() cannot choose an x-axis.
     Fit a model with at least one predictor, such as 'lm(y ~ x, data = your_data)'.
+--- source
+mpg <- ggplot2::mpg
+quiet_summary <- function(...) function() autoplot(..., summary = FALSE)
+
+raises("no_predictors", quiet_summary(lm(mpg ~ 1, mtcars)), "error", "The model has no predictors",
+       covers = c("autoplot.input-errors", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "An intercept-only model, lm(y ~ 1), is a real teaching example with nothing to put on x; the message must say so rather than fail inside ggplot2.")

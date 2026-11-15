@@ -1,0 +1,28 @@
+--- checks
+expect_equal(d$y, predicted(m, grid_of(d)))
+expect_equal(d$y, 2 * predicted(m, grid_of(d)))
+expect_equal(on_axis(m, mpg, back_transform = "LOG")$y, on_axis(m, mpg)$y)
+expect_equal(d$y, back_transform_names[[nm]](predicted(m, grid_of(d))), label = nm)
+expect_equal(on_axis(m, mpg, back_transform = TRUE)$y, on_axis(m, mpg)$y)
+--- source
+grid_of <- function(d) data.frame(disp = d$x, hp = mean(mtcars$hp))
+on_axis <- function(model, y, ...) {
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, {{ y }})) + geom_slice(model, n = 15, ...)
+  slice_data(p)
+}
+
+expectation("override",
+            covers = "shared.back-transform.override",
+            purpose = "Catches back_transform being ignored: FALSE, a function, every known name (in any case) and TRUE must each give exactly their own mapping.", {
+  m <- lm(log(mpg) ~ disp + hp, mtcars)
+  d <- on_axis(m, mpg, back_transform = FALSE)
+  expect_equal(d$y, predicted(m, grid_of(d)))
+  d <- on_axis(m, mpg, back_transform = function(v) v * 2)
+  expect_equal(d$y, 2 * predicted(m, grid_of(d)))
+  expect_equal(on_axis(m, mpg, back_transform = "LOG")$y, on_axis(m, mpg)$y)
+  for (nm in c("log10", "log2", "sqrt", "exp", "inverse", "1/x")) {
+    d <- on_axis(m, mpg, back_transform = nm)
+    expect_equal(d$y, back_transform_names[[nm]](predicted(m, grid_of(d))), label = nm)
+  }
+  expect_equal(on_axis(m, mpg, back_transform = TRUE)$y, on_axis(m, mpg)$y)
+})

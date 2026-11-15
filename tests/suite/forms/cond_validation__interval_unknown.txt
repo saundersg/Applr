@@ -1,3 +1,10 @@
+--- main
 error
 `interval` must be one of "none", "confidence", "prediction".
     For example, 'interval = "confidence"'.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("interval_unknown", function() geom_slice(model, interval = "ci"), "error", "`interval` must be one of",
+       covers = c("shared.validation.interval", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "\"ci\" is a natural guess for a confidence interval; the message must list the three real choices.")

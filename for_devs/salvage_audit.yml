@@ -7,7 +7,7 @@
 #   additions:   each test written because of the audit
 #     id:        stable, lower case
 #     case:      the case file it is in (test-case_<case>.R)
-#     tests:     test_that() names or judged output names in that file
+#     tests:     expectation() or judged output names in that file
 #     entries:   inventory IDs it covers
 #     why:       the situation the old suite had that the new one lacked
 #   old:         one line per old case, testthat test and file
@@ -19,52 +19,52 @@
 additions:
   - id: every-engine-back-transform
     case: num_model_shapes
-    tests: ["exp(y), y^2, sqrt(y) and 1/y responses are inverted the same way by both engines"]
+    tests: ["every_engine_inverts"]
     entries: [shared.back-transform.every-engine]
     why: exp(y) and y^2 responses were untested, and they take their own branches of the inverse (unary exp, binary ^). Only log was checked in slice_2d().
   - id: one-predictor-x-expression
     case: num_model_shapes
-    tests: ["an x-axis expression of one predictor predicts at the data rows, in both engines"]
+    tests: ["one_predictor_expression"]
     entries: [shared.composite-x.one-predictor]
     why: aes(log(x)), aes(x^2) and aes(1/x) take the composite path although they name one predictor; only several-predictor expressions were tested.
   - id: factor-in-formula-pinned
     case: num_model_shapes
-    tests: ["a factor made in the formula is drawn per level once a grouping, predict_vars or autoplot() pins it"]
+    tests: ["formula_factor_pinned"]
     entries: [shared.slicing.factor-in-formula-pinned]
     why: as.factor(x) in the formula is the commonest model shape in the student analyses; only its imputation bug was pinned, not the way it works.
   - id: dot-formula
     case: num_model_shapes
-    tests: ["a `y ~ .` model slices like its spelled-out formula"]
+    tests: ["dot_formula"]
     entries: [shared.model-data.dot-formula]
     why: Seen in the student analyses; nothing tested a formula whose predictors aren't written out.
   - id: two-aesthetics
     case: num_model_shapes
-    tests: ["colour and linetype on two predictors give one line per pair, each pinned"]
+    tests: ["two_aesthetics"]
     entries: [shared.slicing.two-aesthetics]
     why: Colour and linetype were tested one at a time, never together on two predictors.
   - id: numeric-facet
     case: num_model_shapes
-    tests: ["a facet on a numeric predictor pins each panel to its number"]
+    tests: ["numeric_facet"]
     entries: [shared.slicing.numeric-facet]
     why: Facet pinning was checked only for a character predictor; a numeric one goes through a different coercion.
   - id: full-range-beyond-data
     case: num_model_shapes
-    tests: ["full_range under wider scale limits predicts past the data"]
+    tests: ["full_range_past_data"]
     entries: [geom_slice.full-range-beyond-data]
     why: full_range was checked only where the panel equals the data range, so prediction past the data was never seen.
   - id: autoplot-transformed
     case: num_model_shapes
-    tests: ["autoplot() puts the raw response and predictor on the axes of a transformed model"]
+    tests: ["autoplot_transformed_axes"]
     entries: [autoplot.transformed-terms]
     why: autoplot() was tested only on untransformed models.
   - id: autoplot-local-data
     case: num_model_shapes
-    tests: ["autoplot() finds data that exists only where the model was fitted"]
+    tests: ["autoplot_local_data"]
     entries: [autoplot.local-data]
     why: Recovery through the formula's environment was tested for geom_slice() without data, never for autoplot() with data in a local scope.
   - id: outside-domain-silent
     case: num_model_shapes
-    tests: ["where a back-transform has no value the line has none there, with no Applr warning (known issue)"]
+    tests: ["outside_domain_known_issue"]
     entries: [shared.back-transform.outside-domain]
     why: Nothing evaluated a back-transform outside its domain. A y^2 model with negative predictions loses those points; slice_2d() says nothing, geom_slice() only ggplot2's "Removed rows" at draw time. Pinned as a known issue.
   - id: log-of-negative-prediction
@@ -79,28 +79,28 @@ additions:
     why: Very small datasets; an interval with no residual degrees of freedom gives the same bare warning. Its wording is judged.
   - id: every-entry-point
     case: cond_boundaries
-    tests: ["every entry point refuses a non-lm model, `$` names and an unknown back_transform alike"]
+    tests: ["every_entry_point_same"]
     entries: [shared.validation.every-entry-point]
     why: The old suite refused bad models and arguments in every engine; the new one only through geom_slice(). This found scatter_3d()'s hint naming geom_slice(), pinned as a known bug.
   - id: latex-factor-styles
     case: text_equation_shapes
-    tests: ["factor_terms", "lm_latex() names factor terms in each style as lm_equation() does",
-            "a factor made in the formula keeps its call in the term name"]
+    tests: ["factor_terms", "latex_factor_styles",
+            "formula_factor_names"]
     entries: [lm_latex.factor-styles, lm_equation.response-and-term-names]
     why: lm_latex() was tested on numeric terms only; factor labels in LaTeX, and factor(cyl) or as.factor(am) term names, were never looked at. Their wording is judged.
   - id: equation-names
     case: text_equation_shapes
-    tests: ["the response and terms are named as the formula writes them"]
+    tests: ["names_as_written"]
     entries: [lm_equation.response-and-term-names]
     why: Equations of 1/y, sqrt(y), exp(y) and y^2 responses, and of x:z and I(x * z) terms, were never checked.
   - id: subtitle-equation-only
     case: text_equation_shapes
-    tests: ["with nothing held the subtitle is the equation alone, with no empty held line"]
+    tests: ["nothing_held_no_line"]
     entries: [geom_slice_subtitle.held-line]
     why: The inventory says the held line is dropped when nothing is held, but no case checked it with the equation shown.
   - id: style-pinned
     case: text_equation_shapes
-    tests: ["a pinned style keeps its names at a narrow width and says nothing about shortening"]
+    tests: ["pinned_style_kept"]
     entries: [geom_slice_subtitle.style-pinned]
     why: The escape hatch from the narrow-width brackets fallback was untested.
 

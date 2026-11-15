@@ -1,0 +1,17 @@
+--- checks
+expect_equal(c(expr_of(p, "x"), expr_of(p, "y")), c("disp", "mpg"))
+expect_equal(d$y, exp(predicted(m, data.frame(disp = d$x))))
+--- source
+mpg <- ggplot2::mpg
+set.seed(3)
+expr_of <- function(p, aes) rlang::as_label(p$mapping[[aes]])
+
+expectation("autoplot_transformed_axes",
+            covers = "autoplot.transformed-terms",
+            purpose = "Catches autoplot() putting log(mpg) or log(disp) on the axes instead of the raw variables a student recognises.", {
+  m <- lm(log(mpg) ~ log(disp), mtcars)
+  p <- suppressMessages(autoplot(m, summary = FALSE))
+  expect_equal(c(expr_of(p, "x"), expr_of(p, "y")), c("disp", "mpg"))
+  d <- slice_data(p)
+  expect_equal(d$y, exp(predicted(m, data.frame(disp = d$x))))
+})

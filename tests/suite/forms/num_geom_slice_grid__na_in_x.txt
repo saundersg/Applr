@@ -1,0 +1,14 @@
+--- checks
+expect_equal(range(d$x), c(1, 5))
+expect_equal(d$y, predicted(m, data.frame(x = d$x)))
+--- source
+expectation("na_in_x",
+            covers = "geom_slice.na-in-x",
+            purpose = "Catches a missing x value turning the grid's range into NA, so no line would be drawn.", {
+  df <- data.frame(x = c(1, 2, NA, 4, 5), y = c(2, 4, 5, 8, 11))
+  m <- lm(y ~ x, data = df)
+  p <- ggplot2::ggplot(df, ggplot2::aes(x, y)) + geom_slice(m)
+  d <- suppressWarnings(slice_data(p))
+  expect_equal(range(d$x), c(1, 5))
+  expect_equal(d$y, predicted(m, data.frame(x = d$x)))
+})

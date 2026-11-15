@@ -1,3 +1,13 @@
+--- main
 error
 The data being plotted is not the data `m` was fitted to.
     The data changed after the model was fitted; refit it, such as 'm <- lm(y ~ x, data = your_data)'.
+--- source
+raises("data_changed", function() {
+  cars <- mtcars
+  m <- lm(mpg ~ wt, data = cars)
+  cars$mpg <- cars$mpg + 1
+  slice_2d(m, x_axis = "wt")
+}, "error", "The data being plotted is not the data `m` was fitted to.",
+       covers = c("shared.model-data.refit-needed", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Data edited after fitting (common in a notebook) would draw a line for data the model never saw; the stop must name the model as the user called it (`m`) and show the refit.")

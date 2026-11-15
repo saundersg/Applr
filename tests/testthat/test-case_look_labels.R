@@ -31,31 +31,37 @@ subtitle_narrow <- build(ggplot2::ggplot(iris, ggplot2::aes(Sepal.Length, Petal.
   ggplot2::geom_point() + geom_slice(iris_model) + geom_slice_subtitle(wrap = 3.5) +
   ggplot2::theme(plot.margin = ggplot2::margin(5, 250, 5, 5)))
 
-covers("geom_slice_text.colour-follows-line", "geom_slice_text.legend-key-colour",
-       "geom_slice_text.legend-headroom", "geom_slice_text.offset-points",
-       "geom_slice_text.expand-fits-labels", "geom_slice_subtitle.readable",
-       "geom_slice_caption.no-indent-right-aligned", "shared.annotation-wrap.hanging-indent",
-       "shared.annotation-wrap.narrow-and-wide")
 judged_output("colour_by_group", colour_by_group,
-              purpose = "Labels on lines coloured by group take their own line's colour and fit inside the widened panel.")
+              covers = c("geom_slice_text.colour-follows-line", "geom_slice_text.expand-fits-labels"),
+              purpose = "Labels on coloured groups: each must match its line's colour, and the panel must widen just enough that no label is clipped.")
 judged_output("legend_style", legend_style,
-              purpose = "The legend style labels six same-coloured lines with bare values and a key naming the variables, with headroom so the key clears the top label.")
+              covers = c("geom_slice_text.legend-key-colour", "geom_slice_text.legend-headroom"),
+              purpose = "The legend style's corner key, the only output showing it with six lines: the key must name the variables and clear the topmost label.")
 judged_output("legend_one_colour", legend_one_colour,
-              purpose = "With a fixed line colour the legend key takes that colour rather than grey.")
+              covers = "geom_slice_text.legend-key-colour",
+              purpose = "Unlike legend_style, the lines share one fixed colour, so the key must take that colour instead of grey.")
 judged_output("left_offset", left_offset,
-              purpose = "Labels at the left ends, offset 15pt and in a fixed colour, widen the panel on the left.")
+              covers = c("geom_slice_text.offset-points", "geom_slice_text.expand-fits-labels"),
+              purpose = "The only output with labels on the left: the gap must look like 15pt and the panel must widen on the left, not the right.")
 judged_output("manual_hjust", manual_hjust,
-              purpose = "A user's hjust and vjust replace the automatic offset, centring labels on the line ends.")
+              covers = "geom_slice_text.offset-points",
+              purpose = "A user's hjust and vjust must take over from the automatic offset; catches Applr's offset fighting the user's placement.")
 judged_output("no_expand", no_expand,
-              purpose = "expand = FALSE leaves the scales alone, so labels run off the panel: the documented trade-off.")
+              covers = "geom_slice_text.expand-fits-labels",
+              purpose = "Shows the documented trade-off of expand = FALSE, labels running off the panel, so you can judge it looks deliberate rather than broken.")
 judged_output("subtitle", subtitle,
-              purpose = "A long subtitle wrapped at 6 inches hangs its continuation lines under the equation's right-hand side, clear of the panel.")
+              covers = c("geom_slice_subtitle.readable", "shared.annotation-wrap.hanging-indent"),
+              purpose = "A long subtitle at the usual width: it must read as an equation, with continuation lines hanging under the right-hand side and clear of the panel.")
 judged_output("caption", caption,
-              purpose = "The same text as a caption sits below the plot, right-aligned and wrapped without the hanging indent.")
+              covers = "geom_slice_caption.no-indent-right-aligned",
+              purpose = "The same text as subtitle, as a caption: right-aligned with no hanging indent, which would look odd on the right.")
 judged_output("subtitle_narrow", subtitle_narrow,
-              purpose = "A subtitle wrapped at 3.5 inches beside a squeezed panel still fits, term by term.")
+              covers = "shared.annotation-wrap.narrow-and-wide",
+              purpose = "The narrow half of narrow-and-wide (subtitle is the wide half): squeezed to 3.5 inches, the subtitle must still fit inside the plot.")
 
-test_that("labels take their line's colour, and the key is grey for mixed colours", {
+expectation("label_and_key_colours",
+            covers = c("geom_slice_text.colour-follows-line", "geom_slice_text.legend-key-colour"),
+            purpose = "Catches labels not matching their lines' colours, or a one-colour plot's legend key turning grey. Note its old name said 'grey for mixed colours', which it doesn't check.", {
   t <- slice_text_data(colour_by_group)
   expect_equal(sort(unique(t$colour)), sort(unique(slice_data(colour_by_group)$colour)))
   key <- Filter(function(l) inherits(l$geom, "GeomText") && !inherits(l$geom, "GeomSliceText"),

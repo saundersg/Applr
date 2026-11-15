@@ -1,0 +1,13 @@
+--- checks
+expect_gt(abs(corners), 0.1)
+--- source
+twisted <- scatter_3d(lm(Sepal.Length ~ Sepal.Width * Petal.Length, iris), n = 25)
+
+expectation("twisted_not_plane",
+            covers = "scatter_3d.twisted-surface",
+            purpose = "Catches the interaction model's surface coming out flat, which would make the twisted picture meaningless.", {
+  s <- Filter(function(t) identical(t$type, "surface"), plotly::plotly_build(twisted)$x$data)[[1]]
+  z <- unname(s$z)
+  corners <- z[1, 1] + z[25, 25] - z[1, 25] - z[25, 1]
+  expect_gt(abs(corners), 0.1)
+})

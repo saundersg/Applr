@@ -37,13 +37,13 @@ test_that("views are rendered for Unreviewed outputs only", {
 test_that("list and diff work; approval requires a note and rejection stores it", {
   paths <- temp_paths()
   run_suite(case_copy(), paths)
-  expect_equal(list_unreviewed(paths), id)
+  expect_equal(list_unreviewed(paths), both)
   expect_match(diff_output(id, paths)[1], "no approved version")
 
   expect_error(agent_decide(id, "approve", "", paths), class = "review_transition_error")
   expect_equal(read_state(paths)[[id]]$status, "Unreviewed")
   agent_decide(id, "approve", "ok", paths)
-  expect_equal(list_unreviewed(paths), character())
+  expect_equal(list_unreviewed(paths), test_id)
 
   # Only a human approval sets the version diffs are taken against.
   run_suite(renamed(), paths)
@@ -93,5 +93,5 @@ test_that("an error while serialising one case leaves the others' results intact
   report <- run_suite(dir, paths)
   expect_match(report[["zz_bad"]], "^ERROR")
   expect_equal(report[[id]], "Unreviewed (new fingerprint)")
-  expect_named(read_state(paths), id)
+  expect_named(read_state(paths), both)
 })

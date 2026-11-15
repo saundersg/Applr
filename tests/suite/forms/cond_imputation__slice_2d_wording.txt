@@ -1,3 +1,15 @@
+--- main
 message
 Value for `f` not specified - Used first value: a
     To specify, use 'var_name = value', such as 'f = a'
+--- source
+d <- data.frame(x = 1:9, f = factor(c("a", "b", "b", "c", "c", "c", "a", "b", "c")),
+                s = c("p", "q", "q", "q", "p", "q", "p", "q", "q"), y = c(3, 5, 4, 8, 9, 12, 10, 13, 16))
+
+raises("slice_2d_wording", function() {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  slice_2d(lm(y ~ x + f, d), x_axis = "x")
+}, "message", "Value for `f` not specified - Used first value: a", format = FALSE,
+       covers = c("shared.imputation.engines-differ", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "slice_2d()'s different wording and choice (first level) side by side with factor_and_character; you can judge the difference. Its hint 'f = a' lacks quotes.")

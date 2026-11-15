@@ -1,0 +1,20 @@
+--- checks
+expect_equal(d$y, predicted(logged, grid_of(d)))
+expect_equal(d$y, log(predicted(raw, grid_of(d))))
+--- source
+grid_of <- function(d) data.frame(disp = d$x, hp = mean(mtcars$hp))
+on_axis <- function(model, y, ...) {
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, {{ y }})) + geom_slice(model, n = 15, ...)
+  slice_data(p)
+}
+
+expectation("axis_expression_units",
+            covers = "shared.back-transform.axis-expression",
+            purpose = "Catches geom_slice() ignoring a y-axis like aes(y = log(mpg)): the line must be in the axis's units whether the model was fitted on log(mpg) or mpg.", {
+  logged <- lm(log(mpg) ~ disp + hp, mtcars)
+  raw <- lm(mpg ~ disp + hp, mtcars)
+  d <- on_axis(logged, log(mpg))
+  expect_equal(d$y, predicted(logged, grid_of(d)))
+  d <- on_axis(raw, log(mpg))
+  expect_equal(d$y, log(predicted(raw, grid_of(d))))
+})

@@ -1,0 +1,16 @@
+--- checks
+expect_equal(range(d$x[d$group == g]), range(mpg$displ[mpg$drv == lvl]))
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv, data = mpg)
+
+expectation("range_per_group",
+            covers = "geom_slice.range-per-group",
+            purpose = "Catches a group's line stretching across the whole panel, past that group's data, which would also stretch the y-axis.", {
+  p <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(model)
+  d <- slice_data(p)
+  for (g in unique(d$group)) {
+    lvl <- levels(factor(mpg$drv))[g]
+    expect_equal(range(d$x[d$group == g]), range(mpg$displ[mpg$drv == lvl]))
+  }
+})

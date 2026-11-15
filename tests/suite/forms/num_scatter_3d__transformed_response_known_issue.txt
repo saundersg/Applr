@@ -1,0 +1,24 @@
+--- checks
+expect_equal(markers_of(x)$z, mtcars$mpg)
+expect_lt(max(surface_of(x)$z), min(mtcars$mpg))
+--- source
+strip_api <- function(x) {
+  if (is.list(x)) return(lapply(x, strip_api))
+  attr(x, "apiSrc") <- NULL
+  x
+}
+built_traces <- function(widget) strip_api(plotly::plotly_build(widget)$x)
+markers_of <- function(x) Filter(function(t) identical(t$type, "scatter3d"), x$data)[[1]]
+surface_of <- function(x) Filter(function(t) identical(t$type, "surface"), x$data)[[1]]
+
+expectation("transformed_response_known_issue",
+            covers = "scatter_3d.transformed-response",
+            purpose = "Pins a known mismatch (raw points, log-scale surface) so whoever settles the open question sees this test change.", {
+  # The surface is predict() on the log scale while the markers are raw mpg,
+  # so they don't line up (for_devs/known_issues.Rmd). This pins today's
+  # behaviour; when it fails, decide which scale both should use.
+  model <- lm(log(mpg) ~ wt + hp, mtcars)
+  x <- built_traces(scatter_3d(model, n = 5))
+  expect_equal(markers_of(x)$z, mtcars$mpg)
+  expect_lt(max(surface_of(x)$z), min(mtcars$mpg))
+})

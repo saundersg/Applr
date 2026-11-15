@@ -1,0 +1,13 @@
+--- checks
+expect_equal(d$y, predicted(model, data.frame(displ = d$x, cyl = 6, drv = "r")))
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ + cyl + drv, data = mpg)
+base <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy))
+
+expectation("held_single",
+            covers = "shared.held-values.single",
+            purpose = "Catches a predictor named in predict_vars being imputed or varied instead of held at the value given.", {
+  d <- slice_data(base + geom_slice(model, n = 10, predict_vars = list(cyl = 6, drv = "r")))
+  expect_equal(d$y, predicted(model, data.frame(displ = d$x, cyl = 6, drv = "r")))
+})

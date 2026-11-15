@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -324,3 +325,7 @@
 <polyline points='525.67,308.02 529.09,310.76 532.52,313.45 535.94,316.08 539.36,318.64 542.78,321.16 546.20,323.64 549.62,326.08 553.05,328.49 556.47,330.88 559.89,333.26 563.31,335.65 566.73,338.06 570.15,340.52 573.58,342.99 577.00,345.43 580.42,347.65 583.84,349.90 587.26,351.84 590.68,353.25 594.11,354.11 597.53,354.54 600.95,354.65 604.37,354.55 607.79,354.55 611.21,354.98 614.64,355.96 618.06,357.44 621.48,359.19 624.90,360.95 628.32,362.58 631.74,363.89 635.17,364.56 638.59,364.33 642.01,362.17 645.43,359.11 648.85,355.73 652.27,352.26 655.70,348.78 659.12,345.34 662.54,341.94 665.96,338.57 669.38,335.20 672.81,331.81 676.23,328.37 679.65,324.88 683.07,321.29 686.49,317.57 689.91,313.71 693.34,309.71 ' style='stroke-width: 0.75; stroke: #FF0000;' />
 </g>
 </svg>
+--- source
+judged_output("diagnose", function() diagnose(lm(dist ~ speed, data = cars)), type = "base_graphics",
+              covers = "diagnose.three-panels",
+              purpose = "The only picture of diagnose(): three residual panels in one row, with the largest residuals labelled and nothing overlapping.")

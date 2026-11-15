@@ -1,0 +1,18 @@
+--- checks
+expect_equal(prep$line$x, rows$x * rows$x2)
+expect_equal(prep$line$fit, predicted(model, rows))
+--- source
+set.seed(2)
+df <- data.frame(x = runif(30, 0, 5), x2 = runif(30, 0, 5), g = rep(c("a", "b"), 15))
+df$y <- 1 + 2 * df$x * df$x2 + ifelse(df$g == "a", 0, 3) + rnorm(30, sd = 0.1)
+model <- lm(y ~ x:x2 + g, data = df)
+
+expectation("slice_2d_at_rows",
+            covers = "shared.composite-x.at-data-points",
+            purpose = "The same rule through slice_2d(), whose x_axis is a string and goes down a separate code path from geom_slice()'s aes().", {
+  prep <- suppressMessages(prepare_slice_data(model, "x * x2", 5, TRUE, "none", list(g = "b")))
+  rows <- df[order(df$x * df$x2), ]
+  rows$g <- "b"
+  expect_equal(prep$line$x, rows$x * rows$x2)
+  expect_equal(prep$line$fit, predicted(model, rows))
+})

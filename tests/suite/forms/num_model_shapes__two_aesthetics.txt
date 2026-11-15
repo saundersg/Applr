@@ -1,0 +1,22 @@
+--- checks
+expect_equal(nrow(pairs), nrow(unique(mpg[c("cyl", "year")])))
+expect_equal(line$y, predicted(m, data.frame(displ = line$x, cyl = cyl_of[[line$colour[1]]], year = year_of[[line$linetype[1]]])))
+--- source
+mpg <- ggplot2::mpg
+
+expectation("two_aesthetics",
+            covers = "shared.slicing.two-aesthetics",
+            purpose = "Catches colour and linetype on two predictors pinning only one of them, or drawing lines for pairs that never occur.", {
+  m <- lm(hwy ~ displ + cyl + year, data = mpg)
+  d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = factor(cyl), linetype = factor(year))) +
+                    geom_slice(m, n = 10))
+  pairs <- unique(d[c("group", "colour", "linetype")])
+  expect_equal(nrow(pairs), nrow(unique(mpg[c("cyl", "year")])))
+  cyl_of <- setNames(sort(unique(mpg$cyl)), unique(d$colour[order(d$group)]))
+  year_of <- setNames(sort(unique(mpg$year)), unique(d$linetype[order(d$group)]))
+  for (g in pairs$group) {
+    line <- d[d$group == g, ]
+    expect_equal(line$y, predicted(m, data.frame(displ = line$x, cyl = cyl_of[[line$colour[1]]],
+                                                 year = year_of[[line$linetype[1]]])))
+  }
+})

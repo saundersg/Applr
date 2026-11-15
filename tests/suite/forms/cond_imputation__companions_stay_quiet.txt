@@ -1,3 +1,14 @@
+--- main
 message
 Value for `cyl` not specified - Used mean: 5.889
     To choose a slice, use 'predict_vars = list(cyl = 5.889)'.
+--- source
+mpg <- ggplot2::mpg
+
+raises("companions_stay_quiet", function() {
+  ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy)) +
+    geom_slice(lm(hwy ~ displ + cyl + year, mpg), predict_vars = list(year = c(1999, 2008))) +
+    geom_slice_text() + geom_slice_subtitle() + geom_slice_caption()
+}, "message", "Value for `cyl` not specified",
+       covers = c("geom_slice_text.silent-rebuild", "geom_slice_subtitle.no-repeat-messages", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Catches text, subtitle or caption layers repeating geom_slice()'s message when they re-resolve the slice: only one message must appear.")

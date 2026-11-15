@@ -50,8 +50,10 @@ two_part <- function(message) {
 # Declares a call's conditions as a judged output and checks them: the kinds
 # raised, in order; that some message contains each of `has` and is in the
 # two-part format; and, unless the call errors, that it finished, building
-# its plot (a ggplot is built; base graphics have drawn).
-raises <- function(name, call, kinds, has = character(), format = TRUE, purpose = NULL) {
+# its plot (a ggplot is built; base graphics have drawn). `covers` is read
+# from the case file, as for judged_output(); tests/suite/inventory.R mirrors
+# this signature to say what the test checks.
+raises <- function(name, call, kinds, has = character(), format = TRUE, purpose = NULL, covers = NULL) {
   judged_output(name, call, type = "conditions", purpose = purpose)
   testthat::test_that(paste0(name, " raises ", paste(kinds, collapse = ", ")), {
     r <- conditions_of(call)

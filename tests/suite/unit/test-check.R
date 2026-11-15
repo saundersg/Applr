@@ -10,7 +10,7 @@ test_that("a recorded fingerprint matches; a changed output reports which parts 
 
   rows <- check_run(renamed(), paths)
   expect_false(rows[[id]]$match)
-  expect_equal(rows[[id]]$parts_differing, "main")
+  expect_equal(rows[[id]]$parts_differing, c("main", "source"))
   expect_identical(read_state(paths), before)
 })
 
@@ -20,7 +20,7 @@ test_that("an output the state records but no case produced stops the check", {
   empty <- tempfile("case")
   dir.create(empty)
   file.copy(file.path(case_dir, "helper-judged.R"), empty)
-  expect_error(check_run(empty, paths), "no case produced: single_predictor_line/plot")
+  expect_error(check_run(empty, paths), paste("no case produced:", paste(both, collapse = ", ")), fixed = TRUE)
 })
 
 test_that("an output that fails to serialise stops the check", {

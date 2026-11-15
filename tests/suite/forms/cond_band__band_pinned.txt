@@ -1,3 +1,4 @@
+--- main
 warning
 `band` variable `drv` is used by the plot's grouping or faceting, so each line already uses its own value. No band is drawn.
     Use one of `cyl`, `year`, such as 'band = "cyl"', or 'band = TRUE' to choose automatically.
@@ -9,3 +10,14 @@ Value for `cyl` not specified - Used mean: 5.889
 message
 Value for `year` not specified - Used mean: 2004
     To choose a slice, use 'predict_vars = list(year = 2004)'.
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ * drv + cyl + year, data = mpg)
+coloured <- function(...) function() {
+  ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(...)
+}
+
+raises("band_pinned", coloured(model, band = "drv"),
+       c("warning", "message", "message"), "used by the plot's grouping or faceting",
+       covers = c("shared.band.unresolvable", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A band named for the colour grouping's variable: each line is already pinned to its own level, which the warning must explain.")

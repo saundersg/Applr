@@ -1,3 +1,12 @@
+--- main
 error
 None of the model's predictors are numeric, but geom_slice() needs a continuous x-axis.
     Fit a model with at least one numeric predictor, or set one with 'mapping = aes(x = ...)'.
+--- source
+mpg <- ggplot2::mpg
+quiet_summary <- function(...) function() autoplot(..., summary = FALSE)
+
+raises("no_numeric_predictor", quiet_summary(lm(hwy ~ drv + fl, mpg)), "error",
+       "None of the model's predictors are numeric",
+       covers = c("autoplot.input-errors", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Only factor predictors means no continuous x-axis; unlike no_predictors there are two ways out (refit, or map x), and the hint must offer both.")

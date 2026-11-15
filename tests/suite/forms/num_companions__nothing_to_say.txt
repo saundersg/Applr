@@ -1,0 +1,15 @@
+--- checks
+expect_null(annotation_of(q))
+expect_identical(q$labels, p$labels)
+--- source
+mpg <- ggplot2::mpg
+quiet <- function(p) suppressMessages(p)
+
+expectation("nothing_to_say",
+            covers = "geom_slice_subtitle.nothing-to-say",
+            purpose = "Catches an empty or placeholder subtitle being set when there is no equation and nothing held.", {
+  p <- quiet(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(lm(mpg ~ wt, mtcars)))
+  q <- quiet(p + geom_slice_subtitle(model = FALSE))
+  expect_null(annotation_of(q))
+  expect_identical(q$labels, p$labels)
+})

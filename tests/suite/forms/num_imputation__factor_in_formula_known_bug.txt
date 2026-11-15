@@ -1,0 +1,18 @@
+--- checks
+expect_equal(r$kinds, c("message", "warning"))
+expect_match(r$messages[2], "predict() failed for this slice", fixed = TRUE)
+expect_equal(nrow(r$value$data[[1]]), 0)
+--- source
+expectation("factor_in_formula_known_bug",
+            covers = "shared.imputation.factor-in-formula",
+            purpose = "Pins a known bug (factor(cyl) imputed as a mean, so no line) so its fix is noticed: when this fails, rewrite it to expect a line at a level.", {
+  # KNOWN BUG (for_devs/known_issues.Rmd): factor(cyl) is imputed with the
+  # mean of the raw cyl, which predict() rejects. When this expectation fails,
+  # the bug is fixed: rewrite it to expect the line predicted at a level.
+  m <- lm(mpg ~ wt + factor(cyl), data = mtcars)
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m)
+  r <- conditions_of(function() p)
+  expect_equal(r$kinds, c("message", "warning"))
+  expect_match(r$messages[2], "predict() failed for this slice", fixed = TRUE)
+  expect_equal(nrow(r$value$data[[1]]), 0)
+})

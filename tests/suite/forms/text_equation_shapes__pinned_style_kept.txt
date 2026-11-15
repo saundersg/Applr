@@ -1,0 +1,19 @@
+--- checks
+expect_equal(r$kinds, "message")
+expect_false(any(grepl("shortened", r$messages)))
+expect_false(grepl("[", r$value$plot$labels$subtitle, fixed = TRUE))
+expect_match(r$value$plot$labels$subtitle, "(Species=\"virginica\")", fixed = TRUE)
+--- source
+expectation("pinned_style_kept",
+            covers = "geom_slice_subtitle.style-pinned",
+            purpose = "Catches a style the user chose being overridden by the automatic [level] shortening at a narrow width, or a shortening message appearing anyway.", {
+  m <- lm(Sepal.Length ~ Sepal.Width * Species + Petal.Length, iris)
+  r <- conditions_of(function() {
+    ggplot2::ggplot(iris, ggplot2::aes(Petal.Length, Sepal.Length, colour = Species)) +
+      geom_slice(m) + geom_slice_subtitle(wrap = 3.5, style = "prettier")
+  })
+  expect_equal(r$kinds, "message")
+  expect_false(any(grepl("shortened", r$messages)))
+  expect_false(grepl("[", r$value$plot$labels$subtitle, fixed = TRUE))
+  expect_match(r$value$plot$labels$subtitle, '(Species="virginica")', fixed = TRUE)
+})

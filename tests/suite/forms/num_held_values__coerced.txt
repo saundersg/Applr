@@ -1,0 +1,15 @@
+--- checks
+expect_equal(as_given$y, typed$y)
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ + cyl + drv, data = mpg)
+base <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy))
+
+expectation("coerced",
+            covers = "shared.held-values.coerced",
+            purpose = "Catches a value of the wrong type (a string for a factor, \"3\" for a number) being passed to predict() as is, where it fails or predicts at the wrong level.", {
+  as_given <- slice_data(base + geom_slice(model, n = 10, predict_vars = list(cyl = "6", drv = "r")))
+  typed <- slice_data(base + geom_slice(model, n = 10,
+                                        predict_vars = list(cyl = 6, drv = factor("r"))))
+  expect_equal(as_given$y, typed$y)
+})

@@ -1,3 +1,13 @@
+--- main
 warning
 `predict_vars` value for `wt` is ignored because it is on the x-axis.
     The x-axis variable varies along the line and cannot be held.
+--- source
+mpg <- ggplot2::mpg
+model <- lm(mpg ~ wt + hp, data = mtcars)
+on_mtcars <- function(mapping, ...) function() ggplot2::ggplot(mtcars, mapping) + geom_slice(...)
+
+raises("predict_vars_on_x", on_mtcars(ggplot2::aes(wt, mpg), model, predict_vars = list(wt = 3, hp = 100)),
+       "warning", "is ignored because it is on the x-axis",
+       covers = c("shared.held-values.on-x-axis", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "Holding the x variable makes no sense, so the value is ignored; the warning must say why rather than leave the user wondering where their value went.")

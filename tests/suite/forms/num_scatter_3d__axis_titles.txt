@@ -1,0 +1,16 @@
+--- checks
+expect_equal(c(scene$xaxis$title, scene$yaxis$title, scene$zaxis$title), c("wt", "hp", "mpg"))
+--- source
+strip_api <- function(x) {
+  if (is.list(x)) return(lapply(x, strip_api))
+  attr(x, "apiSrc") <- NULL
+  x
+}
+built_traces <- function(widget) strip_api(plotly::plotly_build(widget)$x)
+
+expectation("axis_titles",
+            covers = "scatter_3d.axis-titles",
+            purpose = "Catches the 3D scene's axes being left as plotly's defaults (x, y, z) instead of the variable names.", {
+  scene <- built_traces(scatter_3d(lm(mpg ~ wt + hp, mtcars), n = 5))$layout$scene
+  expect_equal(c(scene$xaxis$title, scene$yaxis$title, scene$zaxis$title), c("wt", "hp", "mpg"))
+})

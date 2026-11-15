@@ -1,0 +1,14 @@
+--- checks
+expect_equal(prep$line$lwr, unname(p[, "lwr"]))
+expect_equal(prep$line$upr, unname(p[, "upr"]))
+--- source
+model <- lm(hwy ~ displ + I(displ^2), data = ggplot2::mpg)
+
+expectation("slice_2d_bands",
+            covers = "shared.intervals.match-predict",
+            purpose = "The same rule through slice_2d(), which computes its bands separately from geom_slice().", {
+  prep <- prepare_slice_data(model, "displ", 10, TRUE, "prediction", list())
+  p <- predict(model, data.frame(displ = prep$line$x), interval = "prediction")
+  expect_equal(prep$line$lwr, unname(p[, "lwr"]))
+  expect_equal(prep$line$upr, unname(p[, "upr"]))
+})

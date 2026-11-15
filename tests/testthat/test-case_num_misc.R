@@ -3,17 +3,17 @@
 # add_slice_2d(), the raw StatSlice layer, a glm, lm_latex()'s return and
 # diagnose()'s graphical parameters.
 
-covers("shared.model-data.raw-variables", "add_slice_2d.line-is-prediction",
-       "ggproto_objects.raw-layer", "shared.validation.glm", "lm_latex.prints-and-returns",
-       "diagnose.restores-par")
-
-test_that("a transformed term slices along its raw variable", {
+expectation("raw_variable",
+            covers = "shared.model-data.raw-variables",
+            purpose = "Catches lm(y ~ I(x^2)) being sliced along the column I(x^2) instead of along x.", {
   m <- lm(mpg ~ I(wt^2) + log(hp), mtcars)
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 10))
   expect_equal(d$y, predicted(m, data.frame(wt = d$x, hp = mean(mtcars$hp))))
 })
 
-test_that("add_slice_2d() draws on the current plot the line slice_2d() would", {
+expectation("add_slice_2d_same_line",
+            covers = "add_slice_2d.line-is-prediction",
+            purpose = "Catches add_slice_2d() drawing a different line from the one slice_2d() would for the same arguments.", {
   m <- lm(mpg ~ disp + hp, mtcars)
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off())
@@ -27,7 +27,9 @@ test_that("add_slice_2d() draws on the current plot the line slice_2d() would", 
   expect_equal(a$line$fit, predicted(m, data.frame(disp = a$line$x, hp = 150)))
 })
 
-test_that("a raw layer() with StatSlice draws what geom_slice() draws", {
+expectation("raw_layer",
+            covers = "ggproto_objects.raw-layer",
+            purpose = "Catches StatSlice used directly through layer() drifting from what geom_slice() draws, for users and extension authors who build layers by hand.", {
   m <- lm(mpg ~ disp + hp + cyl, mtcars)
   base <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg))
   raw <- base + ggplot2::layer(stat = StatSlice, geom = GeomSlice, position = "identity",
@@ -38,13 +40,17 @@ test_that("a raw layer() with StatSlice draws what geom_slice() draws", {
   expect_equal(slice_data(raw)[c("x", "y")], slice_data(layered)[c("x", "y")])
 })
 
-test_that("a glm is sliced on the link scale", {
+expectation("glm_link_scale",
+            covers = "shared.validation.glm",
+            purpose = "Catches a glm() being refused, or sliced on a scale other than the link scale predict.glm() gives by default.", {
   m <- glm(am ~ wt, family = binomial, data = mtcars)
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, am)) + geom_slice(m, n = 10))
   expect_equal(d$y, predicted(m, data.frame(wt = d$x)))
 })
 
-test_that("lm_latex() prints its string and returns it invisibly", {
+expectation("lm_latex_returns",
+            covers = "lm_latex.prints-and-returns",
+            purpose = "Catches lm_latex() printing without returning its string, or returning it visibly so it prints twice.", {
   m <- lm(mpg ~ wt, mtcars)
   out <- capture.output(v <- withVisible(lm_latex(m)))
   expect_false(v$visible)
@@ -52,7 +58,9 @@ test_that("lm_latex() prints its string and returns it invisibly", {
   expect_match(v$value, "^\\$\\$.*\\$\\$$")
 })
 
-test_that("diagnose() restores mfrow", {
+expectation("diagnose_restores_mfrow",
+            covers = "diagnose.restores-par",
+            purpose = "Catches diagnose() leaving the device split into panels, so the user's next plot comes out small.", {
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off())
   graphics::par(mfrow = c(2, 2))

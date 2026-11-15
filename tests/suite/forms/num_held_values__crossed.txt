@@ -1,0 +1,20 @@
+--- checks
+expect_equal(length(unique(d$group)), 6)
+expect_equal(line$y, predicted(model, data.frame(displ = line$x, cyl = combos$cyl[i], drv = combos$drv[i])))
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ + cyl + drv, data = mpg)
+base <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy))
+
+expectation("crossed",
+            covers = "shared.held-values.multi-crossed",
+            purpose = "Catches several multi-value entries being paired up instead of crossed (3 x 2 must give 6 lines), or two lines sharing a group and being joined.", {
+  d <- slice_data(base + geom_slice(model, n = 10,
+                                    predict_vars = list(cyl = c(4, 6, 8), drv = c("f", "r"))))
+  expect_equal(length(unique(d$group)), 6)
+  combos <- expand.grid(cyl = c(4, 6, 8), drv = c("f", "r"), stringsAsFactors = FALSE)
+  for (i in seq_len(nrow(combos))) {
+    line <- d[d$group == sort(unique(d$group))[i], ]
+    expect_equal(line$y, predicted(model, data.frame(displ = line$x, cyl = combos$cyl[i], drv = combos$drv[i])))
+  }
+})

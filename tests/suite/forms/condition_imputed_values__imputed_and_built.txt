@@ -1,0 +1,17 @@
+--- checks
+expect_message(expect_message(p <- ggplot2::ggplot_build(call()), "`hp`"), "`qsec`")
+expect_s3_class(p, "ggplot_built")
+--- source
+model <- lm(mpg ~ wt + hp + qsec, data = mtcars)
+call <- function() {
+  ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
+    ggplot2::geom_point() +
+    geom_slice(model)
+}
+
+expectation("imputed_and_built",
+            covers = "shared.imputation.message",
+            purpose = "Catches an unheld predictor going unannounced, or the plot failing to build after the messages.", {
+  expect_message(expect_message(p <- ggplot2::ggplot_build(call()), "`hp`"), "`qsec`")
+  expect_s3_class(p, "ggplot_built")
+})

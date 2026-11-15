@@ -12,10 +12,9 @@ built_traces <- function(widget) strip_api(plotly::plotly_build(widget)$x)
 markers_of <- function(x) Filter(function(t) identical(t$type, "scatter3d"), x$data)[[1]]
 surface_of <- function(x) Filter(function(t) identical(t$type, "surface"), x$data)[[1]]
 
-covers("scatter_3d.points-are-data", "scatter_3d.raw-predictors", "scatter_3d.marker-colours",
-       "scatter_3d.axis-titles", "scatter_3d.transformed-response", "autoplot.type-3d")
-
-test_that("the markers are the model's data rows", {
+expectation("markers_are_data",
+            covers = "scatter_3d.points-are-data",
+            purpose = "Catches scatter_3d() plotting anything but the model's own rows at (first predictor, second predictor, response).", {
   x <- built_traces(scatter_3d(lm(mpg ~ wt + hp, mtcars), n = 5))
   m <- markers_of(x)
   expect_equal(m$x, mtcars$wt)
@@ -23,7 +22,9 @@ test_that("the markers are the model's data rows", {
   expect_equal(m$z, mtcars$mpg)
 })
 
-test_that("transformed terms graph over their raw predictors", {
+expectation("raw_predictors",
+            covers = "scatter_3d.raw-predictors",
+            purpose = "Catches a model with I(x^2) getting a third axis or an axis named I(x^2) instead of graphing over x and y.", {
   model <- lm(mpg ~ wt + I(wt^2) + hp, mtcars)
   x <- built_traces(scatter_3d(model, n = 6))
   s <- surface_of(x)
@@ -33,7 +34,9 @@ test_that("transformed terms graph over their raw predictors", {
   expect_equal(unname(s$z), expected)
 })
 
-test_that("markers follow the colours given, with a colour bar titled by the response", {
+expectation("marker_colours",
+            covers = "scatter_3d.marker-colours",
+            purpose = "Catches markers ignoring `colors`, a single colour giving an invalid ramp, or the colour bar losing the response's name.", {
   x <- built_traces(scatter_3d(lm(mpg ~ wt + hp, mtcars), n = 5, colors = c("purple", "orange")))
   m <- markers_of(x)
   expect_equal(m$marker$color, mtcars$mpg)
@@ -45,12 +48,16 @@ test_that("markers follow the colours given, with a colour bar titled by the res
   expect_equal(vapply(flat$marker$colorscale, function(s) s[[2]], ""), c("#FF0000", "#FF0000"))
 })
 
-test_that("the axes are titled with the predictors and the response", {
+expectation("axis_titles",
+            covers = "scatter_3d.axis-titles",
+            purpose = "Catches the 3D scene's axes being left as plotly's defaults (x, y, z) instead of the variable names.", {
   scene <- built_traces(scatter_3d(lm(mpg ~ wt + hp, mtcars), n = 5))$layout$scene
   expect_equal(c(scene$xaxis$title, scene$yaxis$title, scene$zaxis$title), c("wt", "hp", "mpg"))
 })
 
-test_that("a transformed response puts the surface on another scale than the points (known issue)", {
+expectation("transformed_response_known_issue",
+            covers = "scatter_3d.transformed-response",
+            purpose = "Pins a known mismatch (raw points, log-scale surface) so whoever settles the open question sees this test change.", {
   # The surface is predict() on the log scale while the markers are raw mpg,
   # so they don't line up (for_devs/known_issues.Rmd). This pins today's
   # behaviour; when it fails, decide which scale both should use.
@@ -60,7 +67,9 @@ test_that("a transformed response puts the surface on another scale than the poi
   expect_lt(max(surface_of(x)$z), min(mtcars$mpg))
 })
 
-test_that("autoplot(type = \"3d\") is scatter_3d() with ... passed on", {
+expectation("autoplot_3d",
+            covers = "autoplot.type-3d",
+            purpose = "Catches autoplot(type = \"3d\") building something other than scatter_3d(), or dropping the arguments passed to it.", {
   model <- lm(mpg ~ wt + hp, mtcars)
   a <- built_traces(autoplot(model, type = "3d", summary = FALSE, n = 5, colors = "red"))
   b <- built_traces(scatter_3d(model, n = 5, colors = "red"))

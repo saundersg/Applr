@@ -5,15 +5,16 @@
 mpg <- ggplot2::mpg
 model <- lm(hwy ~ displ * drv, data = mpg)
 
-covers("geom_slice.n-points", "geom_slice.range-per-group", "geom_slice.full-range",
-       "geom_slice.na-in-x", "geom_slice.empty-group")
-
-test_that("each line has exactly n points", {
+expectation("n_points",
+            covers = "geom_slice.n-points",
+            purpose = "Catches n being ignored or off by one, on a single line (the default is 100, so n = 7 makes a change obvious).", {
   p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(lm(mpg ~ wt, mtcars), n = 7)
   expect_equal(nrow(slice_data(p)), 7)
 })
 
-test_that("each group's line spans that group's own x range", {
+expectation("range_per_group",
+            covers = "geom_slice.range-per-group",
+            purpose = "Catches a group's line stretching across the whole panel, past that group's data, which would also stretch the y-axis.", {
   p <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(model)
   d <- slice_data(p)
   for (g in unique(d$group)) {
@@ -22,7 +23,9 @@ test_that("each group's line spans that group's own x range", {
   }
 })
 
-test_that("full_range and its alias fullrange span the panel instead", {
+expectation("full_range",
+            covers = "geom_slice.full-range",
+            purpose = "Catches full_range, or its ggplot2 spelling fullrange, failing to extend every line to the panel's range.", {
   for (layer in list(geom_slice(model, full_range = TRUE), geom_slice(model, fullrange = TRUE))) {
     p <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + layer
     d <- slice_data(p)
@@ -30,7 +33,9 @@ test_that("full_range and its alias fullrange span the panel instead", {
   }
 })
 
-test_that("missing x values don't change the grid's range", {
+expectation("na_in_x",
+            covers = "geom_slice.na-in-x",
+            purpose = "Catches a missing x value turning the grid's range into NA, so no line would be drawn.", {
   df <- data.frame(x = c(1, 2, NA, 4, 5), y = c(2, 4, 5, 8, 11))
   m <- lm(y ~ x, data = df)
   p <- ggplot2::ggplot(df, ggplot2::aes(x, y)) + geom_slice(m)
@@ -39,7 +44,9 @@ test_that("missing x values don't change the grid's range", {
   expect_equal(d$y, predicted(m, data.frame(x = d$x)))
 })
 
-test_that("a level with no rows draws nothing and the other lines are intact", {
+expectation("empty_group",
+            covers = "geom_slice.empty-group",
+            purpose = "Catches a factor level with no rows breaking the layer, or shifting the lines of the levels that do have rows.", {
   df <- data.frame(x = rep(1:5, 2), g = factor(rep(c("a", "b"), each = 5), levels = c("a", "b", "c")))
   df$y <- df$x * ifelse(df$g == "a", 1, 2)
   m <- lm(y ~ x * g, data = df)

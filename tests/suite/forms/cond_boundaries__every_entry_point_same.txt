@@ -1,0 +1,46 @@
+--- checks
+expect_equal(r$kinds, "error")
+expect_match(error_of(entry[[fn]]$model(dollar)), "Models with `$` in their variable names", fixed = TRUE)
+expect_match(error_of(entry[[fn]]$back(lm(mpg ~ wt, mtcars))), "\"ln\" is not a known `back_transform` name.", fixed = TRUE)
+expect_match(error_of(function() get(fn)(data.frame(x = 1))), paste0("received a \"data.frame\".\n    Fit a model first, such as 'model <- lm(y ~ x, data = your_data)', then call '", fn, "(model)'."), fixed = TRUE)
+expect_match(error_of(function() scatter_3d(lm(mtcars$mpg ~ mtcars$wt + mtcars$hp))), "Models with `$` in their variable names", fixed = TRUE)
+expect_match(error_of(function() scatter_3d(data.frame(x = 1))), "then call 'geom_slice(model)'.", fixed = TRUE)
+--- source
+expectation("every_entry_point_same",
+            covers = "shared.validation.every-entry-point",
+            purpose = "Catches one entry point (slice_2d, add_slice_2d, autoplot, scatter_3d) drifting from geom_slice()'s refusal wording, or naming the wrong function in its hint; scatter_3d's wrong name is pinned as a known bug.", {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  plot(mpg ~ wt, mtcars)
+  error_of <- function(call) {
+    r <- conditions_of(call)
+    expect_equal(r$kinds, "error")
+    r$messages
+  }
+  dollar <- lm(mtcars$mpg ~ mtcars$wt)
+  on_plot <- function(...) function() ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(...)
+  entry <- list(
+    geom_slice = list(model = on_plot, back = function(m) on_plot(m, back_transform = "ln")),
+    slice_2d = list(model = function(m) function() slice_2d(m), back = function(m) function() slice_2d(m, back_transform = "ln")),
+    add_slice_2d = list(model = function(m) function() add_slice_2d(m),
+                        back = function(m) function() add_slice_2d(m, back_transform = "ln")),
+    autoplot = list(model = function(m) function() autoplot(m, summary = FALSE),
+                    back = function(m) function() autoplot(m, back_transform = "ln", summary = FALSE))
+  )
+  for (fn in names(entry)) {
+    expect_match(error_of(entry[[fn]]$model(dollar)), "Models with `$` in their variable names", fixed = TRUE)
+    expect_match(error_of(entry[[fn]]$back(lm(mpg ~ wt, mtcars))), '"ln" is not a known `back_transform` name.',
+                 fixed = TRUE)
+  }
+  for (fn in c("slice_2d", "add_slice_2d")) {
+    expect_match(error_of(function() get(fn)(data.frame(x = 1))),
+                 paste0("received a \"data.frame\".\n    Fit a model first, such as 'model <- lm(y ~ x, data = your_data)', then call '",
+                        fn, "(model)'."), fixed = TRUE)
+  }
+  expect_match(error_of(function() scatter_3d(lm(mtcars$mpg ~ mtcars$wt + mtcars$hp))),
+               "Models with `$` in their variable names", fixed = TRUE)
+  # KNOWN BUG (for_devs/known_issues.Rmd): scatter_3d() checks the model as
+  # geom_slice() does, so its hint names the wrong function. When this
+  # fails, expect 'scatter_3d(model)'.
+  expect_match(error_of(function() scatter_3d(data.frame(x = 1))), "then call 'geom_slice(model)'.", fixed = TRUE)
+})

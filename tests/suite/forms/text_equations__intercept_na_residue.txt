@@ -1,0 +1,24 @@
+--- checks
+expect_match(equations[["no_intercept"]], "^mpg = -?[0-9.]+\\*wt$")
+expect_false(grepl("NA", equations[["rank_deficient"]], fixed = TRUE))
+expect_equal(equations[["exact_fit"]], "y = 0 + 2*x")
+--- source
+models <- list(
+  simple = lm(mpg ~ wt, mtcars),
+  multiple = lm(mpg ~ disp + hp, mtcars),
+  transformed = lm(log(mpg) ~ wt + I(wt^2), mtcars),
+  no_intercept = lm(mpg ~ 0 + wt, mtcars),
+  rank_deficient = lm(mpg ~ wt + I(2 * wt), mtcars),
+  exact_fit = lm(y ~ x, data.frame(x = 1:5, y = 2 * (1:5))),
+  intercept_only = lm(mpg ~ 1, mtcars),
+  underscore_name = lm(mpg ~ wt_lb, transform(mtcars, wt_lb = wt * 1000))
+)
+equations <- vapply(models, lm_equation, "")
+
+expectation("intercept_na_residue",
+            covers = c("lm_equation.no-intercept", "lm_equation.na-and-residue"),
+            purpose = "Catches an intercept appearing in a no-intercept model, 'NA' printed for an aliased term, or floating-point residue like 2e-15 shown instead of 0.", {
+  expect_match(equations[["no_intercept"]], "^mpg = -?[0-9.]+\\*wt$")
+  expect_false(grepl("NA", equations[["rank_deficient"]], fixed = TRUE))
+  expect_equal(equations[["exact_fit"]], "y = 0 + 2*x")
+})

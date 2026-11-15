@@ -7,11 +7,9 @@ base <- ggplot2::ggplot(iris, ggplot2::aes(Petal.Length, Sepal.Length))
 three <- function(...) suppressMessages(
   base + geom_slice(iris_model, predict_vars = list(Sepal.Width = c(2, 3, 4))) + geom_slice_text(...))
 
-covers("geom_slice_text.label-per-line", "geom_slice_text.location",
-       "geom_slice_text.one-layer-per-slice", "geom_slice_text.expand-keeps-scale",
-       "geom_slice_text.date-or-log-axis")
-
-test_that("each line gets one label at its right end, at the line's endpoint", {
+expectation("label_at_end",
+            covers = "geom_slice_text.label-per-line",
+            purpose = "Catches a line getting no label, two labels, or a label away from its line's right-hand endpoint.", {
   p <- three()
   t <- slice_text_data(p)
   d <- slice_data(p)
@@ -24,13 +22,17 @@ test_that("each line gets one label at its right end, at the line's endpoint", {
   }
 })
 
-test_that("location = \"left\" labels the left end, right-justified", {
+expectation("left_location",
+            covers = "geom_slice_text.location",
+            purpose = "Catches location = \"left\" being ignored, or its labels left-justified so they run over the line.", {
   t <- slice_text_data(three(location = "left"))
   expect_equal(unique(t$x), min(iris$Petal.Length))
   expect_equal(unique(t$hjust), 1)
 })
 
-test_that("two slice layers of one model are labelled as if combined", {
+expectation("two_layers_combined",
+            covers = "geom_slice_text.one-layer-per-slice",
+            purpose = "Catches labels being built from only one of two slice layers of the same model, so some lines go unlabelled or wrongly labelled.", {
   p <- suppressMessages(base +
     geom_slice(iris_model, predict_vars = list(Sepal.Width = 2)) +
     geom_slice(iris_model, predict_vars = list(Sepal.Width = 4), colour = "red") +
@@ -40,7 +42,9 @@ test_that("two slice layers of one model are labelled as if combined", {
   expect_equal(t$colour[t$label == "Sepal.Width: 4"], "red")
 })
 
-test_that("widening keeps the user's scale and adds no 'already present' message", {
+expectation("keeps_user_scale",
+            covers = "geom_slice_text.expand-keeps-scale",
+            purpose = "Catches the room made for labels replacing the user's own x scale (limits, breaks, name) or printing ggplot2's 'Scale for x is already present'.", {
   p <- base + geom_slice(iris_model, predict_vars = list(Sepal.Width = c(2, 4))) +
     ggplot2::scale_x_continuous("Petal length", limits = c(0, 8), breaks = c(0, 4, 8),
                                 expand = ggplot2::expansion(mult = c(0.2, 0.05)))
@@ -59,7 +63,9 @@ test_that("widening keeps the user's scale and adds no 'already present' message
   expect_null(untouched$scales$get_scales("x"))
 })
 
-test_that("a log x scale stays a log scale after widening", {
+expectation("log_scale_kept",
+            covers = "geom_slice_text.date-or-log-axis",
+            purpose = "Catches widening for labels quietly turning a log x axis into a linear one.", {
   m <- lm(mpg ~ disp + hp, mtcars)
   p <- suppressMessages(ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + ggplot2::scale_x_log10() +
                           geom_slice(m, predict_vars = list(hp = c(100, 200))) + geom_slice_text())

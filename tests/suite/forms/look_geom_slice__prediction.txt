@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -312,3 +313,13 @@
 <text x='32.79' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='104.92px' lengthAdjust='spacingAndGlyphs'>Prediction interval</text>
 </g>
 </svg>
+--- source
+mpg <- ggplot2::mpg
+quad <- lm(hwy ~ displ + I(displ^2), data = mpg)
+points <- function(data, mapping) ggplot2::ggplot(data, mapping) + ggplot2::geom_point()
+prediction <- points(mpg, ggplot2::aes(displ, hwy)) + geom_slice(quad, interval = "prediction") +
+  ggplot2::labs(title = "Prediction interval")
+
+judged_output("prediction", prediction,
+              covers = "shared.intervals.look",
+              purpose = "The same slice with a prediction ribbon; next to confidence, it must look clearly wider and cover most points.")

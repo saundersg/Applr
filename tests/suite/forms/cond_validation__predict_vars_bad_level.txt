@@ -1,6 +1,14 @@
+--- main
 error
 Problem while computing stat.
 i Error occurred in the 1st layer.
 Caused by error:
 ! "rose" is not a level of the model's factor `Species`.
     Use one of: "setosa", "versicolor", "virginica".
+--- source
+raises("predict_vars_bad_level", function() {
+  ggplot2::ggplot(iris, ggplot2::aes(Petal.Length, Sepal.Length)) +
+    geom_slice(lm(Sepal.Length ~ Petal.Length + Species, iris), predict_vars = list(Species = "rose"))
+}, "error", '"rose" is not a level',
+       covers = c("shared.held-values.bad-level", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A misspelt or invented factor level stops only when the plot is built, so the message arrives wrapped by ggplot2; Applr's part must still list the levels.")

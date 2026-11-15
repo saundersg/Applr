@@ -1,0 +1,14 @@
+--- checks
+expect_warning(drawit(m, "hp", wt = 3, col = "red"), "deprecated")
+expect_equal(a$line$fit, predicted(m, data.frame(hp = a$line$x, wt = 3)))
+--- source
+expectation("drawit_draws_slice_2d",
+            covers = "drawit.warns-and-forwards",
+            purpose = "Catches drawit() drawing something other than slice_2d()'s line for the same model and held values, or dropping its deprecation warning.", {
+  m <- lm(mpg ~ wt + hp, mtcars)
+  a <- suppressWarnings(prepare_slice_data(m, "hp", 100, TRUE, "none", list(wt = 3)))
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  expect_warning(drawit(m, "hp", wt = 3, col = "red"), "deprecated")
+  expect_equal(a$line$fit, predicted(m, data.frame(hp = a$line$x, wt = 3)))
+})

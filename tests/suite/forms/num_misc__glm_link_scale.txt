@@ -1,0 +1,10 @@
+--- checks
+expect_equal(d$y, predicted(m, data.frame(wt = d$x)))
+--- source
+expectation("glm_link_scale",
+            covers = "shared.validation.glm",
+            purpose = "Catches a glm() being refused, or sliced on a scale other than the link scale predict.glm() gives by default.", {
+  m <- glm(am ~ wt, family = binomial, data = mtcars)
+  d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, am)) + geom_slice(m, n = 10))
+  expect_equal(d$y, predicted(m, data.frame(wt = d$x)))
+})

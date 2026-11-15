@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -91,3 +92,10 @@
 <text x='59.04' y='48.96' style='font-size: 12.00px; fill: #666666; font-family: sans;' textLength='40.04px' lengthAdjust='spacingAndGlyphs'>hp: 150</text>
 </g>
 </svg>
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+draw <- function() slice_2d(model, x_axis = "wt", hp = 150)
+
+judged_output("plot", draw, type = "base_graphics",
+              covers = c("slice_2d.plot-labels", "slice_2d.caption"),
+              purpose = "Mainly the base_graphics type's demo for the suite's own tests. For you, the plainest slice_2d() plot (untransformed model, default style, one held value); look_base/slice_2d_default and slice_2d_styled cover the rest.")

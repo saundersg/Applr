@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -94,3 +95,13 @@
 <text x='32.79' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='120.35px' lengthAdjust='spacingAndGlyphs'>scale_y_log10() axis</text>
 </g>
 </svg>
+--- source
+mpg <- ggplot2::mpg
+set.seed(123)
+logged <- lm(log(mpg) ~ disp + hp, data = mtcars)
+y_scale <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + ggplot2::geom_point() + geom_slice(logged) +
+  ggplot2::scale_y_log10() + ggplot2::labs(title = "scale_y_log10() axis")
+
+judged_output("y_scale", y_scale,
+              covers = "geom_slice.scale-transforms",
+              purpose = "The third view: under scale_y_log10() the line must be straight with mpg tick labels; the three side by side catch one view drifting.")

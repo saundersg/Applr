@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -160,3 +161,17 @@
 <text transform='translate(13.05,275.30) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='5.50px' lengthAdjust='spacingAndGlyphs'>y</text>
 </g>
 </svg>
+--- source
+set.seed(123)
+d <- data.frame(x = runif(80, -10, 10), x2 = runif(80, 0, 4),
+                g = factor(sample(c("A", "B"), 80, replace = TRUE)))
+d$y <- d$x * ifelse(d$g == "A", 0.5, 2) + ifelse(d$g == "A", 5, -5) + 4 * d$x2 + rnorm(80)
+model <- lm(y ~ x * g + x2, data = d)
+build <- function(p) suppressMessages(p)
+on_d <- function(mapping = ggplot2::aes(x, y)) ggplot2::ggplot(d, mapping) + ggplot2::geom_point(alpha = 0.5)
+left_offset <- build(on_d() + geom_slice(model, predict_vars = list(x2 = c(0, 4))) +
+  geom_slice_text(location = "left", offset = 15, color = "black"))
+
+judged_output("left_offset", left_offset,
+              covers = c("geom_slice_text.offset-points", "geom_slice_text.expand-fits-labels"),
+              purpose = "The only output with labels on the left: the gap must look like 15pt and the panel must widen on the left, not the right.")

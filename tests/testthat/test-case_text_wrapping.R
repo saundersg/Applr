@@ -25,17 +25,16 @@ examples <- c(
     ggplot2::ggplot(shared_level, ggplot2::aes(x, y)) + geom_slice(ambiguous) + geom_slice_subtitle(wrap = 1.5)))
 )
 
-covers("shared.annotation-wrap.fits", "shared.annotation-wrap.between-terms",
-       "shared.annotation-wrap.ladder", "shared.annotation-wrap.width-or-off",
-       "shared.annotation-wrap.prepend-equals", "shared.annotation-wrap.overlong-term",
-       "shared.annotation-wrap.ambiguous-brackets")
 judged_output("wrapped", examples, type = "returned_text",
-              purpose = "One long subtitle wrapped at fixed widths: where it breaks, how it indents, when it shortens to [level], and when it can't.")
+              covers = c("shared.annotation-wrap.ladder", "shared.annotation-wrap.between-terms", "shared.annotation-wrap.prepend-equals", "shared.annotation-wrap.overlong-term", "shared.annotation-wrap.ambiguous-brackets"),
+              purpose = "One long subtitle at fixed widths, so you judge the breaks themselves independent of any device: where it breaks, the indent, when [level] appears and when nothing fits.")
 
 lines <- function(name) strsplit(examples[[name]], "\n", fixed = TRUE)[[1]]
 blank <- "^[    ]+"
 
-test_that("wrap = FALSE keeps one line per item; a width breaks between terms only", {
+expectation("breaks_between_terms",
+            covers = c("shared.annotation-wrap.width-or-off", "shared.annotation-wrap.between-terms", "shared.annotation-wrap.fits"),
+            purpose = "Catches a break inside a term, an operator stranded at a line end, text lost or reordered when wrapping, or wrap = FALSE still wrapping.", {
   expect_length(lines("unwrapped"), 2)
   wrapped <- lines("wide_6in")
   expect_gt(length(wrapped), 2)
@@ -44,7 +43,9 @@ test_that("wrap = FALSE keeps one line per item; a width breaks between terms on
   expect_false(any(grepl("[+-]$", wrapped)))
 })
 
-test_that("continuation lines hang under the equation's right-hand side, even after a prefix", {
+expectation("hanging_indent",
+            covers = "shared.annotation-wrap.prepend-equals",
+            purpose = "Catches continuation lines not indented, or indented under a prefix like 'Fitted: ' instead of under the equation.", {
   wrapped <- lines("wide_6in")
   expect_true(all(grepl(blank, wrapped[2:(length(wrapped) - 1)])))
   pre <- lines("prepend_4in")
@@ -52,18 +53,24 @@ test_that("continuation lines hang under the equation's right-hand side, even af
   expect_true(grepl(blank, pre[2]))
 })
 
-test_that("the short [level] form appears only where it buys a fit, and never when ambiguous", {
+expectation("brackets_only_when_needed",
+            covers = c("shared.annotation-wrap.ladder", "shared.annotation-wrap.ambiguous-brackets"),
+            purpose = "Catches [level] shortening when full names fit, failing to shorten when they don't, or shortening two factors with a shared level to the same label.", {
   expect_false(grepl("[", examples[["wide_6in"]], fixed = TRUE))
   expect_true(grepl("[virginica]", examples[["brackets_3.5in"]], fixed = TRUE))
   expect_false(grepl("[High]", examples[["shared_level_1.5in"]], fixed = TRUE))
 })
 
-test_that("a term wider than the line sits on a line of its own", {
+expectation("overlong_term",
+            covers = "shared.annotation-wrap.overlong-term",
+            purpose = "Catches a term too wide for the line being split in the middle instead of placed on its own line.", {
   over <- lines("overlong_1in")
   expect_true('- 0.286*Sepal.Width:(Species="virginica")' %in% over)
 })
 
-test_that("a single held value splits between its name and value today (known issue)", {
+expectation("held_value_split_known_issue",
+            covers = "shared.annotation-wrap.between-terms",
+            purpose = "Pins a known issue ('Sepal.Width' and '= 3.057' on separate lines) so its fix is noticed: when this fails, the pair stays together.", {
   # KNOWN ISSUE (for_devs/known_issues.Rmd): with one held value the line is
   # broken at any space, so "Sepal.Width = 3.057" can split. When this
   # fails, the pair stays together.

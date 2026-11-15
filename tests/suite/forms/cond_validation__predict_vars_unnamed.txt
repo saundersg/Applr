@@ -1,3 +1,11 @@
+--- main
 error
 `predict_vars` must be a named list of variable = value pairs.
     For example, 'predict_vars = list(hp = 110)'.
+--- source
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("predict_vars_unnamed", function() geom_slice(model, predict_vars = list(100)), "error",
+       "named list",
+       covers = c("shared.held-values.malformed", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A value with no variable name can't be held anywhere; the hint must show the variable = value form.")

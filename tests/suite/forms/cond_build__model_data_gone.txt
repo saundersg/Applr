@@ -1,6 +1,16 @@
+--- main
 error
 Problem while computing stat.
 i Error occurred in the 1st layer.
 Caused by error:
 ! The data the model was fitted on could not be found.
     Fit the model with a data argument, such as 'lm(y ~ x, data = your_data)'.
+--- source
+mpg <- ggplot2::mpg
+
+raises("model_data_gone", function() {
+  fit <- function() { d <- mtcars; m <- lm(mpg ~ wt, data = d); rm(d); m }
+  ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(fit())
+}, "error", "The data the model was fitted on could not be found.",
+       covers = c("shared.model-data.fitted-in-function", "shared.conditions.two-part-format", "shared.conditions.severity"),
+       purpose = "A model fitted inside a function whose data has gone; without this check users get an obscure eval error instead of 'could not be found'.")

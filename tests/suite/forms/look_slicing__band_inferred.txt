@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -330,3 +331,13 @@
 <text x='704.15' y='303.27' style='font-size: 8.80px; font-family: sans;' textLength='2.93px' lengthAdjust='spacingAndGlyphs'>r</text>
 </g>
 </svg>
+--- source
+mpg <- ggplot2::mpg
+set.seed(123)
+band_model <- lm(hwy ~ displ * drv + cyl, data = mpg)
+band_inferred <- suppressMessages(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) +
+  ggplot2::geom_point() + geom_slice(band_model, band = TRUE) + geom_slice_text())
+
+judged_output("band_inferred", band_inferred,
+              covers = "shared.band.look",
+              purpose = "band = TRUE on coloured groups: each band must be one translucent ribbon in its line's colour with both edges drawn, and the labels must say which edge is which.")

@@ -1,0 +1,12 @@
+--- checks
+expect_equal(graphics::par("mfrow"), c(2, 2))
+--- source
+expectation("diagnose_restores_mfrow",
+            covers = "diagnose.restores-par",
+            purpose = "Catches diagnose() leaving the device split into panels, so the user's next plot comes out small.", {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  graphics::par(mfrow = c(2, 2))
+  diagnose(lm(mpg ~ wt, mtcars))
+  expect_equal(graphics::par("mfrow"), c(2, 2))
+})

@@ -1,0 +1,25 @@
+--- checks
+expect_equal(d$y, cs[[2]](predicted(cs[[1]], data.frame(x = d$x, w = 0.5))), label = label)
+expect_equal(prep$line$fit, cs[[2]](predicted(cs[[1]], data.frame(x = prep$line$x, w = 0.5))), label = label)
+--- source
+set.seed(3)
+pos <- data.frame(x = runif(40, 1, 10), w = runif(40))
+pos$y <- sqrt(pos$x) + pos$w + rnorm(40, sd = 0.05)
+
+expectation("every_engine_inverts",
+            covers = "shared.back-transform.every-engine",
+            purpose = "Catches exp(y) or a power response, which take their own branches of the inverse, being undone differently by geom_slice() and slice_2d(); num_back_transform covers the common log/sqrt cases.", {
+  cases <- list(
+    list(lm(exp(y) ~ x + w, pos), log),
+    list(lm(y^2 ~ x + w, pos), sqrt),
+    list(lm(sqrt(y) ~ x + w, pos), function(v) v^2),
+    list(lm(1 / y ~ x + w, pos), function(v) 1 / v)
+  )
+  for (cs in cases) {
+    label <- deparse(formula(cs[[1]])[[2]])
+    d <- slice_data(ggplot2::ggplot(pos, ggplot2::aes(x, y)) + geom_slice(cs[[1]], n = 15, predict_vars = list(w = 0.5)))
+    expect_equal(d$y, cs[[2]](predicted(cs[[1]], data.frame(x = d$x, w = 0.5))), label = label)
+    prep <- prepare_slice_data(cs[[1]], "x", 15, TRUE, "none", list(w = 0.5))
+    expect_equal(prep$line$fit, cs[[2]](predicted(cs[[1]], data.frame(x = prep$line$x, w = 0.5))), label = label)
+  }
+})

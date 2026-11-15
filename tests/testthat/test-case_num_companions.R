@@ -7,11 +7,9 @@ model <- lm(hwy ~ displ * drv + cyl + year, data = mpg)
 coloured <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv))
 quiet <- function(p) suppressMessages(p)
 
-covers("geom_slice_subtitle.skips-shown", "geom_slice_subtitle.nothing-to-say",
-       "geom_slice_caption.same-text-in-caption", "shared.companions.no-device-side-effect",
-       "geom_slice_subtitle.held-line")
-
-test_that("variables on x, in the legend, in a facet or in labels are left out of the held line", {
+expectation("skips_shown",
+            covers = c("geom_slice_subtitle.skips-shown", "geom_slice_subtitle.held-line"),
+            purpose = "Catches the subtitle's held line repeating what the plot already shows (the x variable, a legend, a facet, a text label), which would tell the reader something false or redundant.", {
   held <- function(p) strsplit(annotation_of(p), "\n", fixed = TRUE)[[1]][2]
   s <- held(quiet(coloured + geom_slice(model) + geom_slice_subtitle(wrap = FALSE)))
   expect_match(s, "^held at: cyl = 5.889; year = 2004$")
@@ -24,14 +22,18 @@ test_that("variables on x, in the legend, in a facet or in labels are left out o
   expect_match(s, "^held at: cyl = 6; year = 2004$")
 })
 
-test_that("with no equation and nothing held, no subtitle is set", {
+expectation("nothing_to_say",
+            covers = "geom_slice_subtitle.nothing-to-say",
+            purpose = "Catches an empty or placeholder subtitle being set when there is no equation and nothing held.", {
   p <- quiet(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(lm(mpg ~ wt, mtcars)))
   q <- quiet(p + geom_slice_subtitle(model = FALSE))
   expect_null(annotation_of(q))
   expect_identical(q$labels, p$labels)
 })
 
-test_that("the caption holds exactly the subtitle's text, wrapped without the indent", {
+expectation("caption_same_text",
+            covers = "geom_slice_caption.same-text-in-caption",
+            purpose = "Catches geom_slice_caption() drifting from geom_slice_subtitle(): it must hold exactly the same text, only without the indent.", {
   p <- quiet(coloured + geom_slice(model))
   expect_identical(annotation_of(quiet(p + geom_slice_caption(wrap = FALSE)), "caption"),
                    annotation_of(quiet(p + geom_slice_subtitle(wrap = FALSE))))
@@ -44,7 +46,9 @@ test_that("the caption holds exactly the subtitle's text, wrapped without the in
   expect_true(any(starts_blank(subtitle[-1])))
 })
 
-test_that("adding companions opens no device and draws no page", {
+expectation("no_device",
+            covers = "shared.companions.no-device-side-effect",
+            purpose = "Catches companions opening a graphics device or drawing a page while they measure text, which would leave blank windows or extra pages in a user's output.", {
   grDevices::graphics.off()
   quiet(coloured + geom_slice(model) + geom_slice_subtitle() + geom_slice_caption())
   expect_equal(grDevices::dev.cur(), c("null device" = 1L))

@@ -55,6 +55,9 @@ probe_type <- function(type, log, env = parent.frame()) {
 # `entries` must hold at least two outputs with different fingerprints, so a
 # view drawn from the wrong one shows.
 expect_complete <- function(type, entries) {
+  # Views come from the type's build, so the core's `source` part, which no
+  # view draws on, is left out (test-item-rules.R covers it).
+  entries <- lapply(entries, function(e) { e$source <- NULL; e })
   fps <- vapply(entries, fingerprint_of, "")
   expect_gt(length(unique(fps)), 1)
 

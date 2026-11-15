@@ -1,0 +1,10 @@
+--- checks
+expect_identical(p$labels$subtitle, lm_equation(m))
+--- source
+expectation("nothing_held_no_line",
+            covers = "geom_slice_subtitle.held-line",
+            purpose = "Catches a dangling 'held at:' line, or any extra text, when nothing is held.", {
+  m <- lm(mpg ~ wt, mtcars)
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m) + geom_slice_subtitle(wrap = FALSE)
+  expect_identical(p$labels$subtitle, lm_equation(m))
+})

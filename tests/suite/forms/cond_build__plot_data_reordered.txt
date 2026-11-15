@@ -1,1 +1,11 @@
+--- main
 (no conditions)
+--- source
+mpg <- ggplot2::mpg
+model <- lm(mpg ~ wt + hp, data = mtcars)
+
+raises("plot_data_reordered", function() {
+  ggplot2::ggplot(mtcars[32:1, ], ggplot2::aes(wt, mpg)) + geom_slice(model, predict_vars = list(hp = 100))
+}, character(),
+       covers = c("shared.model-data.plot-data-mismatch", "shared.conditions.severity"),
+       purpose = "Catches the data check being too strict: the same rows in another order are the same data and must draw with nothing said.")

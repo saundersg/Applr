@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -96,3 +97,12 @@
 <text x='59.04' y='48.96' style='font-size: 12.00px; fill: #666666; font-family: sans;' textLength='48.71px' lengthAdjust='spacingAndGlyphs'>disp: 250</text>
 </g>
 </svg>
+--- source
+logged <- lm(log(mpg) ~ disp + hp, data = mtcars)
+quietly <- function(code) function() suppressMessages(code())
+
+judged_output("slice_2d_styled", quietly(function() {
+  slice_2d(logged, x_axis = "hp", disp = 250, n = 150, col = "blue", lwd = 2, interval = "prediction")
+}), type = "base_graphics",
+              covers = c("slice_2d.ylim-covers-band", "slice_2d.graphical-params"),
+              purpose = "The only base plot with a band and custom style: the band must be a translucent version of the line's colour, and the y-axis must make room for it.")

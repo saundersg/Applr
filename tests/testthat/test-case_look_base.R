@@ -6,24 +6,28 @@
 logged <- lm(log(mpg) ~ disp + hp, data = mtcars)
 quietly <- function(code) function() suppressMessages(code())
 
-covers("slice_2d.plot-labels", "slice_2d.ylim-covers-band", "slice_2d.graphical-params",
-       "add_slice_2d.adds-to-plot", "add_slice_2d.caption-off", "diagnose.three-panels")
 judged_output("slice_2d_default", quietly(function() slice_2d(logged)), type = "base_graphics",
-              purpose = "slice_2d() with defaults on a log(mpg) model: points, back-transformed line, formula title and held-value caption.")
+              covers = c("slice_2d.plot-labels", "slice_2d.caption"),
+              purpose = "slice_2d() with every default on a log(mpg) model: the back-transformed curve and a caption of filled-in values, both absent from base_slice_2d/plot.")
 judged_output("slice_2d_styled", quietly(function() {
   slice_2d(logged, x_axis = "hp", disp = 250, n = 150, col = "blue", lwd = 2, interval = "prediction")
 }), type = "base_graphics",
-              purpose = "slice_2d() with a chosen x-axis, held value, n, colour, width and a prediction band whose y-axis covers the band.")
+              covers = c("slice_2d.ylim-covers-band", "slice_2d.graphical-params"),
+              purpose = "The only base plot with a band and custom style: the band must be a translucent version of the line's colour, and the y-axis must make room for it.")
 judged_output("add_slice_2d_overlay", quietly(function() {
   plot(mpg ~ disp, data = mtcars)
   add_slice_2d(logged, hp = min(mtcars$hp), col = "blue")
   add_slice_2d(logged, hp = max(mtcars$hp), col = "red", lty = 2, interval = "confidence")
 }), type = "base_graphics",
-              purpose = "Two add_slice_2d() slices on the user's own plot, one with a confidence band, in their own styles and with no caption.")
+              covers = c("add_slice_2d.adds-to-plot", "add_slice_2d.caption-off"),
+              purpose = "add_slice_2d() on the user's own plot: two slices must overlay without redrawing it, each in its own style, and no caption may be painted over.")
 judged_output("diagnose", function() diagnose(lm(dist ~ speed, data = cars)), type = "base_graphics",
-              purpose = "diagnose() draws its three residual panels side by side, labelling the largest residuals.")
+              covers = "diagnose.three-panels",
+              purpose = "The only picture of diagnose(): three residual panels in one row, with the largest residuals labelled and nothing overlapping.")
 
-test_that("with an interval the y-axis covers the band", {
+expectation("ylim_covers_band",
+            covers = "slice_2d.ylim-covers-band",
+            purpose = "Catches the y-axis being sized to the data only, which would cut the prediction band off at the top or bottom.", {
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off())
   suppressMessages(slice_2d(logged, x_axis = "hp", disp = 250, interval = "prediction"))

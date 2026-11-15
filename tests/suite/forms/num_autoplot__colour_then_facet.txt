@@ -1,0 +1,22 @@
+--- checks
+expect_equal(expr_of(p, "colour"), "drv")
+expect_equal(names(p$facet$params$facets), "cyl")
+expect_equal(expr_of(p, "colour"), "factor(cyl)")
+expect_equal(expr_of(p, "colour"), "year")
+--- source
+mpg <- ggplot2::mpg
+model <- lm(hwy ~ displ + drv + cyl, data = mpg)
+quiet_autoplot <- function(...) suppressMessages(autoplot(..., summary = FALSE))
+expr_of <- function(p, aes) rlang::as_label(p$mapping[[aes]])
+
+expectation("colour_then_facet",
+            covers = "autoplot.categorical-to-colour-facet",
+            purpose = "Catches the wrong predictor becoming colour or facet, a few-valued numeric not being wrapped in factor(), or a user's colour mapping being replaced.", {
+  p <- quiet_autoplot(model)
+  expect_equal(expr_of(p, "colour"), "drv")
+  expect_equal(names(p$facet$params$facets), "cyl")
+  p <- quiet_autoplot(lm(hwy ~ displ + cyl, mpg))
+  expect_equal(expr_of(p, "colour"), "factor(cyl)")
+  p <- quiet_autoplot(model, ggplot2::aes(colour = year))
+  expect_equal(expr_of(p, "colour"), "year")
+})

@@ -1,3 +1,4 @@
+--- main
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
 <defs>
@@ -784,3 +785,13 @@
 <text transform='translate(13.05,283.62) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='19.57px' lengthAdjust='spacingAndGlyphs'>hwy</text>
 </g>
 </svg>
+--- source
+mpg <- ggplot2::mpg
+set.seed(123)
+band_model <- lm(hwy ~ displ * drv + cyl, data = mpg)
+facet_grid <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy)) + ggplot2::geom_point() +
+  geom_slice(band_model, interval = "confidence") + ggplot2::facet_grid(drv ~ cyl)
+
+judged_output("facet_grid", facet_grid,
+              covers = "shared.slicing.facets-look",
+              purpose = "facet_grid() over two predictors, the busiest panel layout: each panel's line and ribbon must sit in that panel's own data.")

@@ -1,0 +1,25 @@
+--- checks
+expect_equal(nrow(t), 3)
+expect_equal(label$x, max(iris$Petal.Length))
+expect_equal(label$y, predicted(iris_model, data.frame(Petal.Length = label$x, Sepal.Width = w)))
+expect_equal(label$hjust, 0)
+--- source
+iris_model <- lm(Sepal.Length ~ Sepal.Width + Petal.Length, data = iris)
+base <- ggplot2::ggplot(iris, ggplot2::aes(Petal.Length, Sepal.Length))
+three <- function(...) suppressMessages(
+  base + geom_slice(iris_model, predict_vars = list(Sepal.Width = c(2, 3, 4))) + geom_slice_text(...))
+
+expectation("label_at_end",
+            covers = "geom_slice_text.label-per-line",
+            purpose = "Catches a line getting no label, two labels, or a label away from its line's right-hand endpoint.", {
+  p <- three()
+  t <- slice_text_data(p)
+  d <- slice_data(p)
+  expect_equal(nrow(t), 3)
+  for (w in c(2, 3, 4)) {
+    label <- t[t$label == paste0("Sepal.Width: ", w), ]
+    expect_equal(label$x, max(iris$Petal.Length))
+    expect_equal(label$y, predicted(iris_model, data.frame(Petal.Length = label$x, Sepal.Width = w)))
+    expect_equal(label$hjust, 0)
+  }
+})

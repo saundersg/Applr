@@ -6,16 +6,15 @@ mpg <- ggplot2::mpg
 model <- lm(hwy ~ displ * drv + cyl, data = mpg)
 coloured <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv))
 
-covers("shared.band.edges-are-predictions", "shared.band.range", "shared.band.infer-true",
-       "geom_slice_text.band-edges")
-
 edges <- function(line, drv, lo, hi) {
   a <- predicted(model, data.frame(displ = line$x, drv = drv, cyl = lo))
   b <- predicted(model, data.frame(displ = line$x, drv = drv, cyl = hi))
   list(ymin = pmin(a, b), ymax = pmax(a, b), y = (a + b) / 2)
 }
 
-test_that("a named band spans the predict_vars values, with the line at the midpoint", {
+expectation("named_band_edges",
+            covers = c("shared.band.edges-are-predictions", "shared.band.range"),
+            purpose = "Catches band edges that aren't the predictions at the two predict_vars values, a line that isn't their midpoint, or edges swapped when given high-then-low, in every colour group.", {
   d <- slice_data(coloured + geom_slice(model, n = 10, band = "cyl", predict_vars = list(cyl = c(7, 5))))
   lv <- levels(factor(mpg$drv))
   for (g in unique(d$group)) {
@@ -27,7 +26,9 @@ test_that("a named band spans the predict_vars values, with the line at the midp
   }
 })
 
-test_that("without predict_vars the band spans the data range, and band = TRUE finds cyl", {
+expectation("data_range_and_true",
+            covers = c("shared.band.range", "shared.band.infer-true"),
+            purpose = "Catches a band without predict_vars not spanning the data range, or band = TRUE choosing a different variable than naming it would.", {
   named <- slice_data(coloured + geom_slice(model, n = 10, band = "cyl"))
   inferred <- slice_data(coloured + geom_slice(model, n = 10, band = TRUE))
   expect_equal(inferred, named)
@@ -35,7 +36,9 @@ test_that("without predict_vars the band spans the data range, and band = TRUE f
   expect_equal(named$ymin[named$group == 1], e$ymin)
 })
 
-test_that("band = TRUE picks the one multi-value predict_vars entry", {
+expectation("true_picks_multi_value",
+            covers = "shared.band.infer-true",
+            purpose = "Unlike data_range_and_true, the predict_vars entry with several values must win over the variable the plot doesn't show.", {
   m <- lm(hwy ~ displ + cyl + year, data = mpg)
   d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy)) +
                     geom_slice(m, n = 10, band = TRUE, predict_vars = list(year = c(1999, 2008), cyl = 6)))
@@ -45,7 +48,9 @@ test_that("band = TRUE picks the one multi-value predict_vars entry", {
   expect_equal(d$ymax, pmax(a, b))
 })
 
-test_that("geom_slice_text() labels each edge with the value that made it", {
+expectation("text_labels_edges",
+            covers = "geom_slice_text.band-edges",
+            purpose = "Catches geom_slice_text() putting a band edge's label on the wrong edge: each label's position must be the prediction for the value it names.", {
   p <- suppressMessages(coloured + geom_slice(model, band = "cyl", predict_vars = list(cyl = c(5, 7))) +
                           geom_slice_text())
   t <- slice_text_data(p)

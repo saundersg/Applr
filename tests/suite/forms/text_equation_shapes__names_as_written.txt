@@ -1,0 +1,14 @@
+--- checks
+expect_equal(vapply(list(1/mpg ~ wt, sqrt(mpg) ~ wt, exp(mpg/10) ~ wt, mpg^2 ~ wt), lhs, ""), c("1/mpg", "sqrt(mpg)", "exp(mpg/10)", "mpg^2"))
+expect_match(lm_equation(lm(mpg ~ wt:hp, mtcars)), "\\*wt:hp$")
+expect_match(lm_equation(lm(mpg ~ I(wt * hp), mtcars)), "\\*I\\(wt \\* hp\\)$")
+--- source
+expectation("names_as_written",
+            covers = "lm_equation.response-and-term-names",
+            purpose = "Catches a transformed response (1/mpg, sqrt, exp, a power) or a term like wt:hp or I(wt * hp) being renamed instead of shown as the formula writes it.", {
+  lhs <- function(f) sub(" = .*", "", lm_equation(lm(f, mtcars)))
+  expect_equal(vapply(list(1 / mpg ~ wt, sqrt(mpg) ~ wt, exp(mpg / 10) ~ wt, mpg^2 ~ wt), lhs, ""),
+               c("1/mpg", "sqrt(mpg)", "exp(mpg/10)", "mpg^2"))
+  expect_match(lm_equation(lm(mpg ~ wt:hp, mtcars)), "\\*wt:hp$")
+  expect_match(lm_equation(lm(mpg ~ I(wt * hp), mtcars)), "\\*I\\(wt \\* hp\\)$")
+})
