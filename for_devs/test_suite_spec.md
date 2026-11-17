@@ -83,6 +83,8 @@ How CI (GitHub Actions) treats each review status, and whether fingerprints can 
 
 **Numeric oracle.** Expectations compare plotted data against the model's predictions on an expected grid that the test builds independently. The prediction function itself is trusted, not tested. This replaces eyeballing reference images for line shape, slope and position.
 
+**The core** (decided 2026-11-16). The rule every drawn line must follow is written once, as `expected_line()` in `tests/testthat/helper-core.R`, with the rule stated in plain words above it: at each x, y is `predict()` on a row with the x-axis variable at that x and every other predictor held at one stated value, mapped into the y-axis's units, and ribbons follow the same rule for their edges. Every numeric expectation compares Applr's output with it, and chooses its inputs from the model and the plot set-up, never from Applr's code. The maintainer reads this file directly, not through the inbox. A change to it is a change to what the package promises, so it goes back to the maintainer with its reason. An x-axis combining several variables isn't covered: the rule says so, and promising more means deliberately changing the rule.
+
 **Output types and states.** Each output type defines what its fingerprint is taken from, and which states a reviewer sees.
 
 | Output type | Fingerprinted from | States (views for review) | Expectations on | Judged as |
@@ -232,6 +234,8 @@ What this says about the hypotheses:
    | Unreviewed, including a new output and an unreviewed platform variant | ✗ |
    | Rejected | ✗ |
    | Case expectations fail | ✗ |
+
+   Amended 2026-11-16: wording (the condition type) is lower priority, so an unreviewed or rejected condition output only warns on CI. Its type registers with `blocks_ci = FALSE`. A failing expectation in its case still fails, and the release check still needs it Human approved.
 
    The release check is separate and stricter: it fails unless every output is Human approved (or an agent-approved variant of one), and it runs the release audit.
 

@@ -2,7 +2,7 @@
 # Predictions of a transformed response land on the plotted y-axis: inverted
 # for a raw axis, mapped for an axis expression, or as back_transform says.
 
-grid_of <- function(d) data.frame(disp = d$x, hp = mean(mtcars$hp))
+held <- list(hp = mean(mtcars$hp))
 on_axis <- function(model, y, ...) {
   p <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, {{ y }})) + geom_slice(model, n = 15, ...)
   slice_data(p)
@@ -22,33 +22,33 @@ test_that("common response transforms are inverted onto a raw y-axis", {
   )
   for (cs in cases) {
     d <- on_axis(cs[[1]], mpg)
-    expect_equal(d$y, cs[[2]](predicted(cs[[1]], grid_of(d))))
+    expect_equal(d$y, expected_line(cs[[1]], list(disp = d$x), held, to_y = cs[[2]]))
   }
   # slice_2d() does the same with no y-axis to read: it always plots raw mpg
   m <- cases[[1]][[1]]
   prep <- suppressMessages(prepare_slice_data(m, "disp", 15, TRUE, "none", list(hp = 120)))
-  expect_equal(prep$line$fit, exp(predicted(m, data.frame(disp = prep$line$x, hp = 120))))
+  expect_equal(prep$line$fit, expected_line(m, list(disp = prep$line$x), list(hp = 120), to_y = exp))
 })
 
 test_that("an axis expression of the response gets predictions in its own units", {
   logged <- lm(log(mpg) ~ disp + hp, mtcars)
   raw <- lm(mpg ~ disp + hp, mtcars)
   d <- on_axis(logged, log(mpg))
-  expect_equal(d$y, predicted(logged, grid_of(d)))
+  expect_equal(d$y, expected_line(logged, list(disp = d$x), held))
   d <- on_axis(raw, log(mpg))
-  expect_equal(d$y, log(predicted(raw, grid_of(d))))
+  expect_equal(d$y, expected_line(raw, list(disp = d$x), held, to_y = log))
 })
 
 test_that("back_transform overrides the inferred mapping", {
   m <- lm(log(mpg) ~ disp + hp, mtcars)
   d <- on_axis(m, mpg, back_transform = FALSE)
-  expect_equal(d$y, predicted(m, grid_of(d)))
+  expect_equal(d$y, expected_line(m, list(disp = d$x), held))
   d <- on_axis(m, mpg, back_transform = function(v) v * 2)
-  expect_equal(d$y, 2 * predicted(m, grid_of(d)))
+  expect_equal(d$y, expected_line(m, list(disp = d$x), held, to_y = function(v) 2 * v))
   expect_equal(on_axis(m, mpg, back_transform = "LOG")$y, on_axis(m, mpg)$y)
   for (nm in c("log10", "log2", "sqrt", "exp", "inverse", "1/x")) {
     d <- on_axis(m, mpg, back_transform = nm)
-    expect_equal(d$y, back_transform_names[[nm]](predicted(m, grid_of(d))), label = nm)
+    expect_equal(d$y, expected_line(m, list(disp = d$x), held, to_y = back_transform_names[[nm]]), label = nm)
   }
   expect_equal(on_axis(m, mpg, back_transform = TRUE)$y, on_axis(m, mpg)$y)
 })
@@ -61,7 +61,7 @@ test_that("nested transforms are inverted in order", {
   )
   for (cs in cases) {
     d <- on_axis(cs[[1]], mpg)
-    expect_equal(d$y, cs[[2]](predicted(cs[[1]], grid_of(d))))
+    expect_equal(d$y, expected_line(cs[[1]], list(disp = d$x), held, to_y = cs[[2]]))
   }
 })
 
@@ -73,7 +73,7 @@ test_that("a box_cox(y, lambda) response is inverted (known bug: only the first 
   box_cox <- function(y, lambda) if (lambda == 0) log(y) else (y^lambda - 1) / lambda
   m <- lm(box_cox(mpg, 0.5) ~ disp + hp, mtcars)
   d <- on_axis(m, mpg)
-  expected <- (0.5 * predicted(m, grid_of(d)) + 1)^2
+  expected <- expected_line(m, list(disp = d$x), held, to_y = function(v) (0.5 * v + 1)^2)
   expect_equal(d$y[1], expected[1])
   expect_true(all(is.na(d$y[-1])))
 })

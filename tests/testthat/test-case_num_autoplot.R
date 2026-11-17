@@ -17,8 +17,9 @@ test_that("the plot is points, a slice with a confidence ribbon and a subtitle, 
   expect_s3_class(p$layers[[1]]$geom, "GeomPoint")
   expect_s3_class(p$layers[[2]]$stat, "StatSlice")
   d <- slice_data(p)
-  ci <- predict(lm(mpg ~ wt + hp, mtcars), data.frame(wt = d$x, hp = mean(mtcars$hp)), interval = "confidence")
-  expect_equal(d$ymin, unname(ci[, "lwr"]))
+  ci <- expected_line(lm(mpg ~ wt + hp, mtcars), list(wt = d$x), list(hp = mean(mtcars$hp)),
+                      interval = "confidence")
+  expect_equal(d$ymin, ci$ymin)
   expect_match(p$labels$subtitle, "^mpg = ")
   expect_equal((p + ggplot2::labs(title = "T"))$labels$title, "T")
 })
@@ -55,9 +56,9 @@ test_that("... reaches geom_slice(), and a band drops the default ribbon", {
   d <- slice_data(quiet_autoplot(lm(mpg ~ wt + hp, mtcars), interval = "none",
                                  predict_vars = list(hp = 100)))
   expect_null(d$ymin)
-  expect_equal(d$y, predicted(lm(mpg ~ wt + hp, mtcars), data.frame(wt = d$x, hp = 100)))
+  expect_equal(d$y, expected_line(lm(mpg ~ wt + hp, mtcars), list(wt = d$x), list(hp = 100)))
   d <- slice_data(quiet_autoplot(lm(mpg ~ wt + hp, mtcars), band = "hp"))
-  a <- predicted(lm(mpg ~ wt + hp, mtcars), data.frame(wt = d$x, hp = min(mtcars$hp)))
+  a <- expected_line(lm(mpg ~ wt + hp, mtcars), list(wt = d$x), list(hp = min(mtcars$hp)))
   expect_equal(d$ymax, a)
 })
 

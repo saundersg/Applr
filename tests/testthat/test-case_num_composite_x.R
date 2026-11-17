@@ -19,7 +19,7 @@ test_that("geom_slice() predicts at each data row of the group, placed at x * x2
     line <- d[d$group == match(g, c("a", "b")), ]
     expect_equal(nrow(line), nrow(rows))
     expect_equal(line$x, rows$x * rows$x2)
-    expect_equal(line$y, predicted(model, rows))
+    expect_equal(line$y, expected_line(model, rows))
   }
   wide <- slice_data(ggplot2::ggplot(df, ggplot2::aes(x * x2, y, colour = g)) +
                        geom_slice(model, n = 5, full_range = TRUE))
@@ -31,5 +31,5 @@ test_that("slice_2d() does the same for x_axis = \"x * x2\"", {
   rows <- df[order(df$x * df$x2), ]
   rows$g <- "b"
   expect_equal(prep$line$x, rows$x * rows$x2)
-  expect_equal(prep$line$fit, predicted(model, rows))
+  expect_equal(prep$line$fit, expected_line(model, rows))
 })

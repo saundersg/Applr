@@ -20,5 +20,5 @@ test_that("the plotted line equals the model's prediction on the expected grid",
   d <- ggplot2::ggplot_build(p)$data[[2]]
   grid <- seq(min(df$x), max(df$x), length.out = 100)
   expect_equal(d$x, grid)
-  expect_equal(d$y, unname(predict(model, data.frame(x = grid))))
+  expect_equal(d$y, expected_line(model, list(x = grid)))
 })

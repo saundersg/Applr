@@ -18,7 +18,7 @@ test_that("geom_slice() holds numeric at the mean and factor or character at the
   m <- lm(y ~ x + num + fac + chr, data = df)
   d <- slice_data(ggplot2::ggplot(df, ggplot2::aes(x, y)) + geom_slice(m, n = 9))
   held <- data.frame(x = d$x, num = mean(df$num), fac = factor("c", levels(df$fac)), chr = "q")
-  expect_equal(d$y, predicted(m, held))
+  expect_equal(d$y, expected_line(m, held))
 })
 
 test_that("missing values are ignored when imputing", {
@@ -26,7 +26,7 @@ test_that("missing values are ignored when imputing", {
   na_df$num[1] <- NA
   m <- lm(y ~ x + num, data = na_df)
   d <- slice_data(ggplot2::ggplot(na_df, ggplot2::aes(x, y)) + geom_slice(m, n = 9))
-  expect_equal(d$y, predicted(m, data.frame(x = d$x, num = mean(na_df$num, na.rm = TRUE))))
+  expect_equal(d$y, expected_line(m, list(x = d$x), list(num = mean(na_df$num, na.rm = TRUE))))
 })
 
 test_that("slice_2d() holds numeric at the mean and factor at the first level", {
@@ -35,7 +35,7 @@ test_that("slice_2d() holds numeric at the mean and factor at the first level", 
   m <- lm(y ~ x + num + fac, data = df)
   prep <- suppressMessages(prepare_slice_data(m, "x", 9, TRUE, "none", list()))
   expect_equal(prep$other_vals, list(num = mean(df$num), fac = "a"))
-  expect_equal(prep$line$fit, predicted(m, data.frame(x = prep$line$x, num = mean(df$num), fac = "a")))
+  expect_equal(prep$line$fit, expected_line(m, list(x = prep$line$x), list(num = mean(df$num), fac = "a")))
 })
 
 test_that("a predictor converted in the formula draws no line today (known bug)", {

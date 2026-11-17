@@ -18,6 +18,6 @@ test_that("the surface equals the model's prediction over the predictor grid", {
   built <- plotly::plotly_build(widget)$x$data
   surface <- Filter(function(t) identical(t$type, "surface"), built)[[1]]
   grid <- expand.grid(wt = surface$x, hp = surface$y)
-  expected <- matrix(predict(model, grid), nrow = length(surface$x))
-  expect_equal(matrix(surface$z, nrow = nrow(surface$z)), t(unname(expected)))
+  expected <- matrix(expected_line(model, grid), nrow = length(surface$x))
+  expect_equal(matrix(surface$z, nrow = nrow(surface$z)), t(expected))
 })

@@ -10,8 +10,8 @@ covers("shared.band.edges-are-predictions", "shared.band.range", "shared.band.in
        "geom_slice_text.band-edges")
 
 edges <- function(line, drv, lo, hi) {
-  a <- predicted(model, data.frame(displ = line$x, drv = drv, cyl = lo))
-  b <- predicted(model, data.frame(displ = line$x, drv = drv, cyl = hi))
+  a <- expected_line(model, list(displ = line$x), list(drv = drv, cyl = lo))
+  b <- expected_line(model, list(displ = line$x), list(drv = drv, cyl = hi))
   list(ymin = pmin(a, b), ymax = pmax(a, b), y = (a + b) / 2)
 }
 
@@ -39,8 +39,8 @@ test_that("band = TRUE picks the one multi-value predict_vars entry", {
   m <- lm(hwy ~ displ + cyl + year, data = mpg)
   d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy)) +
                     geom_slice(m, n = 10, band = TRUE, predict_vars = list(year = c(1999, 2008), cyl = 6)))
-  a <- predicted(m, data.frame(displ = d$x, cyl = 6, year = 1999))
-  b <- predicted(m, data.frame(displ = d$x, cyl = 6, year = 2008))
+  a <- expected_line(m, list(displ = d$x), list(cyl = 6, year = 1999))
+  b <- expected_line(m, list(displ = d$x), list(cyl = 6, year = 2008))
   expect_equal(d$ymin, pmin(a, b))
   expect_equal(d$ymax, pmax(a, b))
 })
@@ -53,6 +53,6 @@ test_that("geom_slice_text() labels each edge with the value that made it", {
   for (i in seq_len(nrow(t))) {
     cyl <- as.numeric(sub("cyl: ", "", t$label[i]))
     drv <- levels(factor(mpg$drv))[t$colour[i] == unique(t$colour)]
-    expect_equal(t$y[i], predicted(model, data.frame(displ = t$x[i], drv = drv, cyl = cyl)))
+    expect_equal(t$y[i], expected_line(model, list(displ = t$x[i]), list(drv = drv, cyl = cyl)))
   }
 })

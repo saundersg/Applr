@@ -36,7 +36,7 @@ test_that("missing x values don't change the grid's range", {
   p <- ggplot2::ggplot(df, ggplot2::aes(x, y)) + geom_slice(m)
   d <- suppressWarnings(slice_data(p))
   expect_equal(range(d$x), c(1, 5))
-  expect_equal(d$y, predicted(m, data.frame(x = d$x)))
+  expect_equal(d$y, expected_line(m, list(x = d$x)))
 })
 
 test_that("a level with no rows draws nothing and the other lines are intact", {
@@ -46,5 +46,5 @@ test_that("a level with no rows draws nothing and the other lines are intact", {
   p <- ggplot2::ggplot(df, ggplot2::aes(x, y, colour = g)) + geom_slice(m)
   d <- slice_data(p)
   expect_equal(sort(unique(d$group)), 1:2)
-  expect_equal(d$y[d$group == 2], predicted(m, data.frame(x = d$x[d$group == 2], g = "b")))
+  expect_equal(d$y[d$group == 2], expected_line(m, list(x = d$x[d$group == 2]), list(g = "b")))
 })

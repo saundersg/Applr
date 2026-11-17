@@ -29,7 +29,7 @@ test_that("transformed terms graph over their raw predictors", {
   s <- surface_of(x)
   expect_equal(s$x, seq(min(mtcars$wt), max(mtcars$wt), length.out = 6))
   expect_equal(s$y, seq(min(mtcars$hp), max(mtcars$hp), length.out = 6))
-  expected <- outer(s$y, s$x, function(hp, wt) predicted(model, data.frame(wt = wt, hp = hp)))
+  expected <- outer(s$y, s$x, function(hp, wt) expected_line(model, list(wt = wt, hp = hp)))
   expect_equal(unname(s$z), expected)
 })
 

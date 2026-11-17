@@ -12,9 +12,6 @@ slice_text_data <- function(p) {
   do.call(rbind, lapply(i, function(k) suppressMessages(ggplot2::layer_data(p, k))))
 }
 
-# The model's prediction on a grid, as an unnamed vector.
-predicted <- function(model, newdata, ...) unname(stats::predict(model, newdata, ...))
-
 # Every condition a call raises, in order, and what it returned (a ggplot is
 # built, so build-time conditions count). An error wrapped by ggplot2's
 # "Problem while ..." chain is recorded by its innermost message.

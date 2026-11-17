@@ -11,7 +11,7 @@ covers("shared.slicing.group-pins", "shared.slicing.facet-pins",
        "autoplot.user-facet-after")
 
 expect_line <- function(line, ...) {
-  expect_equal(line$y, predicted(model, data.frame(displ = line$x, ...)))
+  expect_equal(line$y, expected_line(model, list(displ = line$x), list(...)))
 }
 
 test_that("each colour group is predicted at its own value", {
@@ -45,7 +45,7 @@ test_that("a facet on a variable the model doesn't use gives every panel the sam
                     ggplot2::facet_wrap(~gear))
   for (panel in unique(d$PANEL)) {
     line <- d[d$PANEL == panel, ]
-    expect_equal(line$y, predicted(m, data.frame(wt = line$x)))
+    expect_equal(line$y, expected_line(m, list(wt = line$x)))
   }
 })
 
@@ -59,7 +59,6 @@ test_that("a facet added after autoplot() still pins its predictor for the line"
   for (k in seq_len(nrow(unique(d[c("PANEL", "group")])))) {
     key <- unique(d[c("PANEL", "group")])[k, ]
     line <- d[d$PANEL == key$PANEL & d$group == key$group, ]
-    expect_equal(line$y, predicted(m, data.frame(displ = line$x, drv = lv[as.integer(key$PANEL)],
-                                                 cyl = cyls[key$group])))
+    expect_equal(line$y, expected_line(m, list(displ = line$x), list(drv = lv[as.integer(key$PANEL)], cyl = cyls[key$group])))
   }
 })

@@ -37,5 +37,5 @@ test_that("drawit() draws what slice_2d() draws", {
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off())
   expect_warning(drawit(m, "hp", wt = 3, col = "red"), "deprecated")
-  expect_equal(a$line$fit, predicted(m, data.frame(hp = a$line$x, wt = 3)))
+  expect_equal(a$line$fit, expected_line(m, list(hp = a$line$x), list(wt = 3)))
 })

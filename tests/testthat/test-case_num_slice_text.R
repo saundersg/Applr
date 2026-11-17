@@ -19,7 +19,7 @@ test_that("each line gets one label at its right end, at the line's endpoint", {
   for (w in c(2, 3, 4)) {
     label <- t[t$label == paste0("Sepal.Width: ", w), ]
     expect_equal(label$x, max(iris$Petal.Length))
-    expect_equal(label$y, predicted(iris_model, data.frame(Petal.Length = label$x, Sepal.Width = w)))
+    expect_equal(label$y, expected_line(iris_model, list(Petal.Length = label$x), list(Sepal.Width = w)))
     expect_equal(label$hjust, 0)
   }
 })

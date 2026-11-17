@@ -23,11 +23,12 @@ platform_status <- function(rec, fingerprint, platform) {
   "Unreviewed (platform variant)"
 }
 
-# How a status shows on CI: "pass", "warn" or "fail".
-ci_verdict <- function(status, case_failed = FALSE) {
+# How a status shows on CI: "pass", "warn" or "fail". An output whose type
+# doesn't block CI (wording) warns until it is Human approved.
+ci_verdict <- function(status, case_failed = FALSE, blocks_ci = TRUE) {
   if (case_failed) return("fail")
   if (startsWith(status, "Human approved")) return("pass")
-  if (identical(status, "Agent approved")) return("warn")
+  if (identical(status, "Agent approved") || !blocks_ci) return("warn")
   "fail"
 }
 
@@ -79,7 +80,7 @@ check_run <- function(dir = "tests/testthat", paths = suite_paths(), platform = 
     differ <- names(here_parts)[is.na(recorded_parts[names(here_parts)]) |
                                   recorded_parts[names(here_parts)] != here_parts]
     rows[[id]] <- list(
-      id = id, case = sub("/.*", "", id), type = out$type$name,
+      id = id, case = sub("/.*", "", id), type = out$type$name, blocks_ci = out$type$blocks_ci,
       status = rec$status %||% "Unreviewed",
       status_here = platform_status(rec, out$fingerprint, platform),
       recorded = rec$fingerprint %||% "", fingerprint = out$fingerprint,
@@ -88,7 +89,7 @@ check_run <- function(dir = "tests/testthat", paths = suite_paths(), platform = 
     )
   }
   for (case in setdiff(failed_cases, ran_cases)) {
-    rows[[case]] <- list(id = case, case = case, type = "", status = "", status_here = "",
+    rows[[case]] <- list(id = case, case = case, type = "", blocks_ci = TRUE, status = "", status_here = "",
                          recorded = "", fingerprint = "", match = FALSE,
                          parts_differing = character(), case_failed = TRUE)
   }

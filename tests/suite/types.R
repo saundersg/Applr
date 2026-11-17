@@ -24,21 +24,26 @@
 #       assert that each changes the fingerprint.
 #   demo                      the case name whose outputs the contract tests
 #       use (tests/testthat/test-case_<demo>.R).
+#   blocks_ci                 FALSE when an unreviewed output only warns on CI
+#       (wording); the release check still needs it Human approved.
 
 output_types <- new.env()
 
 register_output_type <- function(name, serialise, states, render, view,
                                  format = c("png", "html"), live = NULL,
-                                 detect = NULL, mutations = list(), demo = NULL) {
+                                 detect = NULL, mutations = list(), demo = NULL,
+                                 blocks_ci = TRUE) {
   stopifnot(is.character(name), length(name) == 1, is.function(serialise),
             is.function(states), is.function(render),
             view %in% c("image", "text", "states"),
             is.null(live) || is.function(live), is.null(detect) || is.function(detect),
+            isTRUE(blocks_ci) || isFALSE(blocks_ci),
             is.list(mutations), length(mutations) == 0 || !is.null(names(mutations)),
             all(vapply(mutations, is.function, TRUE)))
   assign(name, list(name = name, serialise = serialise, states = states,
                     render = render, view = view, format = match.arg(format),
-                    live = live, detect = detect, mutations = mutations, demo = demo),
+                    live = live, detect = detect, mutations = mutations, demo = demo,
+                    blocks_ci = blocks_ci),
          envir = output_types)
   invisible(name)
 }

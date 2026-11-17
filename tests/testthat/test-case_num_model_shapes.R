@@ -27,9 +27,9 @@ test_that("exp(y), y^2, sqrt(y) and 1/y responses are inverted the same way by b
   for (cs in cases) {
     label <- deparse(formula(cs[[1]])[[2]])
     d <- slice_data(ggplot2::ggplot(pos, ggplot2::aes(x, y)) + geom_slice(cs[[1]], n = 15, predict_vars = list(w = 0.5)))
-    expect_equal(d$y, cs[[2]](predicted(cs[[1]], data.frame(x = d$x, w = 0.5))), label = label)
+    expect_equal(d$y, expected_line(cs[[1]], list(x = d$x), list(w = 0.5), to_y = cs[[2]]), label = label)
     prep <- prepare_slice_data(cs[[1]], "x", 15, TRUE, "none", list(w = 0.5))
-    expect_equal(prep$line$fit, cs[[2]](predicted(cs[[1]], data.frame(x = prep$line$x, w = 0.5))), label = label)
+    expect_equal(prep$line$fit, expected_line(cs[[1]], list(x = prep$line$x), list(w = 0.5), to_y = cs[[2]]), label = label)
   }
 })
 
@@ -39,10 +39,10 @@ test_that("an x-axis expression of one predictor predicts at the data rows, in b
   rows$hp <- 120
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(log(disp), mpg)) + geom_slice(m, n = 5, predict_vars = list(hp = 120)))
   expect_equal(d$x, log(rows$disp))
-  expect_equal(d$y, predicted(m, rows))
+  expect_equal(d$y, expected_line(m, rows))
   prep <- prepare_slice_data(m, "log(disp)", 5, TRUE, "none", list(hp = 120))
   expect_equal(prep$line$x, log(rows$disp))
-  expect_equal(prep$line$fit, predicted(m, rows))
+  expect_equal(prep$line$fit, expected_line(m, rows))
 })
 
 test_that("a factor made in the formula is drawn per level once a grouping, predict_vars or autoplot() pins it", {
@@ -51,10 +51,10 @@ test_that("a factor made in the formula is drawn per level once a grouping, pred
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg, colour = as.factor(cyl))) + geom_slice(m, n = 10))
   for (g in unique(d$group)) {
     line <- d[d$group == g, ]
-    expect_equal(line$y, predicted(m, data.frame(wt = line$x, cyl = cyls[g])))
+    expect_equal(line$y, expected_line(m, list(wt = line$x), list(cyl = cyls[g])))
   }
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 10, predict_vars = list(cyl = 6)))
-  expect_equal(d$y, predicted(m, data.frame(wt = d$x, cyl = 6)))
+  expect_equal(d$y, expected_line(m, list(wt = d$x), list(cyl = 6)))
   p <- suppressMessages(autoplot(m, summary = FALSE))
   expect_equal(expr_of(p, "colour"), "factor(cyl)")
   expect_equal(length(unique(slice_data(p)$group)), 3)
@@ -80,8 +80,7 @@ test_that("colour and linetype on two predictors give one line per pair, each pi
   year_of <- setNames(sort(unique(mpg$year)), unique(d$linetype[order(d$group)]))
   for (g in pairs$group) {
     line <- d[d$group == g, ]
-    expect_equal(line$y, predicted(m, data.frame(displ = line$x, cyl = cyl_of[[line$colour[1]]],
-                                                 year = year_of[[line$linetype[1]]])))
+    expect_equal(line$y, expected_line(m, list(displ = line$x), list(cyl = cyl_of[[line$colour[1]]], year = year_of[[line$linetype[1]]])))
   }
 })
 
@@ -92,7 +91,7 @@ test_that("a facet on a numeric predictor pins each panel to its number", {
   cyls <- sort(unique(mtcars$cyl))
   for (panel in unique(d$PANEL)) {
     line <- d[d$PANEL == panel, ]
-    expect_equal(line$y, predicted(m, data.frame(disp = line$x, hp = 110, cyl = cyls[as.integer(panel)])))
+    expect_equal(line$y, expected_line(m, list(disp = line$x), list(hp = 110, cyl = cyls[as.integer(panel)])))
   }
 })
 
@@ -101,7 +100,7 @@ test_that("full_range under wider scale limits predicts past the data", {
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 9, full_range = TRUE) +
                     ggplot2::scale_x_continuous(limits = c(0, 8)))
   expect_equal(d$x, seq(0, 8, length.out = 9))
-  expect_equal(d$y, predicted(m, data.frame(wt = d$x)))
+  expect_equal(d$y, expected_line(m, list(wt = d$x)))
 })
 
 test_that("autoplot() puts the raw response and predictor on the axes of a transformed model", {
@@ -109,7 +108,7 @@ test_that("autoplot() puts the raw response and predictor on the axes of a trans
   p <- suppressMessages(autoplot(m, summary = FALSE))
   expect_equal(c(expr_of(p, "x"), expr_of(p, "y")), c("disp", "mpg"))
   d <- slice_data(p)
-  expect_equal(d$y, exp(predicted(m, data.frame(disp = d$x))))
+  expect_equal(d$y, expected_line(m, list(disp = d$x), to_y = exp))
 })
 
 test_that("autoplot() finds data that exists only where the model was fitted", {
@@ -122,7 +121,7 @@ test_that("autoplot() finds data that exists only where the model was fitted", {
   p <- autoplot(m, summary = FALSE)
   expect_equal(nrow(ggplot2::layer_data(p, 1)), 10)
   d <- slice_data(p)
-  expect_equal(d$y, predicted(m, data.frame(x = d$x)))
+  expect_equal(d$y, expected_line(m, list(x = d$x)))
 })
 
 test_that("where a back-transform has no value the line has none there, with no Applr warning (known issue)", {
@@ -135,10 +134,10 @@ test_that("where a back-transform has no value the line has none there, with no 
   r <- conditions_of(function() ggplot2::ggplot(s, ggplot2::aes(x, y)) + geom_slice(m, n = 10))
   expect_equal(r$kinds, "message")
   d <- r$value$data[[1]]
-  raw <- predicted(m, data.frame(x = d$x))
+  raw <- expected_line(m, list(x = d$x))
   expect_true(any(raw < 0))
   expect_true(all(is.na(d$y[raw < 0])))
   expect_equal(d$y[raw >= 0], sqrt(raw[raw >= 0]))
   prep <- prepare_slice_data(m, "x", 10, TRUE, "none", list())
-  expect_true(all(is.na(prep$line$fit[predicted(m, data.frame(x = prep$line$x)) < 0])))
+  expect_true(all(is.na(prep$line$fit[expected_line(m, list(x = prep$line$x)) < 0])))
 })

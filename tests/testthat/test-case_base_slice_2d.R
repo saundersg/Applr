@@ -15,5 +15,5 @@ test_that("the prepared line equals the model's prediction with hp held at 150",
                              fn = "slice_2d")
   grid <- seq(min(mtcars$wt), max(mtcars$wt), length.out = 100)
   expect_equal(prep$line$x, grid)
-  expect_equal(prep$line$fit, unname(predict(model, data.frame(wt = grid, hp = 150))))
+  expect_equal(prep$line$fit, expected_line(model, list(wt = grid), list(hp = 150)))
 })

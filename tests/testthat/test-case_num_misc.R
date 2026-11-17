@@ -10,7 +10,7 @@ covers("shared.model-data.raw-variables", "add_slice_2d.line-is-prediction",
 test_that("a transformed term slices along its raw variable", {
   m <- lm(mpg ~ I(wt^2) + log(hp), mtcars)
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 10))
-  expect_equal(d$y, predicted(m, data.frame(wt = d$x, hp = mean(mtcars$hp))))
+  expect_equal(d$y, expected_line(m, list(wt = d$x), list(hp = mean(mtcars$hp))))
 })
 
 test_that("add_slice_2d() draws on the current plot the line slice_2d() would", {
@@ -24,7 +24,7 @@ test_that("add_slice_2d() draws on the current plot the line slice_2d() would", 
   a <- prepare_slice_data(m, "disp", 100, TRUE, "none", list(hp = 150), fn = "add_slice_2d")
   b <- prepare_slice_data(m, "disp", 100, TRUE, "none", list(hp = 150), fn = "slice_2d")
   expect_equal(a$line, b$line)
-  expect_equal(a$line$fit, predicted(m, data.frame(disp = a$line$x, hp = 150)))
+  expect_equal(a$line$fit, expected_line(m, list(disp = a$line$x), list(hp = 150)))
 })
 
 test_that("a raw layer() with StatSlice draws what geom_slice() draws", {
@@ -41,7 +41,7 @@ test_that("a raw layer() with StatSlice draws what geom_slice() draws", {
 test_that("a glm is sliced on the link scale", {
   m <- glm(am ~ wt, family = binomial, data = mtcars)
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, am)) + geom_slice(m, n = 10))
-  expect_equal(d$y, predicted(m, data.frame(wt = d$x)))
+  expect_equal(d$y, expected_line(m, list(wt = d$x)))
 })
 
 test_that("lm_latex() prints its string and returns it invisibly", {

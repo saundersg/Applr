@@ -18,7 +18,7 @@ dir.create(out_dir, recursive = TRUE)
 rows <- check_run()
 notes <- write_bundle(rows, out_dir)
 for (id in names(rows)) {
-  rows[[id]]$verdict <- ci_verdict(rows[[id]]$status_here, rows[[id]]$case_failed)
+  rows[[id]]$verdict <- ci_verdict(rows[[id]]$status_here, rows[[id]]$case_failed, rows[[id]]$blocks_ci)
   rows[[id]]$note <- notes[[id]] %||% ""
 }
 failures <- attr(rows, "failures")
@@ -47,14 +47,13 @@ if (nzchar(Sys.getenv("GITHUB_ACTIONS"))) {
   }
   summary <- Sys.getenv("GITHUB_STEP_SUMMARY")
   if (nzchar(summary)) {
-    counts <- table(factor(vapply(rows, reason, ""), levels = unique(vapply(rows, reason, ""))))
+    keys <- vapply(rows, function(r) paste(reason(r), r$verdict, sep = "	"), "")
+    counts <- table(factor(keys, levels = unique(keys)))
+    split <- strsplit(names(counts), "	", fixed = TRUE)
     lines <- c(sprintf("## Judged outputs on %s", attr(rows, "platform")), "",
                "| Status here | Outputs | CI |", "|---|---|---|",
-               sprintf("| %s | %d | %s |", names(counts), as.integer(counts),
-                       vapply(names(counts), function(s) {
-                         c(pass = "✓", warn = "warning", fail = "✗")[[
-                           ci_verdict(s, s == "case expectations fail")]]
-                       }, "")))
+               sprintf("| %s | %d | %s |", vapply(split, `[[`, "", 1), as.integer(counts),
+                       c(pass = "✓", warn = "warning", fail = "✗")[vapply(split, `[[`, "", 2)]))
     variants <- Filter(function(r) !r$match && !r$case_failed, rows)
     if (length(variants)) {
       lines <- c(lines, "", "Platform variants (forms and views in this run's artifact):", "",

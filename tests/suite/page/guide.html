@@ -8,7 +8,7 @@
 <h3>The two halves of a case</h3>
 <p>A <b>case</b> is one file, <code>tests/testthat/test-case_&lt;name&gt;.R</code>, about one scenario. It holds two kinds of thing:</p>
 <ul>
-  <li><b>Expectations</b> are ordinary testthat checks that pass or fail on their own: the plotted line equals the model's prediction, this warning is raised, the plot still builds. They never need review. They ship with the package, so CRAN runs them.</li>
+  <li><b>Expectations</b> are ordinary testthat checks that pass or fail on their own: the plotted line equals the model's prediction, this warning is raised, the plot still builds. They never need review. They ship with the package, so CRAN runs them. Every check that a line is right compares it with one function, <code>expected_line()</code> in <code>tests/testthat/helper-core.R</code>, which states the rule in plain words. That file is the place to read to trust the numbers.</li>
   <li><b>Judged outputs</b> are anything that needs a reviewer's eye: how a plot looks, how a message is worded, how a widget feels to use. A case declares each one with <code>judged_output()</code>, which does nothing under R CMD check.</li>
 </ul>
 <p>If a case's expectations fail, its judged outputs aren't looked at at all: the review state stays exactly as it was.</p>
@@ -42,7 +42,7 @@
 <ul>
   <li><b>CRAN</b> runs only the expectations, within its time and two-thread limits. Judged outputs do nothing there.</li>
   <li><b>CRAN</b> takes about 35 seconds for the expectations under <code>R CMD check</code>.</li>
-  <li><b>CI</b> (GitHub Actions, on pushes to the test-suite branch) runs every case on Windows, macOS and Ubuntu with pinned package versions, and checks each output's fingerprint against the one recorded on your machine. Your machine's fingerprints count everywhere: in the cross-platform experiment, all 143 outputs matched on all three. Human approved passes, Agent approved passes with a warning, and Unreviewed, Rejected or a failing expectation fails the run.</li>
+  <li><b>CI</b> (GitHub Actions, on pushes to the test-suite branch) runs every case on Windows, macOS and Ubuntu with pinned package versions, and checks each output's fingerprint against the one recorded on your machine. Your machine's fingerprints count everywhere: in the cross-platform experiment, all 143 outputs matched on all three. Human approved passes, Agent approved passes with a warning, and Unreviewed, Rejected or a failing expectation fails the run. Wording is the exception: an unreviewed message only warns, though the release check still needs you to have approved it.</li>
   <li>If an output ever comes out differently on one platform, that's a <b>platform variant</b>. CI uploads its forms and views for download. If you approved the original, an agent can approve the variant with a note on what differs, and you don't need to look again.</li>
   <li>The <b>release check</b> (<code>Rscript tests/suite/release.R</code>, on your machine, before a CRAN submission) fails until everything is Human approved. It also re-renders every state and compares it with the screenshot kept when you approved it. A difference there means the fingerprint missed something: a suite bug.</li>
 </ul>

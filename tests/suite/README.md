@@ -11,7 +11,9 @@ screenshots of interactive states, `chromote` with Chrome. Vocabulary: `GLOSSARY
 
 A case is `tests/testthat/test-case_<name>.R`: ordinary testthat expectations
 (shipped, run by CRAN) plus `judged_output()` calls that declare what a
-reviewer judges. From the package root:
+reviewer judges. Numeric expectations compare what Applr drew with
+`expected_line()` in `tests/testthat/helper-core.R`, the one place the rule
+for a correct line is written down (spec: *The core*). From the package root:
 
 ```sh
 Rscript tests/suite/suite.R run                 # run cases, fingerprint outputs
@@ -283,6 +285,10 @@ records but no case produced, or one that fails to serialise, stops the run.
 | Agent approved | warning |
 | Unreviewed (new, changed, or an unapproved platform variant), Rejected | ✗ |
 | Case expectations fail | ✗ |
+
+A type registered with `blocks_ci = FALSE` (conditions, i.e. wording) only
+warns while it is Unreviewed or Rejected; the release check still requires it
+Human approved.
 
 `check.R` holds the policy (`platform_status()`, `ci_verdict()`,
 `release_verdict()`). An output whose fingerprint differs on a runner is a
