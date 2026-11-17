@@ -115,7 +115,7 @@ breaks <- list(
        file = "check.R", line = "if (identical(status, \"Agent approved\")) return(\"warn\")",
        to = "  if (identical(status, \"Agent approved\")) return(\"pass\")"),
   list(name = "CI passes an Unreviewed or Rejected output",
-       file = "check.R", line = "if (startsWith(status, \"Human approved\")) return(\"pass\")",
+       file = "check.R", line = "if (startsWith(status, \"Human approved\") || !inbox) return(\"pass\")",
        to = "  if (!identical(status, \"Agent approved\")) return(\"pass\")"),
   list(name = "A missing input passes the CI check",
        file = "check.R", line = "if (length(missing)) {", to = "  if (FALSE) {"),
@@ -125,11 +125,18 @@ breaks <- list(
   list(name = "A platform variant counts for an original that isn't Human approved",
        file = "check.R", line = "identical(rec$status, \"Human approved\")) {", to = "      TRUE) {"),
   list(name = "The release check accepts Agent approved",
-       file = "check.R", line = "if (!case_failed && startsWith(status, \"Human approved\"))",
-       to = "  if (!case_failed && !identical(status, \"Rejected\")) \"pass\" else \"fail\""),
+       file = "check.R", line = "|| !inbox) \"pass\" else \"fail\"",
+       to = "  if (!identical(status, \"Rejected\")) \"pass\" else \"fail\""),
   list(name = "The release audit misses a changed view",
        file = "check.R", line = "changed <- names(out$states)[!mapply(same_view, kept, now)]",
-       to = "    changed <- character()")
+       to = "    changed <- character()"),
+  list(name = "A wording tick still counts after the wording changed",
+       file = "wording.R", line = "current <- !is.null(m) && identical(m$fingerprint, s$fingerprint)",
+       to = "    current <- !is.null(m)"),
+  list(name = "A tick on wording that changed since the page loaded is accepted",
+       file = "wording.R", line = "if (!identical(site$fingerprint, fingerprint)) {", to = "  if (FALSE) {"),
+  list(name = "The release check sees no unticked wording",
+       file = "wording.R", line = "Filter(function(s) !identical(s$mark, \"ok\")", to = "  list()")
 )
 
 apply_break <- function(dir, b) {
