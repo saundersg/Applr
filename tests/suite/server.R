@@ -1,6 +1,7 @@
 # Review server (httpuv): serves the review page in page/, the data it reads
 # and the views, and records human decisions. It is the only code that
-# writes human_decisions.json (and, during ticket 4, salvage_review.json).
+# writes human_decisions.json, wording_review.json (and, during ticket 4,
+# salvage_review.json).
 # Start it with tests/suite/review.R.
 
 review_port <- function() as.integer(getOption("applr.review_port", 7654))
@@ -54,7 +55,8 @@ read_json_or_null <- function(file) if (file.exists(file)) jsonlite::read_json(f
 
 # Everything the page draws, read fresh on every request so a re-run or an
 # agent decision shows on reload.
-review_api_data <- function(paths, inventory_file, case_dir) {
+review_api_data <- function(paths, inventory_file, case_dir, wording_dir = "R",
+                            roles_file = "tests/suite/wording_roles.csv") {
   inventory <- list(groups = list(), entries = list())
   inventory_error <- NULL
   if (file.exists(inventory_file)) {
@@ -83,6 +85,9 @@ review_api_data <- function(paths, inventory_file, case_dir) {
     cases = case_index(case_dir, inventory),
     inventory = inventory,
     inventory_error = inventory_error,
+    wording = list(sites = wording_with_marks(wording_sites(wording_dir), paths),
+                   roles = read_wording_roles(roles_file), examples = condition_forms(paths)),
+    situations = situation_list(case_dir),
     health = list(mutation = read_json_or_null(file.path(root, "mutation_report.json")),
                   tests = read_json_or_null(file.path(root, "test_report.json")),
                   code = suite_code_hash(root, case_dir))
@@ -179,6 +184,26 @@ salvage_request <- function(req, paths, salvage_file, case_dir) {
   respond_json(list(ok = TRUE))
 }
 
+wording_request <- function(req, paths, wording_dir) {
+  refused <- refuse_foreign(req)
+  if (!is.null(refused)) return(refused)
+  body <- jsonlite::fromJSON(rawToChar(req$rook.input$read()), simplifyVector = TRUE)
+  res <- tryCatch(wording_mark(body$key %||% "", body$fingerprint %||% "", body$mark %||% "", paths, wording_dir),
+                  error = function(e) e)
+  if (inherits(res, "error")) return(respond_json(list(error = conditionMessage(res)), 409))
+  respond_json(list(ok = TRUE))
+}
+
+# The text of every condition output's form, keyed by output: the wording
+# page finds real examples of each message in it.
+condition_forms <- function(paths) {
+  recs <- Filter(function(r) !is.null(r$type) && !output_type(r$type)$inbox, review_records(paths))
+  files <- file.path(paths$forms, paste0(file_id(names(recs)), ".txt"))
+  keep <- file.exists(files)
+  lapply(stats::setNames(files[keep], names(recs)[keep]),
+         function(f) paste(readLines(f, warn = FALSE, encoding = "UTF-8"), collapse = "\n"))
+}
+
 decide_request <- function(req, paths) {
   refused <- refuse_foreign(req)
   if (!is.null(refused)) return(refused)
@@ -192,7 +217,7 @@ decide_request <- function(req, paths) {
 
 review_app <- function(paths = suite_paths(), page_dir = "tests/suite/page",
                        inventory_file = inventory_path(), case_dir = "tests/testthat",
-                       salvage_file = salvage_path()) {
+                       salvage_file = salvage_path(), wording_dir = "R") {
   route <- function(req) {
     path <- req$PATH_INFO
     get <- identical(req$REQUEST_METHOD, "GET")
@@ -203,11 +228,12 @@ review_app <- function(paths = suite_paths(), page_dir = "tests/suite/page",
     if (get && startsWith(path, "/views/")) {
       return(serve_file(file.path(paths$views, httpuv::decodeURIComponent(substring(path, 8))), paths$views))
     }
-    if (get && path == "/api/data") return(respond_json(review_api_data(paths, inventory_file, case_dir)))
+    if (get && path == "/api/data") return(respond_json(review_api_data(paths, inventory_file, case_dir, wording_dir)))
     if (get && path == "/api/form") {
       return(respond_json(review_api_form(parse_query(req$QUERY_STRING)$id %||% "", paths)))
     }
     if (identical(req$REQUEST_METHOD, "POST") && path == "/api/decide") return(decide_request(req, paths))
+    if (identical(req$REQUEST_METHOD, "POST") && path == "/api/wording") return(wording_request(req, paths, wording_dir))
     if (get && path == "/api/salvage") return(respond_json(salvage_api_data(paths, salvage_file, case_dir)))
     if (identical(req$REQUEST_METHOD, "POST") && path == "/api/salvage") {
       return(salvage_request(req, paths, salvage_file, case_dir))

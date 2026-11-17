@@ -80,6 +80,20 @@ A human approval also keeps that version's form (`forms/approved/`) and views
 taken against, so both always show what changed since the maintainer last
 signed off. An agent approval keeps nothing.
 
+## Writing cases
+
+Judged outputs are built the way a user would type them, because the review
+page shows that code beside the output: plain `ggplot()` calls (ggplot2 is
+attached in `helper-judged.R`), no case-local helper functions, no
+`suppressMessages()`. Base graphics are wrapped in `function() { ... }`,
+which the page drops. Give each `judged_output()` a `title` of about three
+words and a one-sentence `purpose`. Returned text with several examples is
+`c(name = <user code>, ...)`, wrapping plot code in a reader such as
+`subtitle_of()` when the text lives on a plot. Each numeric test gets a
+`# Title:` line directly above its `test_that()`, whose description is the
+sentence the numeric tests page shows; numeric expectations compare with
+`expected_line()` (`helper-core.R`).
+
 ## The review page
 
 `Rscript tests/suite/review.R` starts a local server (httpuv, on
@@ -92,16 +106,26 @@ load, so a re-run or an agent decision shows on refresh.
   view, unless the link names an output. The sidebar groups every output by
   status, with search; "your turn" is the inbox of Agent approved outputs.
   The page follows the system's light or dark setting.
-- Each output shows its purpose and the code that produces it (the declaring
-  call and the top-level lines before it that it depends on, read from the
-  case file by `case_outputs()` in `inventory.R`), whether it is new, its
-  expected behaviour (from the inventory entries its
-  case cites), the agent note, and its view kind: an image with swipe or
+- Each inbox item shows its `title` and `purpose`, the agent note ("Why it
+  was made" or "Why it changed"), the output (an image with swipe or
   side-by-side comparison against the last human-approved render, a text
-  diff, or sampled states plus the live widget.
-- Approve, or reject with a note (starter phrases offered). Keys: `j`/`k`
-  next/previous in the queue, `a` approve, `r` reject, `Ctrl+Enter` send the
-  rejection, `Esc` cancel, `s` swipe/side by side, `o` overview, `[` sidebar.
+  diff, or sampled states plus the live widget) and beside it the code a
+  user would type, with only the setup it needs. `case_outputs()` in
+  `inventory.R` reads all of that from the case file without running it, so
+  cases build judged outputs as a user would (see *Writing cases*). Code
+  details, fingerprint, serialised form and who/when sit behind buttons.
+- Approve, or send back with a note (starter phrases offered). Keys: `j`/`k`
+  next/previous in the queue, `a` approve, `r` send back, `Ctrl+Enter` send
+  the note, `Esc` cancel, `s` swipe/side by side, `o` overview, `[` sidebar.
+- The wording page (`?view=wording`) lists every message in `R/`, one row
+  per call site (`wording_sites()` in `wording.R`), filled in with real
+  values from the condition outputs' forms or a scenario. Ticks go through
+  `POST /api/wording` to `wording_review.json`, which only the server writes
+  and the hook protects. `wording_roles.csv` says what each filled-in
+  expression stands for (column, value, fn, model, response, cls); an
+  expression missing from it stays as written.
+- The numeric tests page (`?view=situations`) lists every `num_` case: its
+  top comment, then each test's `# Title:` line and `test_that()` sentence.
 - Sidebar pages: the overview, the behaviour inventory with coverage, suite
   health (latest `test.R` and `mutate.R` runs, with date and commit, and
   whether the mutation report is up to date with the suite's code), and, at
@@ -286,9 +310,10 @@ records but no case produced, or one that fails to serialise, stops the run.
 | Unreviewed (new, changed, or an unapproved platform variant), Rejected | ✗ |
 | Case expectations fail | ✗ |
 
-A type registered with `blocks_ci = FALSE` (conditions, i.e. wording) only
-warns while it is Unreviewed or Rejected; the release check still requires it
-Human approved.
+A type registered with `inbox = FALSE` (conditions, i.e. wording) is reviewed
+on the wording page instead: CI and the release check ignore its review
+status, though its case must still pass, and the release check needs every
+message ticked there (`wording_unticked()` in `wording.R`).
 
 `check.R` holds the policy (`platform_status()`, `ci_verdict()`,
 `release_verdict()`). An output whose fingerprint differs on a runner is a

@@ -11,6 +11,7 @@ covers("geom_slice_text.label-per-line", "geom_slice_text.location",
        "geom_slice_text.one-layer-per-slice", "geom_slice_text.expand-keeps-scale",
        "geom_slice_text.date-or-log-axis")
 
+# Title: Right-end labels
 test_that("each line gets one label at its right end, at the line's endpoint", {
   p <- three()
   t <- slice_text_data(p)
@@ -24,12 +25,14 @@ test_that("each line gets one label at its right end, at the line's endpoint", {
   }
 })
 
+# Title: Label location
 test_that("location = \"left\" labels the left end, right-justified", {
   t <- slice_text_data(three(location = "left"))
   expect_equal(unique(t$x), min(iris$Petal.Length))
   expect_equal(unique(t$hjust), 1)
 })
 
+# Title: Two layers combined
 test_that("two slice layers of one model are labelled as if combined", {
   p <- suppressMessages(base +
     geom_slice(iris_model, predict_vars = list(Sepal.Width = 2)) +
@@ -40,6 +43,7 @@ test_that("two slice layers of one model are labelled as if combined", {
   expect_equal(t$colour[t$label == "Sepal.Width: 4"], "red")
 })
 
+# Title: Widening keeps scale
 test_that("widening keeps the user's scale and adds no 'already present' message", {
   p <- base + geom_slice(iris_model, predict_vars = list(Sepal.Width = c(2, 4))) +
     ggplot2::scale_x_continuous("Petal length", limits = c(0, 8), breaks = c(0, 4, 8),
@@ -59,6 +63,7 @@ test_that("widening keeps the user's scale and adds no 'already present' message
   expect_null(untouched$scales$get_scales("x"))
 })
 
+# Title: Log x after widening
 test_that("a log x scale stays a log scale after widening", {
   m <- lm(mpg ~ disp + hp, mtcars)
   p <- suppressMessages(ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + ggplot2::scale_x_log10() +

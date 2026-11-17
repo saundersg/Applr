@@ -11,6 +11,7 @@ covers("geom_slice_subtitle.skips-shown", "geom_slice_subtitle.nothing-to-say",
        "geom_slice_caption.same-text-in-caption", "shared.companions.no-device-side-effect",
        "geom_slice_subtitle.held-line")
 
+# Title: Held line exclusions
 test_that("variables on x, in the legend, in a facet or in labels are left out of the held line", {
   held <- function(p) strsplit(annotation_of(p), "\n", fixed = TRUE)[[1]][2]
   s <- held(quiet(coloured + geom_slice(model) + geom_slice_subtitle(wrap = FALSE)))
@@ -24,6 +25,7 @@ test_that("variables on x, in the legend, in a facet or in labels are left out o
   expect_match(s, "^held at: cyl = 6; year = 2004$")
 })
 
+# Title: No empty subtitle
 test_that("with no equation and nothing held, no subtitle is set", {
   p <- quiet(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(lm(mpg ~ wt, mtcars)))
   q <- quiet(p + geom_slice_subtitle(model = FALSE))
@@ -31,6 +33,7 @@ test_that("with no equation and nothing held, no subtitle is set", {
   expect_identical(q$labels, p$labels)
 })
 
+# Title: Caption matches subtitle
 test_that("the caption holds exactly the subtitle's text, wrapped without the indent", {
   p <- quiet(coloured + geom_slice(model))
   expect_identical(annotation_of(quiet(p + geom_slice_caption(wrap = FALSE)), "caption"),
@@ -44,6 +47,7 @@ test_that("the caption holds exactly the subtitle's text, wrapped without the in
   expect_true(any(starts_blank(subtitle[-1])))
 })
 
+# Title: No device opened
 test_that("adding companions opens no device and draws no page", {
   grDevices::graphics.off()
   quiet(coloured + geom_slice(model) + geom_slice_subtitle() + geom_slice_caption())

@@ -4,14 +4,11 @@
 # messages' wording is judged.
 
 model <- lm(mpg ~ wt + hp + qsec, data = mtcars)
-call <- function() {
-  ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
-    ggplot2::geom_point() +
-    geom_slice(model)
-}
+call <- function() ggplot(mtcars, aes(wt, mpg)) + geom_point() + geom_slice(model)
 
 covers("shared.imputation.message")
 judged_output("wording", call, type = "conditions",
+              title = "Imputed values message",
               purpose = "A three-predictor model with nothing held imputes each unheld predictor with one message, and the plot still builds.")
 
 test_that("each unheld predictor is imputed with a message and the plot still builds", {

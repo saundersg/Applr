@@ -7,13 +7,14 @@ df <- data.frame(x = runif(50, -10, 10))
 df$y <- 2 * df$x + 3 + rnorm(50)
 model <- lm(y ~ x, data = df)
 
-p <- ggplot2::ggplot(df, ggplot2::aes(x, y)) +
-  ggplot2::geom_point() +
+p <- ggplot(df, aes(x, y)) +
+  geom_point() +
   geom_slice(model) +
-  ggplot2::labs(title = "Single predictor")
+  labs(title = "Single predictor")
 
 covers("geom_slice.line-is-prediction", "geom_slice.user-theme")
 judged_output("plot", p,
+              title = "Single predictor line",
               purpose = "A one-predictor model's line runs through the points in the user's plot, title and default theme.")
 
 test_that("the plotted line equals the model's prediction on the expected grid", {

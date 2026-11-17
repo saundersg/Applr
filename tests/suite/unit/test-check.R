@@ -47,14 +47,15 @@ test_that("CI shows each review status by the approved policy", {
   expect_equal(ci_verdict("Human approved", case_failed = TRUE), "fail")
 })
 
-test_that("unreviewed wording warns on CI instead of failing, unless its case fails", {
+test_that("wording's review status counts on neither CI nor the release check, but its case must pass", {
   for (s in c("Unreviewed", "Unreviewed (platform variant)", "Rejected", "Agent approved")) {
-    expect_equal(ci_verdict(s, blocks_ci = FALSE), "warn", label = s)
+    expect_equal(ci_verdict(s, inbox = FALSE), "pass", label = s)
+    expect_equal(release_verdict(s, inbox = FALSE), "pass", label = s)
   }
-  expect_equal(ci_verdict("Human approved", blocks_ci = FALSE), "pass")
-  expect_equal(ci_verdict("Unreviewed", case_failed = TRUE, blocks_ci = FALSE), "fail")
-  expect_false(output_type("conditions")$blocks_ci)
-  expect_true(output_type("static_plot")$blocks_ci)
+  expect_equal(ci_verdict("Unreviewed", case_failed = TRUE, inbox = FALSE), "fail")
+  expect_equal(release_verdict("Human approved", case_failed = TRUE, inbox = FALSE), "fail")
+  expect_false(output_type("conditions")$inbox)
+  expect_true(output_type("static_plot")$inbox)
 })
 
 test_that("the release check accepts Human approved and its platform variants only", {

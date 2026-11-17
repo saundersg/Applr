@@ -17,6 +17,7 @@ covers("shared.back-transform.every-engine", "shared.composite-x.one-predictor",
        "geom_slice.full-range-beyond-data", "autoplot.transformed-terms",
        "autoplot.local-data", "shared.back-transform.outside-domain")
 
+# Title: Engines agree on transforms
 test_that("exp(y), y^2, sqrt(y) and 1/y responses are inverted the same way by both engines", {
   cases <- list(
     list(lm(exp(y) ~ x + w, pos), log),
@@ -33,6 +34,7 @@ test_that("exp(y), y^2, sqrt(y) and 1/y responses are inverted the same way by b
   }
 })
 
+# Title: One-predictor x expression
 test_that("an x-axis expression of one predictor predicts at the data rows, in both engines", {
   m <- lm(mpg ~ log(disp) + hp, mtcars)
   rows <- mtcars[order(mtcars$disp), ]
@@ -45,6 +47,7 @@ test_that("an x-axis expression of one predictor predicts at the data rows, in b
   expect_equal(prep$line$fit, expected_line(m, rows))
 })
 
+# Title: Formula-made factor
 test_that("a factor made in the formula is drawn per level once a grouping, predict_vars or autoplot() pins it", {
   m <- lm(mpg ~ wt + as.factor(cyl), mtcars)
   cyls <- sort(unique(mtcars$cyl))
@@ -60,6 +63,7 @@ test_that("a factor made in the formula is drawn per level once a grouping, pred
   expect_equal(length(unique(slice_data(p)$group)), 3)
 })
 
+# Title: Dot formula
 test_that("a `y ~ .` model slices like its spelled-out formula", {
   cars <- mtcars[c("mpg", "wt", "hp")]
   dot <- lm(mpg ~ ., data = cars)
@@ -70,6 +74,7 @@ test_that("a `y ~ .` model slices like its spelled-out formula", {
   expect_equal(prep(dot), prep(spelled))
 })
 
+# Title: Colour and linetype pairs
 test_that("colour and linetype on two predictors give one line per pair, each pinned", {
   m <- lm(hwy ~ displ + cyl + year, data = mpg)
   d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = factor(cyl), linetype = factor(year))) +
@@ -84,6 +89,7 @@ test_that("colour and linetype on two predictors give one line per pair, each pi
   }
 })
 
+# Title: Numeric facet pins
 test_that("a facet on a numeric predictor pins each panel to its number", {
   m <- lm(mpg ~ disp + hp + cyl, mtcars)
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg)) + geom_slice(m, n = 10, predict_vars = list(hp = 110)) +
@@ -95,6 +101,7 @@ test_that("a facet on a numeric predictor pins each panel to its number", {
   }
 })
 
+# Title: Prediction past data
 test_that("full_range under wider scale limits predicts past the data", {
   m <- lm(mpg ~ wt, mtcars)
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 9, full_range = TRUE) +
@@ -103,6 +110,7 @@ test_that("full_range under wider scale limits predicts past the data", {
   expect_equal(d$y, expected_line(m, list(wt = d$x)))
 })
 
+# Title: autoplot() transformed axes
 test_that("autoplot() puts the raw response and predictor on the axes of a transformed model", {
   m <- lm(log(mpg) ~ log(disp), mtcars)
   p <- suppressMessages(autoplot(m, summary = FALSE))
@@ -111,6 +119,7 @@ test_that("autoplot() puts the raw response and predictor on the axes of a trans
   expect_equal(d$y, expected_line(m, list(disp = d$x), to_y = exp))
 })
 
+# Title: autoplot() finds data
 test_that("autoplot() finds data that exists only where the model was fitted", {
   m <- local({
     class_data <- data.frame(x = c(1, 3, 2, 5, 4, 6, 8, 7, 9, 10))
@@ -124,6 +133,7 @@ test_that("autoplot() finds data that exists only where the model was fitted", {
   expect_equal(d$y, expected_line(m, list(x = d$x)))
 })
 
+# Title: Back-transform gaps
 test_that("where a back-transform has no value the line has none there, with no Applr warning (known issue)", {
   # KNOWN ISSUE (for_devs/known_issues.Rmd): sqrt() of a negative y^2
   # prediction is NaN. slice_2d() drops those points without a word;

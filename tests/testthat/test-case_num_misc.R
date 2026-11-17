@@ -7,12 +7,14 @@ covers("shared.model-data.raw-variables", "add_slice_2d.line-is-prediction",
        "ggproto_objects.raw-layer", "shared.validation.glm", "lm_latex.prints-and-returns",
        "diagnose.restores-par")
 
+# Title: Transformed term axis
 test_that("a transformed term slices along its raw variable", {
   m <- lm(mpg ~ I(wt^2) + log(hp), mtcars)
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 10))
   expect_equal(d$y, expected_line(m, list(wt = d$x), list(hp = mean(mtcars$hp))))
 })
 
+# Title: add_slice_2d() matches slice_2d()
 test_that("add_slice_2d() draws on the current plot the line slice_2d() would", {
   m <- lm(mpg ~ disp + hp, mtcars)
   grDevices::pdf(NULL)
@@ -27,6 +29,7 @@ test_that("add_slice_2d() draws on the current plot the line slice_2d() would", 
   expect_equal(a$line$fit, expected_line(m, list(disp = a$line$x), list(hp = 150)))
 })
 
+# Title: Raw layer equivalence
 test_that("a raw layer() with StatSlice draws what geom_slice() draws", {
   m <- lm(mpg ~ disp + hp + cyl, mtcars)
   base <- ggplot2::ggplot(mtcars, ggplot2::aes(disp, mpg))
@@ -38,12 +41,14 @@ test_that("a raw layer() with StatSlice draws what geom_slice() draws", {
   expect_equal(slice_data(raw)[c("x", "y")], slice_data(layered)[c("x", "y")])
 })
 
+# Title: glm link scale
 test_that("a glm is sliced on the link scale", {
   m <- glm(am ~ wt, family = binomial, data = mtcars)
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, am)) + geom_slice(m, n = 10))
   expect_equal(d$y, expected_line(m, list(wt = d$x)))
 })
 
+# Title: lm_latex() return value
 test_that("lm_latex() prints its string and returns it invisibly", {
   m <- lm(mpg ~ wt, mtcars)
   out <- capture.output(v <- withVisible(lm_latex(m)))
@@ -52,6 +57,7 @@ test_that("lm_latex() prints its string and returns it invisibly", {
   expect_match(v$value, "^\\$\\$.*\\$\\$$")
 })
 
+# Title: diagnose() restores mfrow
 test_that("diagnose() restores mfrow", {
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off())

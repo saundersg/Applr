@@ -12,6 +12,7 @@ covers("shared.back-transform.auto", "shared.back-transform.axis-expression",
        "shared.back-transform.override", "shared.back-transform.nested",
        "shared.back-transform.box-cox")
 
+# Title: Common response transforms
 test_that("common response transforms are inverted onto a raw y-axis", {
   cases <- list(
     list(lm(log(mpg) ~ disp + hp, mtcars), exp),
@@ -30,6 +31,7 @@ test_that("common response transforms are inverted onto a raw y-axis", {
   expect_equal(prep$line$fit, expected_line(m, list(disp = prep$line$x), list(hp = 120), to_y = exp))
 })
 
+# Title: Response axis expression
 test_that("an axis expression of the response gets predictions in its own units", {
   logged <- lm(log(mpg) ~ disp + hp, mtcars)
   raw <- lm(mpg ~ disp + hp, mtcars)
@@ -39,6 +41,7 @@ test_that("an axis expression of the response gets predictions in its own units"
   expect_equal(d$y, expected_line(raw, list(disp = d$x), held, to_y = log))
 })
 
+# Title: back_transform override
 test_that("back_transform overrides the inferred mapping", {
   m <- lm(log(mpg) ~ disp + hp, mtcars)
   d <- on_axis(m, mpg, back_transform = FALSE)
@@ -53,6 +56,7 @@ test_that("back_transform overrides the inferred mapping", {
   expect_equal(on_axis(m, mpg, back_transform = TRUE)$y, on_axis(m, mpg)$y)
 })
 
+# Title: Nested transforms
 test_that("nested transforms are inverted in order", {
   cases <- list(
     list(lm(sqrt(log(mpg)) ~ disp + hp, mtcars), function(v) exp(v^2)),
@@ -65,6 +69,7 @@ test_that("nested transforms are inverted in order", {
   }
 })
 
+# Title: Box-Cox response
 test_that("a box_cox(y, lambda) response is inverted (known bug: only the first point)", {
   # KNOWN BUG (for_devs/known_issues.Rmd): the inverse wraps a scalar
   # condition in ifelse(), so only the first prediction survives and the rest

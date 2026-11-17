@@ -14,6 +14,7 @@ expect_line <- function(line, ...) {
   expect_equal(line$y, expected_line(model, list(displ = line$x), list(...)))
 }
 
+# Title: Colour group values
 test_that("each colour group is predicted at its own value", {
   d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) + geom_slice(model, n = 10))
   lv <- levels(factor(mpg$drv))
@@ -22,6 +23,7 @@ test_that("each colour group is predicted at its own value", {
   for (g in unique(d$group)) expect_line(d[d$group == g, ], drv = lv[g], cyl = cyl_mean)
 })
 
+# Title: Facet panel values
 test_that("each panel is predicted at its own facet value, wrap or grid", {
   lv <- levels(factor(mpg$drv))
   for (facet in list(ggplot2::facet_wrap(~drv), ggplot2::facet_grid(rows = ggplot2::vars(drv)))) {
@@ -32,6 +34,7 @@ test_that("each panel is predicted at its own facet value, wrap or grid", {
   }
 })
 
+# Title: Numeric colour pins
 test_that("colour = factor(cyl) pins the numeric cyl at each group's number", {
   d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = factor(cyl))) +
                     geom_slice(model, n = 10, predict_vars = list(drv = "f")))
@@ -39,6 +42,7 @@ test_that("colour = factor(cyl) pins the numeric cyl at each group's number", {
   for (g in unique(d$group)) expect_line(d[d$group == g, ], drv = "f", cyl = cyls[g])
 })
 
+# Title: Unused facet variable
 test_that("a facet on a variable the model doesn't use gives every panel the same line", {
   m <- lm(mpg ~ wt, mtcars)
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 10) +
@@ -49,6 +53,7 @@ test_that("a facet on a variable the model doesn't use gives every panel the sam
   }
 })
 
+# Title: Facet after autoplot()
 test_that("a facet added after autoplot() still pins its predictor for the line", {
   m <- lm(hwy ~ displ + drv + cyl, data = mpg)
   p <- suppressMessages(autoplot(m, ggplot2::aes(colour = factor(cyl)), summary = FALSE)) +

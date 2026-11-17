@@ -25,8 +25,3 @@ held at: cyl = 5.889; year = 2004
 [string_value]
 hwy = 30.8 - 2.91*displ + 4.79*(drv="f") + 5.26*(drv="r")
 held at: drv = "r"
-
-[slice_2d_caption]
-drv: f; cyl: 5.9; year: 2003.5
-
-[slice_2d_caption_empty]

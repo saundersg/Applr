@@ -5,6 +5,8 @@
 #                             agent's status, never a human's
 #   human_decisions.json      every human decision; written only by the
 #                             review server (server.R)
+#   wording_review.json       the maintainer's ticks on the wording page;
+#                             written only by the review server (wording.R)
 #   forms/<id>.txt            current serialised form
 #   forms/approved/<id>.txt   form at the last human approval, for diffs
 # Views go to `view_dir` (gitignored) and are for viewing only:
@@ -13,6 +15,7 @@
 suite_paths <- function(root = "tests/suite", view_dir = "tests/output") {
   list(state = file.path(root, "review_state.json"),
        decisions = file.path(root, "human_decisions.json"),
+       wording = file.path(root, "wording_review.json"),
        forms = file.path(root, "forms"),
        approved = file.path(root, "forms", "approved"),
        views = view_dir)
@@ -148,8 +151,10 @@ apply_case <- function(r, paths) {
   report
 }
 
+# Inbox outputs only: wording is reviewed on its own page by the maintainer.
 list_unreviewed <- function(paths = suite_paths()) {
-  names(Filter(function(r) identical(r$status, "Unreviewed"), review_records(paths)))
+  inbox <- function(r) is.null(r$type) || output_type(r$type)$inbox
+  names(Filter(function(r) identical(r$status, "Unreviewed") && inbox(r), review_records(paths)))
 }
 
 # Rejected outputs with who rejected them and the note, for the agent fixing
@@ -228,6 +233,7 @@ review_page_data <- function(paths = suite_paths()) {
     approved_form <- file.path(paths$approved, paste0(file_id(id), ".txt"))
     list(
       id = id, case = rec$case, type = rec$type, view = rec$view,
+      inbox = is.null(rec$type) || output_type(rec$type)$inbox,
       status = rec$status, who = rec$who, when = rec$when,
       agent_note = rec$agent_note, rejection_note = rec$rejection_note,
       human_note = rec$human_note,

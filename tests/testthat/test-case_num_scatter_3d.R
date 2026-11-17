@@ -15,6 +15,7 @@ surface_of <- function(x) Filter(function(t) identical(t$type, "surface"), x$dat
 covers("scatter_3d.points-are-data", "scatter_3d.raw-predictors", "scatter_3d.marker-colours",
        "scatter_3d.axis-titles", "scatter_3d.transformed-response", "autoplot.type-3d")
 
+# Title: Markers are data
 test_that("the markers are the model's data rows", {
   x <- built_traces(scatter_3d(lm(mpg ~ wt + hp, mtcars), n = 5))
   m <- markers_of(x)
@@ -23,6 +24,7 @@ test_that("the markers are the model's data rows", {
   expect_equal(m$z, mtcars$mpg)
 })
 
+# Title: Raw predictor axes
 test_that("transformed terms graph over their raw predictors", {
   model <- lm(mpg ~ wt + I(wt^2) + hp, mtcars)
   x <- built_traces(scatter_3d(model, n = 6))
@@ -33,6 +35,7 @@ test_that("transformed terms graph over their raw predictors", {
   expect_equal(unname(s$z), expected)
 })
 
+# Title: Marker colours
 test_that("markers follow the colours given, with a colour bar titled by the response", {
   x <- built_traces(scatter_3d(lm(mpg ~ wt + hp, mtcars), n = 5, colors = c("purple", "orange")))
   m <- markers_of(x)
@@ -45,11 +48,13 @@ test_that("markers follow the colours given, with a colour bar titled by the res
   expect_equal(vapply(flat$marker$colorscale, function(s) s[[2]], ""), c("#FF0000", "#FF0000"))
 })
 
+# Title: Axis titles
 test_that("the axes are titled with the predictors and the response", {
   scene <- built_traces(scatter_3d(lm(mpg ~ wt + hp, mtcars), n = 5))$layout$scene
   expect_equal(c(scene$xaxis$title, scene$yaxis$title, scene$zaxis$title), c("wt", "hp", "mpg"))
 })
 
+# Title: Transformed response scale
 test_that("a transformed response puts the surface on another scale than the points (known issue)", {
   # The surface is predict() on the log scale while the markers are raw mpg,
   # so they don't line up (for_devs/known_issues.Rmd). This pins today's
@@ -60,6 +65,7 @@ test_that("a transformed response puts the surface on another scale than the poi
   expect_lt(max(surface_of(x)$z), min(mtcars$mpg))
 })
 
+# Title: autoplot() 3D type
 test_that("autoplot(type = \"3d\") is scatter_3d() with ... passed on", {
   model <- lm(mpg ~ wt + hp, mtcars)
   a <- built_traces(autoplot(model, type = "3d", summary = FALSE, n = 5, colors = "red"))

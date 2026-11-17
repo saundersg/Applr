@@ -18,7 +18,7 @@ dir.create(out_dir, recursive = TRUE)
 rows <- check_run()
 notes <- write_bundle(rows, out_dir)
 for (id in names(rows)) {
-  rows[[id]]$verdict <- ci_verdict(rows[[id]]$status_here, rows[[id]]$case_failed, rows[[id]]$blocks_ci)
+  rows[[id]]$verdict <- ci_verdict(rows[[id]]$status_here, rows[[id]]$case_failed, rows[[id]]$inbox)
   rows[[id]]$note <- notes[[id]] %||% ""
 }
 failures <- attr(rows, "failures")

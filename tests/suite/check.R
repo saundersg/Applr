@@ -23,19 +23,20 @@ platform_status <- function(rec, fingerprint, platform) {
   "Unreviewed (platform variant)"
 }
 
-# How a status shows on CI: "pass", "warn" or "fail". An output whose type
-# doesn't block CI (wording) warns until it is Human approved.
-ci_verdict <- function(status, case_failed = FALSE, blocks_ci = TRUE) {
+# How a status shows on CI: "pass", "warn" or "fail". The status of an output
+# reviewed outside the inbox (wording) doesn't count; its case still must pass.
+ci_verdict <- function(status, case_failed = FALSE, inbox = TRUE) {
   if (case_failed) return("fail")
-  if (startsWith(status, "Human approved")) return("pass")
-  if (identical(status, "Agent approved") || !blocks_ci) return("warn")
+  if (startsWith(status, "Human approved") || !inbox) return("pass")
+  if (identical(status, "Agent approved")) return("warn")
   "fail"
 }
 
 # The release check accepts Human approved only, a platform variant of it
-# included.
-release_verdict <- function(status, case_failed = FALSE) {
-  if (!case_failed && startsWith(status, "Human approved")) "pass" else "fail"
+# included. Wording is checked by its own ticks instead (wording_unticked()).
+release_verdict <- function(status, case_failed = FALSE, inbox = TRUE) {
+  if (case_failed) return("fail")
+  if (startsWith(status, "Human approved") || !inbox) "pass" else "fail"
 }
 
 # Runs every case in `dir` and returns one row per judged output: its
@@ -80,7 +81,7 @@ check_run <- function(dir = "tests/testthat", paths = suite_paths(), platform = 
     differ <- names(here_parts)[is.na(recorded_parts[names(here_parts)]) |
                                   recorded_parts[names(here_parts)] != here_parts]
     rows[[id]] <- list(
-      id = id, case = sub("/.*", "", id), type = out$type$name, blocks_ci = out$type$blocks_ci,
+      id = id, case = sub("/.*", "", id), type = out$type$name, inbox = out$type$inbox,
       status = rec$status %||% "Unreviewed",
       status_here = platform_status(rec, out$fingerprint, platform),
       recorded = rec$fingerprint %||% "", fingerprint = out$fingerprint,
@@ -89,7 +90,7 @@ check_run <- function(dir = "tests/testthat", paths = suite_paths(), platform = 
     )
   }
   for (case in setdiff(failed_cases, ran_cases)) {
-    rows[[case]] <- list(id = case, case = case, type = "", blocks_ci = TRUE, status = "", status_here = "",
+    rows[[case]] <- list(id = case, case = case, type = "", inbox = TRUE, status = "", status_here = "",
                          recorded = "", fingerprint = "", match = FALSE,
                          parts_differing = character(), case_failed = TRUE)
   }

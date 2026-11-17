@@ -10,6 +10,7 @@ model <- lm(y ~ x:x2 + g, data = df)
 
 covers("shared.composite-x.at-data-points", "shared.composite-x.full-range-ignored")
 
+# Title: Composite x rows
 test_that("geom_slice() predicts at each data row of the group, placed at x * x2", {
   p <- ggplot2::ggplot(df, ggplot2::aes(x * x2, y, colour = g)) + geom_slice(model, n = 5)
   d <- slice_data(p)
@@ -26,6 +27,7 @@ test_that("geom_slice() predicts at each data row of the group, placed at x * x2
   expect_equal(wide, d)
 })
 
+# Title: slice_2d() composite x
 test_that("slice_2d() does the same for x_axis = \"x * x2\"", {
   prep <- suppressMessages(prepare_slice_data(model, "x * x2", 5, TRUE, "none", list(g = "b")))
   rows <- df[order(df$x * df$x2), ]

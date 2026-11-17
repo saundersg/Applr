@@ -52,7 +52,7 @@ register_output_type(
   view = "text",
   format = "html",
   demo = "condition_imputed_values",
-  blocks_ci = FALSE,
+  inbox = FALSE,
   mutations = list(
     extra = function(x) { f <- x$object; x$object <- function() { v <- f(); warning("Mutated"); v }; x },
     drop_messages = function(x) { f <- draw_call(x$object); x$object <- function() suppressMessages(f()); x },

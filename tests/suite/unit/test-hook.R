@@ -36,6 +36,14 @@ test_that("the salvage verdicts file is protected the same way while it exists",
   expect_equal(run_hook("Bash", list(command = "echo '[]' > tests/suite/salvage_review.json")), 2)
 })
 
+test_that("the wording ticks are protected the same way", {
+  settings <- jsonlite::read_json(file.path(root, ".claude", "settings.json"))
+  expect_true("Edit(tests/suite/wording_review.json)" %in% unlist(settings$permissions$deny))
+  target <- file.path(root, "tests", "suite", "wording_review.json")
+  expect_equal(run_hook("Write", list(file_path = target, content = "{}")), 2)
+  expect_equal(run_hook("Bash", list(command = "echo '{}' > tests/suite/wording_review.json")), 2)
+})
+
 test_that("the agent commands, and files that only mention the decisions file, are allowed", {
   expect_equal(run_hook("Bash", list(command = "Rscript tests/suite/suite.R approve single_predictor_line/plot \"ok\"")), 0)
   expect_equal(run_hook("Write", list(file_path = file.path(root, "tests", "suite", "store.R"),

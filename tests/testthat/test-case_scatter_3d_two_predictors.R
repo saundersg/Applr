@@ -12,6 +12,7 @@ judged_output("widget", widget, states = list(
   top = list(eye = list(x = 0, y = 0, z = 2.5)),
   side = list(eye = list(x = 2.5, y = 0, z = 0))
 ),
+              title = "Two-predictor surface",
               purpose = "scatter_3d() on a two-predictor model shows the prediction surface through the points, readable from every camera.")
 
 test_that("the surface equals the model's prediction over the predictor grid", {

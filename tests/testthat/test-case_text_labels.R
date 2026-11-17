@@ -7,34 +7,24 @@ d <- data.frame(x = runif(80, -10, 10), x2 = runif(80, 0, 4),
                 g = factor(sample(c("A", "B"), 80, replace = TRUE)))
 d$y <- d$x * ifelse(d$g == "A", 0.5, 2) + ifelse(d$g == "A", 5, -5) + 4 * d$x2 + rnorm(80)
 model <- lm(y ~ x * g + x2, data = d)
-crossed <- function(...) {
-  ggplot2::ggplot(d, ggplot2::aes(x, y)) +
-    geom_slice(model, predict_vars = list(x2 = c(0, 2.123456), g = c("A", "B"))) + geom_slice_text(...)
-}
-labels_of <- function(p) paste(sort(slice_text_data(suppressMessages(p))$label), collapse = "\n")
-key_of <- function(p) {
-  p <- suppressMessages(p)
-  layer <- Filter(function(l) inherits(l$geom, "GeomText") && !inherits(l$geom, "GeomSliceText"), p$layers)
-  if (length(layer)) layer[[1]]$aes_params$label else ""
-}
+crossed <- ggplot(d, aes(x, y)) + geom_slice(model, predict_vars = list(x2 = c(0, 2.123456), g = c("A", "B")))
+coloured <- ggplot(d, aes(x, y, colour = g))
 
 examples <- c(
-  variable = labels_of(crossed()),
-  value = labels_of(crossed(style = "value")),
-  legend = labels_of(crossed(style = "legend")),
-  legend_key = key_of(crossed(style = "legend")),
-  group = labels_of(ggplot2::ggplot(d, ggplot2::aes(x, y, colour = g)) +
-                      geom_slice(model) + geom_slice_text()),
+  variable = labels_of(crossed + geom_slice_text()),
+  value = labels_of(crossed + geom_slice_text(style = "value")),
+  legend = labels_of(crossed + geom_slice_text(style = "legend")),
+  legend_key = legend_key_of(crossed + geom_slice_text(style = "legend")),
+  group = labels_of(coloured + geom_slice(model) + geom_slice_text()),
   # Any predict_vars entry wins over the group, even a single value, so both
   # lines read the same
-  group_and_single_value = labels_of(ggplot2::ggplot(d, ggplot2::aes(x, y, colour = g)) +
-                                       geom_slice(model, predict_vars = list(x2 = 2)) + geom_slice_text()),
-  group_and_values = labels_of(ggplot2::ggplot(d, ggplot2::aes(x, y, colour = g)) +
-                                 geom_slice(model, predict_vars = list(x2 = c(0, 4))) + geom_slice_text())
+  group_and_single_value = labels_of(coloured + geom_slice(model, predict_vars = list(x2 = 2)) + geom_slice_text()),
+  group_and_values = labels_of(coloured + geom_slice(model, predict_vars = list(x2 = c(0, 4))) + geom_slice_text())
 )
 
 covers("geom_slice_text.label-predict-vars", "geom_slice_text.label-group", "geom_slice_text.style")
 judged_output("labels", examples, type = "returned_text",
+              title = "Line label text",
               purpose = "The label strings geom_slice_text() writes in each style, from predict_vars and from a colour group, and which wins when both vary.")
 
 test_that("labels name the values, crossed in predict_vars order, to 4 significant figures", {

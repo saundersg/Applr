@@ -72,6 +72,29 @@ test_that("each output's purpose and code are read from its case file, with only
   expect_equal(unlist(out$warns$setup), c("base <- mtcars", "set.seed(1)", "m <- lm(mpg ~ wt, base)"))
 })
 
+test_that("each output's title and user-level code are read, unwrapping function() and splitting examples", {
+  f <- tempfile(fileext = ".R")
+  writeLines(c("m <- lm(mpg ~ wt, mtcars)", "unused <- 2", "p <- ggplot(mtcars, aes(wt, mpg)) +",
+               "        geom_slice(m)",
+               "judged_output('line', p, title = 'Plain line', purpose = 'P.')",
+               "judged_output('base', function() {", "  plot(mpg ~ wt, mtcars)", "  add_slice_2d(m)",
+               "}, type = 'base_graphics')",
+               "texts <- c(eq = lm_equation(m),", "           sub = subtitle_of(p + geom_slice_subtitle()))",
+               "judged_output('texts', texts, type = 'returned_text')"), f)
+  out <- case_outputs(f)
+  expect_equal(out$line$title, "Plain line")
+  expect_equal(out$line$user$code, "ggplot(mtcars, aes(wt, mpg)) +
+  geom_slice(m)")
+  expect_equal(unlist(out$line$user$setup), "m <- lm(mpg ~ wt, mtcars)")
+  expect_equal(out$base$user$code, "plot(mpg ~ wt, mtcars)
+add_slice_2d(m)")
+  ex <- out$texts$user$examples
+  expect_named(ex, c("eq", "sub"))
+  expect_equal(c(ex$eq$reader, ex$eq$code), c("", "lm_equation(m)"))
+  expect_equal(c(ex$sub$reader, ex$sub$code), c("subtitle_of", "p + geom_slice_subtitle()"))
+  expect_length(ex$sub$setup, 2)
+})
+
 test_that("each case gets its family from the first function entry it cites, and unknown IDs are flagged", {
   inv <- read_inventory(write_yaml_lines(inventory_lines))
   dir <- tempfile("case"); dir.create(dir)

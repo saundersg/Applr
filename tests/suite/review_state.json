@@ -2262,17 +2262,17 @@
     "status": "Agent approved"
   },
   "text_subtitles/subtitles": {
-    "agent_note": "Representative subtitles: equation then 'held at:' line, multi-values as 'cyl = 4, 8', a band line, model = FALSE, prepend/append (append lands after the held line, as documented), brackets style, a quoted string value. slice_2d()'s caption reads 'drv: f; cyl: 5.9; year: 2003.5' where geom_slice() would say year = 2004 (engines differ); its empty caption is ''.",
+    "agent_note": "The two slice_2d() caption examples are gone: slice_2d() draws its caption rather than returning it, so they were only reachable through internal code. Their wording is still checked by a plain expectation in this case, and you see the caption on the slice_2d() plots. The seven subtitles are unchanged.",
     "rejection_note": "",
     "who": "agent",
-    "when": "2026-11-11T20:10:29-0700",
+    "when": "2026-11-17T09:20:51-0700",
     "case": "text_subtitles",
     "type": "returned_text",
     "view": "text",
     "states": "text",
-    "fingerprint": "123cb7877d95",
+    "fingerprint": "cc76f41ac3d0",
     "parts": {
-      "main": "123cb7877d95"
+      "main": "cc76f41ac3d0"
     },
     "engine_version": "",
     "status": "Agent approved"
@@ -2301,7 +2301,11 @@
     "case": "widget_scatter_3d",
     "type": "plotly_3d",
     "view": "states",
-    "states": ["default", "top", "side"],
+    "states": [
+      "default",
+      "top",
+      "side"
+    ],
     "fingerprint": "d9ce10a86df1",
     "parts": {
       "figure": "02e2e057a8fa",
@@ -2319,7 +2323,11 @@
     "case": "widget_scatter_3d",
     "type": "plotly_3d",
     "view": "states",
-    "states": ["default", "top", "side"],
+    "states": [
+      "default",
+      "top",
+      "side"
+    ],
     "fingerprint": "245dd007cf3f",
     "parts": {
       "figure": "1bac21472da5",
@@ -2337,7 +2345,11 @@
     "case": "widget_scatter_3d",
     "type": "plotly_3d",
     "view": "states",
-    "states": ["default", "top", "side"],
+    "states": [
+      "default",
+      "top",
+      "side"
+    ],
     "fingerprint": "ce0725f6ae52",
     "parts": {
       "figure": "ca1c298ff9e6",

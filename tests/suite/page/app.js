@@ -8,18 +8,19 @@ const GROUP_ORDER = ["you", "rejected", "agent", "approved"];
 const VIEW_KIND = { image: "image", text: "text diff", states: "states + live" };
 const QUICK_NOTES = ["Labels clipped", "Spacing too tight", "Line doesn't match the expected behaviour",
   "Wording unclear", "Legend wrong", "Agent note doesn't match what I see"];
-const PAGES = ["overview", "inventory", "health", "principles", "structure", "salvage"];
+const PAGES = ["overview", "wording", "situations", "inventory", "health", "principles", "structure", "salvage"];
 
 const arr = x => x == null ? [] : Array.isArray(x) ? x : [x];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 let DATA = null, OUT = {}, CASES = {}, ENTRIES = {}, GUIDE = {}, SALVAGE = null;
 const forms = {};
-const ui = { view: "case", sel: null, collapsed: false, compare: "swipe", filter: "", rejecting: false, draft: "",
+const ui = { view: "case", sel: null, collapsed: false, compare: "swipe", filter: "", rejecting: false, draft: "", detail: {}, whyOpen: false,
   open: { you: true, rejected: true, agent: true, approved: false }, sessionTotal: null, done: 0, error: null, busy: false };
 
 const key = o => STATUS_KEY[o.status] || "agent";
-const ids = () => Object.keys(OUT).sort();
+// Wording outputs are reviewed on the wording page, not in the inbox.
+const ids = () => Object.keys(OUT).filter(id => OUT[id].inbox !== false).sort();
 const yourQueue = () => ids().filter(id => key(OUT[id]) === "you");
 const caseOf = o => CASES[o.case] || { name: o.case, covers: [], unknown: [], family: "not in the inventory" };
 const pill = s => `<span class="pill s-${s}">${STATUS_LABEL[s]}</span>`;
@@ -69,12 +70,15 @@ function syncUrl() {
   history.replaceState(null, "", u);
 }
 function go(view, sel) {
+  if (sel !== undefined && sel !== ui.sel) ui.whyOpen = false;
   ui.view = view; if (sel !== undefined) ui.sel = sel;
   ui.rejecting = false; ui.draft = ""; ui.error = null;
   syncUrl(); render();
   document.querySelector("main")?.scrollTo(0, 0);
 }
 const firstOutputOf = cs => ids().find(id => OUT[id].case === cs);
+
+const wordingLeft = () => arr(DATA.wording?.sites).filter(r => r.mark !== "ok").length;
 
 // ---- sidebar ----
 function sidebar() {
@@ -83,6 +87,8 @@ function sidebar() {
       <button title="Expand sidebar ( [ )" data-act="toggle">☰</button>
       <button title="Your queue" data-act="case" class="${ui.view === "case" ? "on" : ""}">✓${q ? `<span class="badge">${q}</span>` : ""}</button>
       <button title="Suite overview (o)" data-go="overview" class="${ui.view === "overview" ? "on" : ""}">▦</button>
+      <button title="Wording" data-go="wording" class="${ui.view === "wording" ? "on" : ""}">✎</button>
+      <button title="Numeric tests" data-go="situations" class="${ui.view === "situations" ? "on" : ""}">≡</button>
       <button title="Behaviour inventory" data-go="inventory" class="${ui.view === "inventory" ? "on" : ""}">☷</button>
       <button title="Suite health" data-go="health" class="${ui.view === "health" ? "on" : ""}">♥</button>
       ${SALVAGE ? `<button title="Salvage audit" data-go="salvage" class="${ui.view === "salvage" ? "on" : ""}">⚖${salvageLeft() ? `<span class="badge">${salvageLeft()}</span>` : ""}</button>` : ""}
@@ -94,19 +100,21 @@ function sidebar() {
     if (!gi.length) return "";
     const open = ui.open[g] || ui.filter;
     return `<div class="group-h" data-group="${g}"><span>${STATUS_LABEL[g]} (${gi.length})</span><span>${open ? "−" : "+"}</span></div>` +
-      (open ? gi.map(id => `<div class="item ${ui.view === "case" && id === ui.sel ? "sel" : ""}" data-pick="${esc(id)}"><span>${esc(id)}</span>
+      (open ? gi.map(id => `<div class="item ${ui.view === "case" && id === ui.sel ? "sel" : ""}" data-pick="${esc(id)}" title="${esc(id)}"><span>${esc(titleOf(OUT[id]))}</span>
         <span class="tag">${OUT[id].rejection_note ? "✎ " : ""}${esc(VIEW_KIND[OUT[id].view] || OUT[id].view)}</span></div>`).join("") : "");
   }).join("");
   const nav = (v, label, k) => `<div class="nav ${ui.view === v ? "sel" : ""}" data-go="${v}"><span>${label}</span>${k ? `<kbd>${k}</kbd>` : ""}</div>`;
   return `<aside><div class="side-top"><b>Applr review</b><button class="ghost" title="Collapse sidebar ( [ )" data-act="toggle">«</button></div>
     <div class="side-body">
       ${nav("overview", "▦ Suite overview", "o")}
+      ${nav("wording", `✎ Wording${wordingLeft() ? ` <span class="pill s-you">${wordingLeft()} to tick</span>` : ""}`)}
+      ${nav("situations", "≡ Numeric tests")}
       ${nav("inventory", "☷ Behaviour inventory")}
       ${nav("health", "♥ Suite health")}
       ${SALVAGE ? nav("salvage", `⚖ Salvage audit${salvageLeft() ? ` <span class="pill s-you">${salvageLeft()} to review</span>` : ""}`) : ""}
       <div style="margin:10px 0 0"><input type="search" id="find" placeholder="Find an output…" value="${esc(ui.filter)}"></div>
       ${groups || `<p class="muted small">No judged outputs${ui.filter ? " match" : " yet: run <code>suite.R run</code>"}.</p>`}
-      <p class="muted small" style="margin-top:16px"><kbd>j</kbd>/<kbd>k</kbd> next/prev in your queue · <kbd>a</kbd> approve · <kbd>r</kbd> reject with note · <kbd>s</kbd> swipe/side by side · <kbd>o</kbd> overview · <kbd>[</kbd> sidebar</p>
+      <p class="muted small" style="margin-top:16px"><kbd>j</kbd>/<kbd>k</kbd> next/prev in your queue · <kbd>a</kbd> approve · <kbd>r</kbd> send back with note · <kbd>s</kbd> swipe/side by side · <kbd>o</kbd> overview · <kbd>[</kbd> sidebar</p>
     </div>
     <div class="side-foot"><div class="nav-h">Guide</div>${nav("principles", "Principles")}${nav("structure", "Structure")}</div></aside>`;
 }
@@ -165,55 +173,77 @@ function formView(id, open) {
 
 function textView(o) { return formView(o.id, true); }
 
-function expected(o) {
-  const c = caseOf(o);
-  const cited = arr(c.covers).map(id => ENTRIES[id]).filter(Boolean);
-  const unknown = arr(c.unknown);
-  if (!cited.length && !unknown.length) return `<div class="expect"><b>Expected:</b> <span class="muted">this case cites no inventory entries.</span></div>`;
-  return `<div class="expect"><b>Expected</b> <span class="muted small">(from the inventory entries this case covers)</span><ul>
-    ${cited.map(e => `<li>${esc(e.principle)} <a class="mono" href="?view=inventory" data-go="inventory">${esc(e.id)}</a></li>`).join("")}
-    ${unknown.map(id => `<li class="tag-bad">Cites ${esc(id)}, which isn't in the inventory.</li>`).join("")}</ul></div>`;
-}
-
 // What the case file says of this output (inventory.R: case_outputs), read
-// without running it.
+// without running it: its title, purpose and the code a user would type.
 const declared = o => caseOf(o).outputs?.[o.id.slice(o.case.length + 1)];
+const titleOf = o => declared(o)?.title || o.id;
 
-function purpose(o) {
-  const d = declared(o);
-  return d?.purpose ? `<p class="purpose">${esc(d.purpose)}</p>`
-    : `<p class="purpose missing">No purpose line: the case file doesn't say why this output exists.</p>`;
+const codeBox = (setup, code) => `<div class="codebox">${arr(setup).map(l => `<div class="setup">${esc(l)}</div>`).join("")}${esc(code || "")}</div>`;
+
+function whyBox(o) {
+  if (!o.agent_note || key(o) === "approved") return "";
+  return `<div class="changed-banner why ${ui.whyOpen ? "open" : ""}" data-act="why" title="${ui.whyOpen ? "Click to shorten" : "Click to read it all"}">
+    <div class="clamp"><b>${o.new ? "Why it was made:" : "Why it changed:"}</b> ${esc(o.agent_note)}</div></div>`;
 }
 
-function codeView(o) {
-  const d = declared(o), c = caseOf(o);
-  if (!d) return `<p class="muted small">Couldn't find the call that declares this output in ${esc(c.file || "its case file")}.</p>`;
-  return `<details open class="code"><summary>Code that produces it <span class="mono">${esc(c.file)}</span></summary>
-    <div class="console">${arr(d.setup).map(l => `<div class="setup">${esc(l)}</div>`).join("")}<div>${esc(d.code)}</div></div></details>`;
+function notes(o) {
+  const k = key(o), by = o.who === "human" ? "you" : o.who === "agent" ? "the agent" : o.who;
+  return [
+    k === "rejected" && o.rejection_note ? `<div class="yournote"><b>Sent back by ${esc(by)}:</b> ${esc(o.rejection_note)}</div>` : "",
+    k === "approved" ? `<div class="oknote"><b>Approved by you</b> <span class="muted small">${esc(o.when)}</span>${o.human_note ? ": " + esc(o.human_note) : ""}</div>` : ""
+  ].join("");
 }
 
 function decisionBar(o) {
   const k = key(o);
   if (k === "agent") return `<p class="muted small">Waiting for an agent pass. Outputs come to you once an agent approves them.</p>`;
   if (k !== "you") return "";
-  if (!ui.rejecting) return `<div class="actions"><button class="approve" data-act="approve" ${ui.busy ? "disabled" : ""}>Approve <kbd class="on-solid">a</kbd></button>
-      <button class="reject" data-act="reject" ${ui.busy ? "disabled" : ""}>Reject… <kbd>r</kbd></button></div>`;
+  if (!ui.rejecting) return `<div class="decide"><button class="approve" data-act="approve" ${ui.busy ? "disabled" : ""}>Approve <kbd class="on-solid">a</kbd></button>
+      <button class="reject" data-act="reject" ${ui.busy ? "disabled" : ""}>Send back… <kbd>r</kbd></button></div>`;
   return `<div class="rejectbox"><b>Send back to the agent</b>
-    <div class="muted small">A note is required. The agent reads it before its next attempt.</div>
+    <div class="muted small">A note is required. It can ask for a change to the case or to the package code, or for the output to be removed.</div>
     <div class="chips">${QUICK_NOTES.map(n => `<button data-chip="${esc(n)}">${esc(n)}</button>`).join("")}</div>
     <textarea id="note" placeholder="What's wrong, and what would right look like?">${esc(ui.draft)}</textarea>
-    <div class="actions"><button class="reject solid" data-act="confirm-reject" ${ui.busy ? "disabled" : ""}>Reject and send <kbd class="on-solid">Ctrl+Enter</kbd></button>
+    <div class="actions"><button class="reject solid" data-act="confirm-reject" ${ui.busy ? "disabled" : ""}>Send back <kbd class="on-solid">Ctrl+Enter</kbd></button>
       <button class="ghost" data-act="cancel-reject">Cancel <kbd>Esc</kbd></button></div></div>`;
 }
 
-function notes(o) {
-  const k = key(o), by = o.who === "human" ? "you" : o.who === "agent" ? "the agent" : o.who;
-  return [
-    k === "rejected" && o.rejection_note ? `<div class="yournote"><b>Rejected by ${esc(by)}:</b> ${esc(o.rejection_note)}</div>` : "",
-    k === "approved" ? `<div class="oknote"><b>Approved by you</b> <span class="muted small">${esc(o.when)}</span>${o.human_note ? ": " + esc(o.human_note) : ""}</div>` : "",
-    o.agent_note ? `<div class="agentnote"><b>Agent${o.new && k !== "approved" ? ` on a new output` : ""}:</b> ${esc(o.agent_note)}</div>` : ""
-  ].join("");
+// A returned-text form split back into its examples, by their [name] headers.
+function textBlocks(o) {
+  const f = forms[o.id];
+  if (!f) { loadForm(o.id).then(() => ui.view === "case" && ui.sel === o.id && render()); return null; }
+  const out = {};
+  let name = null;
+  arr(f.form).forEach(l => {
+    const m = l.match(/^\[(.+)\]$/);
+    if (m) { name = m[1]; out[name] = []; } else if (name) out[name].push(l);
+  });
+  Object.keys(out).forEach(k => out[k] = out[k].join("\n").replace(/\s+$/, ""));
+  return out;
 }
+
+function exampleGrid(o, examples) {
+  const blocks = textBlocks(o), list = Object.entries(examples);
+  const setup = [...new Set(list.flatMap(([, e]) => arr(e.setup)))];
+  return `${setup.length ? `<div><h4>Setup</h4>${codeBox(setup)}</div>` : ""}
+    <div class="sit-grid">${list.map(([name, e], n) => `<div class="situation"><h4>${n + 1}. ${esc(name.replace(/_/g, " "))}</h4>
+      ${codeBox([], e.code)}
+      <div class="arrow">↓${e.reader ? ` <span class="small muted">its ${esc(e.reader.replace(/_of$/, "").replace(/_/g, " "))}</span>` : ""}</div>
+      <pre class="textout">${blocks ? esc(blocks[name] ?? "(not in the form)") : "Loading…"}</pre></div>`).join("")}</div>`;
+}
+
+const DETAILS = {
+  code: ["Code details", o => {
+    const d = declared(o), c = caseOf(o);
+    if (!d) return `<p class="muted small">Couldn't find the call that declares this output in ${esc(c.file || "its case file")}.</p>`;
+    return `<p class="small muted" style="margin-top:0">As the case file <span class="mono">tests/testthat/${esc(c.file)}</span> declares it:</p>
+      <div class="console">${arr(d.setup).map(l => `<div class="setup">${esc(l)}</div>`).join("")}<div>${esc(d.code)}</div></div>`;
+  }],
+  fp: ["Fingerprint", o => `<span class="mono">${esc(o.fingerprint)}</span>${arr(o.parts).length > 1 ? ` <span class="small muted">parts: ${arr(o.parts).map(esc).join(", ")}</span>` : ""}
+    <span class="small muted">· changes whenever the serialised form changes</span>`],
+  form: ["Serialised form", o => forms[o.id] ? formView(o.id, false) : (loadForm(o.id).then(() => render()), `<p class="muted small">Loading…</p>`)],
+  who: ["Who and when", o => `${pill(key(o))} set by <b>${esc(o.who)}</b> · ${esc(o.when)} <span class="small muted">· ${esc(o.type)} · ${esc(caseOf(o).family)}</span>`]
+};
 
 function caseView() {
   const o = OUT[ui.sel];
@@ -227,20 +257,26 @@ function caseView() {
       <p class="muted">${n ? `${n} judged output${n > 1 ? "s" : ""} in the suite. Outputs reach you after an agent approves them.` : "No judged outputs yet."}</p>
       <button data-go="overview">Open the suite overview</button></div>`;
   }
-  const c = caseOf(o);
+  const d = declared(o), u = d?.user;
+  const badge = key(o) === "approved" ? "" : o.new ? `<span class="pill badge-new">New</span>` : `<span class="pill badge-changed">Changed</span>`;
   const visual = o.view === "text" ? textView(o) : o.view === "states" ? statesView(o) : imageView(o);
+  const body = u?.examples
+    ? `${exampleGrid(o, u.examples)}${decisionBar(o)}`
+    : `<div class="stage"><div>${visual}</div><div class="side"><h4>What the user typed</h4>
+        ${u?.code ? codeBox(u.setup, u.code) : `<div class="codebox muted">The case file doesn't build this output as a user would; see Code details.</div>`}
+        ${decisionBar(o)}</div></div>`;
+  const chips = Object.entries(DETAILS).map(([k, [label]]) =>
+    `<button class="${ui.detail[k] ? "on" : ""}" data-detail="${k}">${ui.detail[k] ? "▾" : "▸"} ${label}</button>`).join("");
+  const panels = Object.entries(DETAILS).filter(([k]) => ui.detail[k]).map(([, [label, f]]) => `<div class="panel"><h4>${label}</h4>${f(o)}</div>`).join("");
   return `${prog}
     ${ui.error ? `<div class="error">${esc(ui.error)}</div>` : ""}
-    <div class="head"><h2>${esc(o.id)}</h2><span class="pills">${o.new ? `<span class="pill s-agent" title="Never Human approved">new</span>` : ""}${pill(key(o))}</span></div>
-    ${purpose(o)}
-    <div class="muted small">${esc(c.family)} · ${esc(o.type)} · ${esc(VIEW_KIND[o.view] || o.view)} · fingerprint <span class="mono">${esc(o.fingerprint)}</span>
-      ${arr(o.parts).length > 1 ? ` (parts: ${arr(o.parts).map(esc).join(", ")})` : ""} · set by ${esc(o.who)} ${esc(o.when)}</div>
-    ${decisionBar(o)}
-    ${notes(o)}
-    ${expected(o)}
-    ${codeView(o)}
-    ${visual}
-    ${o.view !== "text" ? `<details data-form><summary>Serialised form and what changed</summary>${forms[o.id] ? formView(o.id, false) : ""}</details>` : ""}`;
+    <div class="title-row"><h2>${esc(titleOf(o))}</h2>${badge}${pill(key(o))}</div>
+    ${d?.purpose ? `<p class="behaviour">${esc(d.purpose)}</p>` : ""}
+    ${whyBox(o)}${notes(o)}
+    ${body}
+    <div class="chiprow">${chips}</div>
+    ${panels}
+    <div class="idline">${esc(o.id)}</div>`;
 }
 
 // ---- overview ----
@@ -423,7 +459,8 @@ function guideView(name) {
 function render() {
   const app = document.getElementById("app");
   const focusFind = document.activeElement?.id === "find";
-  const body = ui.view === "overview" ? overview() : ui.view === "inventory" ? inventoryView() : ui.view === "health" ? healthView()
+  const body = ui.view === "overview" ? overview() : ui.view === "wording" ? wordingView() : ui.view === "situations" ? situationsView()
+    : ui.view === "inventory" ? inventoryView() : ui.view === "health" ? healthView()
     : ui.view === "principles" || ui.view === "structure" ? guideView(ui.view) : ui.view === "salvage" ? salvageView() : caseView();
   const scroll = document.querySelector("main")?.scrollTop || 0;
   app.innerHTML = `<div class="shell ${ui.collapsed ? "collapsed" : ""}">${sidebar()}<main>${body}</main></div>`;
@@ -472,6 +509,9 @@ function render() {
   app.querySelectorAll("[data-case]").forEach(d => d.addEventListener("click", () => { const id = firstOutputOf(d.dataset.case); if (id) go("case", id); }));
   app.querySelectorAll("[data-go]").forEach(d => d.addEventListener("click", e => { e.preventDefault(); go(d.dataset.go); }));
   app.querySelectorAll("[data-compare]").forEach(b => b.addEventListener("click", () => { ui.compare = b.dataset.compare; render(); }));
+  app.querySelectorAll("[data-detail]").forEach(b => b.addEventListener("click", () => { ui.detail[b.dataset.detail] = !ui.detail[b.dataset.detail]; render(); }));
+  if (ui.view === "wording") wordingEvents(app);
+  if (ui.view === "situations") situationsEvents(app);
   app.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", () => action(b.dataset.act)));
   app.querySelectorAll("details[data-form]").forEach(d => d.addEventListener("toggle", () => {
     if (d.open && !forms[ui.sel]) { const id = ui.sel; loadForm(id).then(() => { if (ui.sel === id) { render(); app.querySelector("details[data-form]")?.setAttribute("open", ""); } }); }
@@ -485,7 +525,7 @@ function render() {
 async function decide(decision, note) {
   const o = OUT[ui.sel];
   if (!o || ui.busy) return;
-  if (decision === "reject" && !note.trim()) { ui.error = "A rejection needs a note for the agent."; render(); return; }
+  if (decision === "reject" && !note.trim()) { ui.error = "Sending back needs a note for the agent."; render(); return; }
   ui.busy = true; ui.error = null; render();
   try {
     const r = await fetch("/api/decide", { method: "POST", headers: { "Content-Type": "application/json" },
@@ -508,6 +548,7 @@ async function decide(decision, note) {
 function action(a) {
   const mine = ui.view === "case" && OUT[ui.sel] && key(OUT[ui.sel]) === "you";
   if (a === "toggle") { ui.collapsed = !ui.collapsed; render(); }
+  if (a === "why") { ui.whyOpen = !ui.whyOpen; render(); }
   if (a === "case") go("case", ui.sel || yourQueue()[0] || null);
   if (a === "next") { const n = yourQueue()[0]; if (n) go("case", n); }
   if (a === "approve" && mine) decide("approve", "");

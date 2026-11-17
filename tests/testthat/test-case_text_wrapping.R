@@ -3,10 +3,7 @@
 # depend on the device: how it breaks, indents and shortens factor names.
 
 iris_model <- lm(Sepal.Length ~ Sepal.Width * Species + Petal.Length, data = iris)
-on_iris <- function(...) {
-  suppressMessages(ggplot2::ggplot(iris, ggplot2::aes(Petal.Length, Sepal.Length, colour = Species)) +
-                     geom_slice(iris_model) + geom_slice_subtitle(...))
-}
+iris_plot <- ggplot(iris, aes(Petal.Length, Sepal.Length, colour = Species)) + geom_slice(iris_model)
 shared_level <- data.frame(
   x = rep(1:6, 2), a = factor(rep(c("Low", "High"), 6), levels = c("Low", "High")),
   b = factor(rep(c("Mid", "Mid", "High"), 4), levels = c("Mid", "High")),
@@ -15,14 +12,14 @@ shared_level <- data.frame(
 ambiguous <- lm(y ~ x + a + b, data = shared_level)
 
 examples <- c(
-  unwrapped = annotation_of(on_iris(wrap = FALSE)),
-  wide_6in = annotation_of(on_iris(wrap = 6)),
-  brackets_3.5in = annotation_of(on_iris(wrap = 3.5)),
-  narrow_2in = annotation_of(on_iris(wrap = 2)),
-  prepend_4in = annotation_of(on_iris(wrap = 4, prepend = "Fitted: ")),
-  overlong_1in = annotation_of(on_iris(wrap = 1, model = TRUE)),
-  shared_level_1.5in = annotation_of(suppressMessages(
-    ggplot2::ggplot(shared_level, ggplot2::aes(x, y)) + geom_slice(ambiguous) + geom_slice_subtitle(wrap = 1.5)))
+  unwrapped = subtitle_of(iris_plot + geom_slice_subtitle(wrap = FALSE)),
+  wide_6in = subtitle_of(iris_plot + geom_slice_subtitle(wrap = 6)),
+  brackets_3.5in = subtitle_of(iris_plot + geom_slice_subtitle(wrap = 3.5)),
+  narrow_2in = subtitle_of(iris_plot + geom_slice_subtitle(wrap = 2)),
+  prepend_4in = subtitle_of(iris_plot + geom_slice_subtitle(wrap = 4, prepend = "Fitted: ")),
+  overlong_1in = subtitle_of(iris_plot + geom_slice_subtitle(wrap = 1, model = TRUE)),
+  shared_level_1.5in = subtitle_of(ggplot(shared_level, aes(x, y)) + geom_slice(ambiguous) +
+                                     geom_slice_subtitle(wrap = 1.5))
 )
 
 covers("shared.annotation-wrap.fits", "shared.annotation-wrap.between-terms",
@@ -30,6 +27,7 @@ covers("shared.annotation-wrap.fits", "shared.annotation-wrap.between-terms",
        "shared.annotation-wrap.prepend-equals", "shared.annotation-wrap.overlong-term",
        "shared.annotation-wrap.ambiguous-brackets")
 judged_output("wrapped", examples, type = "returned_text",
+              title = "Subtitle wrapping",
               purpose = "One long subtitle wrapped at fixed widths: where it breaks, how it indents, when it shortens to [level], and when it can't.")
 
 lines <- function(name) strsplit(examples[[name]], "\n", fixed = TRUE)[[1]]

@@ -2,31 +2,47 @@
 # lm_equation() and lm_latex() across representative models. Both outputs
 # are judged as text; expectations check what each string must contain.
 
-models <- list(
-  simple = lm(mpg ~ wt, mtcars),
-  multiple = lm(mpg ~ disp + hp, mtcars),
-  transformed = lm(log(mpg) ~ wt + I(wt^2), mtcars),
-  no_intercept = lm(mpg ~ 0 + wt, mtcars),
-  rank_deficient = lm(mpg ~ wt + I(2 * wt), mtcars),
-  exact_fit = lm(y ~ x, data.frame(x = 1:5, y = 2 * (1:5))),
-  intercept_only = lm(mpg ~ 1, mtcars),
-  underscore_name = lm(mpg ~ wt_lb, transform(mtcars, wt_lb = wt * 1000))
+simple <- lm(mpg ~ wt, mtcars)
+multiple <- lm(mpg ~ disp + hp, mtcars)
+transformed <- lm(log(mpg) ~ wt + I(wt^2), mtcars)
+no_intercept <- lm(mpg ~ 0 + wt, mtcars)
+rank_deficient <- lm(mpg ~ wt + I(2 * wt), mtcars)
+exact_fit <- lm(y ~ x, data.frame(x = 1:5, y = 2 * (1:5)))
+intercept_only <- lm(mpg ~ 1, mtcars)
+underscore_name <- lm(mpg ~ wt_lb, transform(mtcars, wt_lb = wt * 1000))
+
+equations <- c(
+  simple = lm_equation(simple),
+  multiple = lm_equation(multiple),
+  transformed = lm_equation(transformed),
+  no_intercept = lm_equation(no_intercept),
+  rank_deficient = lm_equation(rank_deficient),
+  exact_fit = lm_equation(exact_fit),
+  intercept_only = lm_equation(intercept_only),
+  underscore_name = lm_equation(underscore_name)
 )
-equations <- vapply(models, lm_equation, "")
-latex <- vapply(models, function(m) {
-  out <- capture.output(v <- lm_latex(m))
-  v
-}, "")
+latex <- c(
+  simple = lm_latex(simple),
+  multiple = lm_latex(multiple),
+  transformed = lm_latex(transformed),
+  no_intercept = lm_latex(no_intercept),
+  rank_deficient = lm_latex(rank_deficient),
+  exact_fit = lm_latex(exact_fit),
+  intercept_only = lm_latex(intercept_only),
+  underscore_name = lm_latex(underscore_name)
+)
 
 covers("lm_equation.format", "lm_equation.no-intercept", "lm_equation.na-and-residue",
        "lm_equation.intercept-only", "lm_latex.format", "lm_latex.special-characters")
 judged_output("equations", equations, type = "returned_text",
+              title = "Equation formats",
               purpose = "lm_equation() across representative model shapes: transformed, no intercept, rank-deficient, exact, intercept-only and underscored names.")
 judged_output("latex", latex, type = "returned_text",
+              title = "LaTeX equations",
               purpose = "lm_latex() on the same model shapes, underbracing each term, including the empty intercept-only term and unescaped underscore.")
 
 test_that("coefficients are rounded to 3 significant figures and signs read naturally", {
-  co <- signif(coef(models$multiple), 3)
+  co <- signif(coef(multiple), 3)
   expect_equal(equations[["multiple"]],
                paste0("mpg = ", co[[1]], " - ", abs(co[["disp"]]), "*disp - ", abs(co[["hp"]]), "*hp"))
   expect_equal(equations[["transformed"]], sub("^", "", equations[["transformed"]]))

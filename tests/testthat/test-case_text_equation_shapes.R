@@ -5,15 +5,11 @@
 # its names when narrow.
 
 iris_model <- lm(Sepal.Length ~ Sepal.Width * Species, data = iris)
-latex_of <- function(...) {
-  out <- capture.output(v <- lm_latex(...))
-  v
-}
 
 examples <- c(
-  latex_prettier = latex_of(iris_model),
-  latex_brackets = latex_of(iris_model, style = "brackets"),
-  latex_raw = latex_of(iris_model, style = "raw"),
+  latex_prettier = lm_latex(iris_model),
+  latex_brackets = lm_latex(iris_model, style = "brackets"),
+  latex_raw = lm_latex(iris_model, style = "raw"),
   equation_factor_call = lm_equation(lm(mpg ~ disp + factor(cyl), mtcars)),
   equation_as_factor_interaction = lm_equation(lm(mpg ~ wt * as.factor(am), mtcars))
 )
@@ -21,6 +17,7 @@ examples <- c(
 covers("lm_latex.factor-styles", "lm_equation.response-and-term-names", "geom_slice_subtitle.style-pinned",
        "geom_slice_subtitle.held-line")
 judged_output("factor_terms", examples, type = "returned_text",
+              title = "Factor term names",
               purpose = "lm_latex() names factor terms in each style as lm_equation() does, and factors made in the formula keep their call in the term name.")
 
 test_that("lm_latex() names factor terms in each style as lm_equation() does", {
@@ -28,7 +25,7 @@ test_that("lm_latex() names factor terms in each style as lm_equation() does", {
   expect_match(examples[["latex_prettier"]], '\\text{Sepal.Width:(Species="virginica")}', fixed = TRUE)
   expect_match(examples[["latex_brackets"]], "\\text{[versicolor]}", fixed = TRUE)
   expect_match(examples[["latex_raw"]], "\\text{Sepal.Width:Speciesvirginica}", fixed = TRUE)
-  expect_equal(latex_of(iris_model, style = "bracket"), examples[["latex_brackets"]])
+  expect_equal(lm_latex(iris_model, style = "bracket"), examples[["latex_brackets"]])
 })
 
 test_that("a factor made in the formula keeps its call in the term name", {

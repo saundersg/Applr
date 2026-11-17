@@ -14,6 +14,7 @@ df <- data.frame(
   y = c(3, 5, 4, 8, 9, 12, 10, 13, 16)
 )
 
+# Title: geom_slice() imputation
 test_that("geom_slice() holds numeric at the mean and factor or character at the most common value", {
   m <- lm(y ~ x + num + fac + chr, data = df)
   d <- slice_data(ggplot2::ggplot(df, ggplot2::aes(x, y)) + geom_slice(m, n = 9))
@@ -21,6 +22,7 @@ test_that("geom_slice() holds numeric at the mean and factor or character at the
   expect_equal(d$y, expected_line(m, held))
 })
 
+# Title: Imputation ignores NA
 test_that("missing values are ignored when imputing", {
   na_df <- df
   na_df$num[1] <- NA
@@ -29,6 +31,7 @@ test_that("missing values are ignored when imputing", {
   expect_equal(d$y, expected_line(m, list(x = d$x), list(num = mean(na_df$num, na.rm = TRUE))))
 })
 
+# Title: slice_2d() imputation
 test_that("slice_2d() holds numeric at the mean and factor at the first level", {
   # The engines differ here (for_devs/known_issues.Rmd): geom_slice() would
   # hold fac at its most common level, "c". This pins each engine's choice.
@@ -38,6 +41,7 @@ test_that("slice_2d() holds numeric at the mean and factor at the first level", 
   expect_equal(prep$line$fit, expected_line(m, list(x = prep$line$x), list(num = mean(df$num), fac = "a")))
 })
 
+# Title: Formula-converted predictor
 test_that("a predictor converted in the formula draws no line today (known bug)", {
   # KNOWN BUG (for_devs/known_issues.Rmd): factor(cyl) is imputed with the
   # mean of the raw cyl, which predict() rejects. When this expectation fails,

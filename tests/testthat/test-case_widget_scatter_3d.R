@@ -16,10 +16,13 @@ log_response <- scatter_3d(lm(log(mpg) ~ wt + hp, mtcars), n = 25)
 covers("scatter_3d.surface-style", "scatter_3d.twisted-surface", "scatter_3d.readable-from-any-angle",
        "scatter_3d.transformed-response")
 judged_output("curved", curved, states = cameras,
+              title = "Curved surface",
               purpose = "A curved surface over raw predictors with a custom gradient stays translucent so the points read through it from every camera.")
 judged_output("twisted", twisted, states = cameras,
+              title = "Twisted surface",
               purpose = "An interaction surface looks nearly flat from the default camera, so the side camera has to show its twist.")
 judged_output("log_response", log_response, states = cameras,
+              title = "Log response surface",
               purpose = "A log(mpg) model's surface sits on the log scale far from the raw points, a known bug shown on purpose.")
 
 test_that("the surface is translucent with no colour bar of its own", {

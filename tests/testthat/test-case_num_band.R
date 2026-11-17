@@ -15,6 +15,7 @@ edges <- function(line, drv, lo, hi) {
   list(ymin = pmin(a, b), ymax = pmax(a, b), y = (a + b) / 2)
 }
 
+# Title: Named band span
 test_that("a named band spans the predict_vars values, with the line at the midpoint", {
   d <- slice_data(coloured + geom_slice(model, n = 10, band = "cyl", predict_vars = list(cyl = c(7, 5))))
   lv <- levels(factor(mpg$drv))
@@ -27,6 +28,7 @@ test_that("a named band spans the predict_vars values, with the line at the midp
   }
 })
 
+# Title: Data-range band
 test_that("without predict_vars the band spans the data range, and band = TRUE finds cyl", {
   named <- slice_data(coloured + geom_slice(model, n = 10, band = "cyl"))
   inferred <- slice_data(coloured + geom_slice(model, n = 10, band = TRUE))
@@ -35,6 +37,7 @@ test_that("without predict_vars the band spans the data range, and band = TRUE f
   expect_equal(named$ymin[named$group == 1], e$ymin)
 })
 
+# Title: Band from predict_vars
 test_that("band = TRUE picks the one multi-value predict_vars entry", {
   m <- lm(hwy ~ displ + cyl + year, data = mpg)
   d <- slice_data(ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy)) +
@@ -45,6 +48,7 @@ test_that("band = TRUE picks the one multi-value predict_vars entry", {
   expect_equal(d$ymax, pmax(a, b))
 })
 
+# Title: Band edge labels
 test_that("geom_slice_text() labels each edge with the value that made it", {
   p <- suppressMessages(coloured + geom_slice(model, band = "cyl", predict_vars = list(cyl = c(5, 7))) +
                           geom_slice_text())

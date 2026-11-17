@@ -10,11 +10,13 @@ covers("shared.held-values.single", "shared.held-values.multi-crossed",
        "shared.held-values.coerced", "shared.held-values.beats-pinning",
        "shared.held-values.base-not-coerced", "slice_2d.held-named-x")
 
+# Title: Single held value
 test_that("a held predictor is held at that value along the whole line", {
   d <- slice_data(base + geom_slice(model, n = 10, predict_vars = list(cyl = 6, drv = "r")))
   expect_equal(d$y, expected_line(model, list(displ = d$x), list(cyl = 6, drv = "r")))
 })
 
+# Title: Crossed held values
 test_that("several values are crossed into one line per combination, each its own group", {
   d <- slice_data(base + geom_slice(model, n = 10,
                                     predict_vars = list(cyl = c(4, 6, 8), drv = c("f", "r"))))
@@ -26,6 +28,7 @@ test_that("several values are crossed into one line per combination, each its ow
   }
 })
 
+# Title: Held value coercion
 test_that("values are coerced to the predictor's type", {
   as_given <- slice_data(base + geom_slice(model, n = 10, predict_vars = list(cyl = "6", drv = "r")))
   typed <- slice_data(base + geom_slice(model, n = 10,
@@ -33,6 +36,7 @@ test_that("values are coerced to the predictor's type", {
   expect_equal(as_given$y, typed$y)
 })
 
+# Title: Held beats pinning
 test_that("a held value beats the pin a grouping aesthetic or facet would give", {
   coloured <- ggplot2::ggplot(mpg, ggplot2::aes(displ, hwy, colour = drv)) +
     geom_slice(model, n = 10, predict_vars = list(drv = "4", cyl = 4))
@@ -47,12 +51,14 @@ test_that("a held value beats the pin a grouping aesthetic or facet would give",
   }
 })
 
+# Title: slice_2d() string factor
 test_that("slice_2d() predicts at a factor value given as a string", {
   prep <- suppressMessages(prepare_slice_data(model, "displ", 10, TRUE, "none",
                                               list(cyl = 6, drv = "r")))
   expect_equal(prep$line$fit, expected_line(model, list(displ = prep$line$x), list(cyl = 6, drv = "r")))
 })
 
+# Title: Predictor named x
 test_that("a held predictor named x is a held value, not x_axis", {
   d <- data.frame(w = 1:10, x = c(2, 1, 4, 3, 6, 5, 8, 7, 10, 9))
   d$y <- d$w + 2 * d$x

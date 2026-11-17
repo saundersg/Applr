@@ -187,12 +187,20 @@ An output's review status is derived from both files. A human approval for the c
 
 **Human authority.** Agents have no reason to write `human_decisions.json`, so a Claude Code hook can block every agent write to it by path, through file-edit and shell tools alike. This is a simple rule, with no need to inspect what an edit changes. One shared file couldn't be protected this way, because agents write it legitimately and a shell command's effect can't be seen in advance. The hook is a guardrail against careless or overeager agents, not a lock against a determined one. A forged decision would still show as a diff to that one file. If agents are ever run outside Claude Code, add a CI check on who changed it.
 
-**Review page.** A small local server started from R (httpuv) serves the review page and records decisions. Layout from the review page prototype (v2):
+**What the maintainer reviews** (decided 2026-11-16 and 17). The maintainer judges user experience and style: what a user types and what they see, including the wording of messages. They don't judge numeric facts, which the core rule and the numeric tests settle. So the review page has three places:
+- **The inbox** holds plots, widgets and returned text: one item per visual feature, plus a few plots the maintainer curates that combine features. Each output is built in its case file exactly as a user would type it (ggplot2 attached, no case-local helpers or message wrappers), with a three-word `title` and a one-sentence `purpose`, so the page shows that code beside the output. Returned text built as `c(name = ...)` shows one box per example; a reader around one (`subtitle_of()`, `labels_of()`, `legend_key_of()` in `helper-judged.R`) is named apart from the plot code it reads.
+- **The wording page** lists every message the package can print, one row per call site in `R/`, read from the source. Rows that read the same apart from names fold together; scenario buttons and Custom fields refill every message's variables, using the hand-kept table `tests/suite/wording_roles.csv` to know what each expression stands for. The maintainer ticks each row (✓ reads well, ✗ needs work) and fixes wording in the R file directly, with no Send back. Ticks live in `wording_review.json`, written only by the review server and protected by the hook like `human_decisions.json`; a tick lapses when its message's wording changes. Condition outputs still run, and their forms supply the page's real examples.
+- **The numeric tests page** lists the numeric tests in plain words: each `num_` file's top comment as a heading, and each test's `# Title:` line and `test_that()` description, with its code one click away.
+
+**Review page.** A small local server started from R (httpuv) serves the review page and records decisions. Layout from the review page prototype (v2), with the item page, wording page and numeric tests page from the 2026-11-17 mockups (`for_devs/prototypes/PROTOTYPE_review_ui` on branch `claude/review-ui-prototypes-da94cc`, version A of each):
 - the suite overview (tiles by function family) is the default view (changed from the inbox at the Part B review, 2026-11-10);
 - a collapsible sidebar groups cases by review status, with search, and the inbox of Agent approved outputs heads it;
 - the page follows the system's light or dark setting;
-- each case shows its expected behaviour, the agent note, any console diff, and a swipe or side-by-side comparison, or sampled states plus the live widget for interactive outputs;
-- reject opens a note box with quick starter phrases;
+- an inbox item ("Stage") shows its title and behaviour line, then the agent's note in an orange box headed "Why it was made" or "Why it changed" (two lines until clicked), then the output large on the left (with swipe or side-by-side comparison when changed, or sampled states plus the live widget) and the user's code on the right, kept in view with Approve and Send back under it. Code details, Fingerprint, Serialised form, and Who and when open from buttons below;
+- Send back opens a note box with quick starter phrases; the note can ask for a change to the case or the package code, or for the output to be removed;
+- the wording page is a checklist table grouped by file, with new or changed rows repeated at the top, a pinned "Fill the variables with" bar, and a drag handle that narrows the list to show how messages wrap;
+- the numeric tests page is an outline: one folded box per file with a Read tick, and numbered rows with code in place;
+- clicking keeps the scroll position; only opening a different item starts at the top;
 - keyboard: j/k, a, r, s, o, [, and Ctrl+Enter;
 - the URL deep-links to a case or to the overview.
 
@@ -235,7 +243,7 @@ What this says about the hypotheses:
    | Rejected | ✗ |
    | Case expectations fail | ✗ |
 
-   Amended 2026-11-16: wording (the condition type) is lower priority, so an unreviewed or rejected condition output only warns on CI. Its type registers with `blocks_ci = FALSE`. A failing expectation in its case still fails, and the release check still needs it Human approved.
+   Amended 2026-11-17: wording (the condition type) is reviewed on its own page, not in the inbox (see *Review page*). Its type registers with `inbox = FALSE`, so CI and the release check ignore its review status, though a failing expectation in its case still fails. The release check instead needs every message ticked as reading well on the wording page.
 
    The release check is separate and stricter: it fails unless every output is Human approved (or an agent-approved variant of one), and it runs the release audit.
 

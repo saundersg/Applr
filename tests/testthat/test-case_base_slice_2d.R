@@ -3,10 +3,10 @@
 # drawn line is the model's prediction, and the base graphics plot is judged.
 
 model <- lm(mpg ~ wt + hp, data = mtcars)
-draw <- function() slice_2d(model, x_axis = "wt", hp = 150)
 
 covers("slice_2d.line-is-prediction")
-judged_output("plot", draw, type = "base_graphics",
+judged_output("plot", function() slice_2d(model, x_axis = "wt", hp = 150), type = "base_graphics",
+              title = "Held value slice",
               purpose = "slice_2d() on a two-predictor model with hp held at 150 draws the points, the prediction line, a formula title and a caption naming the held value.")
 
 test_that("the prepared line equals the model's prediction with hp held at 150", {

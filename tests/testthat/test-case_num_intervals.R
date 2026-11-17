@@ -7,6 +7,7 @@ base <- ggplot2::ggplot(ggplot2::mpg, ggplot2::aes(displ, hwy))
 
 covers("shared.intervals.match-predict", "shared.back-transform.ribbons-upright")
 
+# Title: geom_slice() ribbons
 test_that("geom_slice() ribbons are predict()'s interval", {
   for (iv in c("confidence", "prediction")) {
     d <- slice_data(base + geom_slice(model, n = 10, interval = iv))
@@ -17,6 +18,7 @@ test_that("geom_slice() ribbons are predict()'s interval", {
   }
 })
 
+# Title: slice_2d() bands
 test_that("slice_2d() bands are predict()'s interval", {
   prep <- prepare_slice_data(model, "displ", 10, TRUE, "prediction", list())
   e <- expected_line(model, list(displ = prep$line$x), interval = "prediction")
@@ -24,6 +26,7 @@ test_that("slice_2d() bands are predict()'s interval", {
   expect_equal(prep$line$upr, e$ymax)
 })
 
+# Title: Upright reversed ribbon
 test_that("under 1/y the ribbon is back-transformed and stays upright", {
   m <- lm(1 / mpg ~ wt, data = mtcars)
   d <- slice_data(ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + geom_slice(m, n = 10, interval = "confidence"))

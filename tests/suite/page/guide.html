@@ -13,6 +13,13 @@
 </ul>
 <p>If a case's expectations fail, its judged outputs aren't looked at at all: the review state stays exactly as it was.</p>
 
+<h3>What you review, and where</h3>
+<ul>
+  <li><b>The inbox</b>: plots, widgets and returned text, judged for how they look. Each shows the code a user would type beside what they'd see.</li>
+  <li><b>Wording</b>: every message the package can print, one row per place in <code>R/</code>. Tick the ones that read well and fix the rest in the R file.</li>
+  <li><b>Numeric tests</b>: what the numeric tests check, in plain words. Read the list for gaps; open a test's code only when a line makes you doubt it. The rule they all check against is in <code>tests/testthat/helper-core.R</code>.</li>
+</ul>
+
 <h3>What a fingerprint decides, and what it doesn't</h3>
 <p>Each judged output is turned into text that leaves out noise (fixed-font SVG for a plot, the message text for conditions, the figure and its settings for a widget). Its <b>fingerprint</b> is a short hash of that text.</p>
 <ul>
@@ -42,7 +49,7 @@
 <ul>
   <li><b>CRAN</b> runs only the expectations, within its time and two-thread limits. Judged outputs do nothing there.</li>
   <li><b>CRAN</b> takes about 35 seconds for the expectations under <code>R CMD check</code>.</li>
-  <li><b>CI</b> (GitHub Actions, on pushes to the test-suite branch) runs every case on Windows, macOS and Ubuntu with pinned package versions, and checks each output's fingerprint against the one recorded on your machine. Your machine's fingerprints count everywhere: in the cross-platform experiment, all 143 outputs matched on all three. Human approved passes, Agent approved passes with a warning, and Unreviewed, Rejected or a failing expectation fails the run. Wording is the exception: an unreviewed message only warns, though the release check still needs you to have approved it.</li>
+  <li><b>CI</b> (GitHub Actions, on pushes to the test-suite branch) runs every case on Windows, macOS and Ubuntu with pinned package versions, and checks each output's fingerprint against the one recorded on your machine. Your machine's fingerprints count everywhere: in the cross-platform experiment, all 143 outputs matched on all three. Human approved passes, Agent approved passes with a warning, and Unreviewed, Rejected or a failing expectation fails the run. Wording is the exception: it isn't reviewed in the inbox but ticked on the wording page, so CI ignores it, and the release check needs every message ticked as reading well.</li>
   <li>If an output ever comes out differently on one platform, that's a <b>platform variant</b>. CI uploads its forms and views for download. If you approved the original, an agent can approve the variant with a note on what differs, and you don't need to look again.</li>
   <li>The <b>release check</b> (<code>Rscript tests/suite/release.R</code>, on your machine, before a CRAN submission) fails until everything is Human approved. It also re-renders every state and compares it with the screenshot kept when you approved it. A difference there means the fingerprint missed something: a suite bug.</li>
 </ul>
